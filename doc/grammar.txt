@@ -1,0 +1,106 @@
+
+	(* === Grammatik === *)
+
+	(* --- Elementare Zeichen Gruppen --- *)
+	(* Dies sind alles oder nichts Gruppen. Wenn in einer beliebigen Regel eines *)
+	(* der Zeichen erlaubt ist, sind auch alle anderen Zeichen der Gruppe erlaubt. *)
+	(* Buchstaben und Ziffern *)
+	ziffer         = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+	kleinbuchstabe = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" 
+				   | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" 
+				   | "u" | "v" | "w" | "x" | "y" | "z" ;
+	grossbuchstabe = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" 
+				   | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" 
+				   | "U" | "V" | "W" | "X" | "Y" | "Z" ;
+
+	(* Symbole für Operatoren (ohne die Präfixe '~' und '|') *)
+	operator_symbol = "+" | "-" | "*" | "/" | "^" | "%" | "!" | 
+					  "<" | ">" | "=" | "&" | "²" | "³" | "°" ; 
+					  
+	(* Entersymbol ist das Leerzeichen *)
+	enter          = " " ;
+	(* Das Ende einer Zeile ist immer auch ein Trennzeichen *)
+	newline        = "\n"; 
+
+	(* --- Präfixe --- *)
+	praefix_inv    = "~" ;
+	praefix_split  = "|" ;
+	praefix_var    = "'" ;
+	exponent_split = "ê" ; (* "e" würde mit den Kleinbuchstaben kollidieren *)
+	dot            = "." ;
+	code_open      = "{" ;
+	code_close     = "}" ;
+
+
+	(* Zusammengesetzte Zeichen Gruppen *)
+
+	buchstabe      = kleinbuchstabe | grossbuchstabe ;
+	incode_zeichen = alle Zeichen außer "{" und "}"
+
+	Trenner        = enter | newline;
+
+
+	(* Ein Bezeichner, der mit einem Kleinbuchstaben beginnt und beliebig lang sein kann *)
+	name        = kleinbuchstabe , { kleinbuchstabe } ;
+
+	(* Die universelle Schnittstelle: Entweder ein schneller Großbuchstabe ODER ein langer Name *)
+	identifier  = grossbuchstabe | name ;
+
+
+	(* --- Argumente --- *)
+	argument       = integer | dot ;
+	argumente      = argument , { praefix_split , argument } ;
+
+	(* --- Token-Definitionen --- *)
+	(* 1. Zahlen *)
+	integer        = ziffer , { ziffer } ;
+	real           = { ziffer } , ( ziffer , dot | dot , ziffer ) , { ziffer } ;
+	exponent       = exponent_split , [ praefix_inv ] , integer ;
+	Zahl           = [ praefix_inv ] , ( integer | real ) , [ exponent ] ;
+
+	(* 2. Befehle, Funktionen, Operatoren *)
+	Befehl         = [ praefix_inv ] , [ praefix_split , [ argumente ] ] , grossbuchstabe ;
+	Funktion       = [ praefix_inv ] , [ praefix_split , [ argumente ] ] , name ;
+
+	(* Operatoren inkl. Doppelt-Tilde "~~" und Split-Operatoren wie "|/", "||", "|" und "~" *)
+	Operator       = operator_symbol
+				   | ( praefix_inv   , [ operator_symbol | praefix_inv   ] )
+				   | ( praefix_split , [ operator_symbol | praefix_split ] )
+				   | ( praefix_inv   , praefix_split , operator_symbol   ) ;
+
+	(* 3. Variablen und Tags (z.B. 'x, '~x, '|x12) *)
+	(* Erlaubte Operatoren für In-Place-Zuweisungen (z.B. '+summe, '*preis) *)
+	var_op          = operator_symbol ;
+
+	(* Tags auf dem Stack (Nutzen exklusiv das '| und optionale Argumente) *)
+	(* Erlaubt: '|tmp (ToS taggen) oder '|3|2vektor (Elemente an Index 3 und 4 taggen) *)
+	Tag             = praefix_var , praefix_split , [ argumente ] , identifier ;
+
+	(* Normale Variablen (Lesen, Schreiben mit ~, In-Place mit +, -, *, /) *)
+	(* Erlaubt: 'x (Lesen), '~x (Schreiben), '+x (In-Place Addition) *)
+	Var_Normal      = praefix_var , [ praefix_inv | var_op ] , identifier ;
+
+
+	(* Zugriff auf Argumente im Code, die vorher mit '| übergeben wurden) *)
+	(* Erlaubt: selbstdefinierte Funktionen der Art |3|5|dropGroup *)
+	Argument        = praefix_var , integer ;
+
+
+	(* Zusammenfassung für die Gesamt-Grammatik *)
+	Variable        = Tag | Var_Normal| Argument;
+
+	(* 4. Code-Blöcke (z.B. "{S2/~- ²~R-~²YY+R-}pq" zur Berechnung der pq-Formel) *)
+
+	(* Ein ausführbarer Code-Block (Anonym oder als benanntes Makro) *)
+	(* Der Name am Ende [ ... ] ist optional, um anonyme Blöcke für 'if' und 'loop' zu erlauben *)
+	(* Erlaubt: { 1 '+i } (Anonym) oder { rnd 1'-i }meinMakro (Benannt) *)
+	Code           = code_open , { Ausdruck } , code_close , [ identifier ] ;
+
+
+	(* --- Die Gesamteingabe --- *)
+	Ausdruck_concept =  Zahl | Befehl | Funktion | Operator | Variable | Code | Trenner;
+
+(* Ausdruck Beschreibung, wie sie im Parser verwendet wird *)
+Ausdruck = { incode_zeichen  | ( code_open, { incode_zeichen }, code_close ) }
+
+Programm       = { Ausdruck } ;

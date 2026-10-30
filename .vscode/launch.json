@@ -1,0 +1,50 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "rpncalc",
+            "request": "launch",
+            "type": "dart",
+            "program": "bin/rpncalc.dart",
+            "console": "terminal"
+        },
+        {
+            "name": "RPN Server",
+            "request": "launch",
+            "type": "dart",
+            "program": "bin/server.dart",
+            "console": "terminal"
+        },
+        {
+            "name": "RPN Client",
+            "program": "bin/client.dart",
+            "request": "launch",
+            "type": "dart",
+            "console": "terminal"
+        },
+        {
+            "name": "RPN App (Windows)",
+            "request": "launch",
+            "type": "dart",
+            "program": "app/lib/main.dart",
+            "deviceId": "windows"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Server & Client gleichzeitig",
+            "configurations": [
+                "RPN Server",
+                "RPN Client"
+            ]
+        }
+    ],
+    "compilationOutputs": {},
+    // Diese globale Einstellung zwingt VS Code, das Terminal sofort anzusteuern:
+    "settings": {
+        "terminal.integrated.focusAfterRun": "terminal"
+    }
+}
