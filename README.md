@@ -17,7 +17,6 @@ Ein RPN-Rechner für die Konsole mit eigener, über eine Grammatik konfigurierba
 | `library/`      | Funktionsbibliotheken in der Sprache des Rechners (Schwingungen, Statistik) |
 | `test/`         | Tests für `dart test`, nutzen die Testfälle aus `lib/selftest/` |
 | `doc/`          | Sprachreferenz (`reference.md`) mit EBNF-Diagramm, API-Spezifikation (`api.md`), Architektur, Anforderungen, Demo |
-| `scratchpad/`   | private Übungen mit KI-Unterstützung; `outdated/` enthält den alten Client mit Textprotokoll |
 
 ## Starten und testen
 
@@ -27,3 +26,7 @@ dart run bin/server.dart      # Socket-Server auf Port 4040, Ende mit Strg+C
 dart run bin/client.dart      # Client, in einem zweiten Terminal
 dart test
 ```
+
+## Lizenz
+
+MIT, siehe [LICENSE](LICENSE).
