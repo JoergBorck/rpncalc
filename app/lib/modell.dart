@@ -110,7 +110,7 @@ class RechnerModell extends ChangeNotifier {
           if (s.art != SpeicherArt.funktion) Taste(s.name, eingabe: apostroph ? s.name : "'${s.name}", name: true),
       ];
 
-  /// Eigene Funktionen ohne die aus mitgelieferten Bibliotheken; die stehen auf den Seiten ihrer Domäne.
+  /// Eigene Funktionen ohne die aus Bibliotheken; die stehen auf den Seiten ihrer Domäne.
   List<Taste> get _eigene => [
         for (Speicher s in zustand.speicher)
           if (s.art == SpeicherArt.funktion && !api.geladeneBibliotheksFunktionen.contains(s.name))

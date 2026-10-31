@@ -89,6 +89,8 @@ mixin Funktionen on Kern {
       }
     }
     versionen[name] = v;
+    // im Block einer Bibliothek: die folgenden Funktionen gehören zu ihr, bis der Block zu Ende ist
+    if (aufrufArgumente.isNotEmpty) aktuelleBibliothek = name;
     return true;
   }
 

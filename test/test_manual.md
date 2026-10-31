@@ -84,6 +84,8 @@ bzw. des Programms. Für das Protokoll den Ausschnitt kopieren (Terminal markier
 | F-05 | Bibliotheken finden | Menü Bibliotheken öffnen | „schwingungen“ und „statistik“, keine Sessions (`.rpn`) | – |
 | F-06 | Eigene Bibliothek | eine Funktion anlegen (`{2*}':dbl`); Datei → Funktionen speichern, Vorschlag `funktionen.rpnlib` übernehmen; Menü Bibliotheken öffnen | „funktionen“ erscheint in der Liste; nach Programmneustart lädt die Auswahl `dbl` wieder; im Menü Datei gibt es kein „Funktionen laden“ mehr | – |
 | F-07 | Bibliotheken nicht mitspeichern | Bibliotheken → statistik; eigene Funktion `{2*}':dbl`; Datei → Funktionen speichern | Meldung „Aus Bibliotheken, nicht gespeichert: …“ mit den Statistik-Funktionen; die Datei enthält nur `dbl`; Datei → Session speichern enthält weiterhin alles | – |
+| F-08 | Bibliotheksfunktionen geschützt | Bibliotheken → statistik; `{1}':mean`, dann `{1}'::mean`, dann `'~mean`; danach `'~~mean`; Bibliotheken → statistik erneut wählen | die ersten drei melden einen Fehler („Funktion gehört zu einer Bibliothek: mean (statistik)“ bzw. „Geschützt, entfernen mit '~~mean“); `'~~mean` entfernt mean; nach dem erneuten Wählen ist mean wieder da | – |
+| F-09 | Namenskonflikt | Programm neu starten; `{1}':mean`; Bibliotheken → statistik | Meldung „Name ist schon vergeben: mean (eigene Funktion)“; keine Statistik-Funktion ist geladen (`sclr` ist unbekannt) | – |
 
 ## H: Hilfe
 

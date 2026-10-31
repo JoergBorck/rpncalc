@@ -91,10 +91,12 @@ class Calculator extends Kern with Speicher, Funktionen, Operatoren, StackBefehl
     String tokenOutput = parser.tokenOutput;
     int errorPosition = parser.errorPosition;
     aufrufArgumente.add(a.liste);
+    String? bibliothek = aktuelleBibliothek; // ein version-Eintrag im Code gilt bis zu dessen Ende
     ParserResult r = parser.feedLine(code);
     String fehlerCode = parser.currentToken.errorCode;
     String fehlerText = parser.currentToken.errorMsg;
     aufrufArgumente.removeLast();
+    aktuelleBibliothek = bibliothek;
     parser.tokenOutput = tokenOutput;
     parser.errorPosition = errorPosition;
     if (r != ParserResult.error) return;

@@ -24,13 +24,6 @@
             "request": "launch",
             "type": "dart",
             "console": "terminal"
-        },
-        {
-            "name": "RPN App (Windows)",
-            "request": "launch",
-            "type": "dart",
-            "program": "app/lib/main.dart",
-            "deviceId": "windows"
         }
     ],
     "compounds": [

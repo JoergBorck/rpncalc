@@ -28,7 +28,7 @@ void main() {
       expect(werte(z), [1, 2, 3]);
     });
 
-    for (final op in ["=", "+", "-", "*", "/"]) {
+    for (final op in ["=", "==", "+", "-", "*", "/", "++", "--"]) {
       test("'${op}x ist ein Fehler", () {
         final z = nach(RpnApi(), ["5'!!g", "2'${op}g"]);
         expect(z.fehler?.code, "konst");
@@ -36,8 +36,9 @@ void main() {
       });
     }
 
-    test("'~x entfernt die Konstante", () {
-      final z = nach(RpnApi(), ["5'!!g", "'~g"]);
+    test("'~~x entfernt die Konstante, '~x ist ein Fehler", () {
+      expect(nach(RpnApi(), ["5'!!g", "'~g"]).fehler?.code, "geschuetzt");
+      final z = nach(RpnApi(), ["5'!!g", "'~~g"]);
       expect(z.fehler, isNull);
       expect(z.speicher, isEmpty);
     });
@@ -118,9 +119,10 @@ void main() {
       expect(werte(z), [-5]);
     });
 
-    test("'D und '~x entfernen den Tag samt Schutz", () {
+    test("'D und '~~x entfernen den Tag samt Schutz, '~x ist ein Fehler", () {
       expect(nach(RpnApi(), ["5'||t", "'D"]).speicher, isEmpty);
-      final z = nach(RpnApi(), ["5'||t", "'~t", "~"]);
+      expect(nach(RpnApi(), ["5'||t", "'~t"]).fehler?.code, "geschuetzt");
+      final z = nach(RpnApi(), ["5'||t", "'~~t", "~"]);
       expect(z.fehler, isNull);
       expect(werte(z), [-5]);
     });

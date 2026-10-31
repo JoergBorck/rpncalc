@@ -17,6 +17,9 @@ class Kern {
   final CodeStack codeStack = CodeStack(); // getrennt vom Werte-Stack
   /// Argumente der laufenden Aufrufe eigener Funktionen, der innerste zuletzt. ~: holt daraus von vorn.
   final List<List<Wert>> aufrufArgumente = [];
+  /// Die Bibliothek, deren Block gerade ausgeführt wird (ab ihrem version-Eintrag), sonst null.
+  /// Funktionen, die in dieser Zeit abgelegt werden, gehören zu ihr (doc/reference.md 10.6).
+  String? aktuelleBibliothek;
   int verbosity = 0;
 
   // Operanden: ops=n holt n Werte vom Stack, der Tos landet im letzten (bei n=2 in y).
@@ -76,6 +79,11 @@ class Kern {
     "tiefe": "Nicht genug Elemente auf dem Stack",
     "code0": "Der Code-Stack ist leer",
     "fktName": "Eingebaute Funktionen können nicht überschrieben werden",
+    "fktDa": "Funktion % gibt es schon, ersetzen mit '::%",
+    "bibFkt": "Funktion gehört zu einer Bibliothek",
+    "konflikt": "Name ist schon vergeben",
+    "geschuetzt": "Geschützt, entfernen mit '~~%",
+    "ungeschuetzt": "Nicht geschützt, entfernen mit '~%",
     "konst": "Konstante kann nur gelesen werden",
     "schutz": "Tag ist schreibgeschützt",
     "json" : "Ungültiges JSON",
@@ -166,5 +174,6 @@ class Kern {
     args.reset();
     codeStack.reset();
     aufrufArgumente.clear();
+    aktuelleBibliothek = null;
   }
 }

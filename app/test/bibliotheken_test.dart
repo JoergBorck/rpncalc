@@ -40,9 +40,9 @@ void main() {
 
   test('beim zweiten Wählen wird nicht noch einmal geladen', () {
     m.waehleDomaene("statistik");
-    m.api.eingabe("{1+}':sclr"); // überschreibt sclr
+    expect(m.api.eingabe("'~~sclr").fehler, isNull); // entfernt sclr aus der Bibliothek
     m.waehleDomaene("Grundfunktionen");
     m.waehleDomaene("statistik");
-    expect(m.api.calculator.eigeneFunktionen["sclr"], "1+");
+    expect(m.api.calculator.eigeneFunktionen.containsKey("sclr"), isFalse);
   });
 }

@@ -364,14 +364,17 @@ Element 0 ist das Element, das beim Anlegen der Tos war.
 | `'!x`   | n (1) | legt x mit n Elementen an und verbraucht dafür n Werte vom Stack; ein vorhandenes x wird ersetzt |
 | `'x`    | n:m (0:1) | kopiert m Elemente ab Element n auf den Stack, die Reihenfolge bleibt |
 | `'=x`   | n:m:k (0:1:0) | schreibt m Werte vom Stack in die Elemente ab n (Tos in Element n) |
+| `'==x`  | – | schreibt den Tos in alle Elemente, z.B. `0'==v` |
 | `'+x` `'-x` `'*x` `'/x` | n:m:k (0:1:0) | ändert m Elemente ab n mit Werten vom Stack |
+| `'++x` `'--x` | n:m (0:1) | erhöht bzw. senkt m Elemente ab n um 1 |
 | `'~x`   | – | entfernt x |
 
 - **Argument k:** 0 heißt, jedes Element bekommt seinen eigenen Wert vom Stack; 1 heißt, der Tos gilt für alle Elemente. Andere Werte sind ein Fehler.
 - **Schreiben und Ändern** lassen die Werte auf dem Stack. Nur das Anlegen verbraucht sie.
 - **Nicht angelegte Variablen:** Lesen, Schreiben oder Ändern ist ein Fehler.
 - **Elementbereich:** Ein Bereich außerhalb der Elemente ist ein Fehler.
-- **Erlaubte Operatoren:** Andere Operatoren als die genannten (z.B. `'^x`) sind für Variablen nicht erlaubt.
+- **Erlaubte Operatoren:** Nach `'` stehen nur `! = + - * / ~`, einfach oder doppelt (8.2). Andere Zeichen
+  (z.B. `'^x`) sind ein Fehler der Grammatik, nicht belegte Paare (z.B. `'**x`, `'+-x`) ein Fehler des Rechners.
 
 Beispiel: `"0 0 0 3:'!s"` legt einen Vektor mit drei Nullen an. `"1 2 3 0:3:'+s"` addiert elementweise.
 `"0:3:'s"` liest alle drei Elemente.
@@ -387,10 +390,12 @@ Eine Konstante ist eine Variable, die nach dem Anlegen nur noch gelesen werden k
 |---------|----------------------|-----------|
 | `'!!x`  | n (1) | legt die Konstante x mit n Elementen an und verbraucht dafür n Werte vom Stack; ein vorhandenes x wird ersetzt |
 | `'x`    | n:m (0:1) | liest wie bei Variablen |
-| `'~x`   | – | entfernt die Konstante |
+| `'~~x`  | – | entfernt die Konstante; `'~x` ist hier ein Fehler |
 | `'!x`   | n (1) | ersetzt die Konstante durch eine gewöhnliche Variable und hebt so den Schreibschutz auf |
 
-- **Schreiben und Ändern** sind ein Fehler: `'=x`, `'+x`, `'-x`, `'*x` und `'/x`.
+- **Schreiben und Ändern** sind ein Fehler: `'=x`, `'==x`, `'+x`, `'-x`, `'*x`, `'/x`, `'++x` und `'--x`.
+- **Entfernen** geht nur mit `'~~x`, dem Gegenstück zu `'!!x`. So verschwindet eine Konstante nicht aus
+  Versehen.
 - **Bewusstes Ersetzen bleibt erlaubt:** Neu anlegen mit `'!!x` oder `'!x`, ebenso ein Tag `'|x` mit demselben Namen. Der Schutz gilt
   versehentlichen Änderungen, nicht dem bewussten Ersetzen.
 
@@ -398,6 +403,37 @@ Beispiel: `"9.81'!!g"` legt die Konstante g an. `"5'=g"` meldet den Fehler „Ko
 
 > **Warum so?** Konstanten wie g oder eine Materialkonstante sollen in Programmen nicht versehentlich überschrieben
 > werden. Ein eigener Befehl zum Aufheben des Schutzes ist nicht nötig, weil `'!x` ohnehin neu anlegt.
+
+### 8.2 Einfache und doppelte Modifikatoren
+
+Jeder Modifikator nach `'` darf einfach oder doppelt stehen. Die doppelte Form ist in der Regel die stärkere:
+Sie legt etwas Geschütztes an oder wirkt auch auf Geschütztes.
+
+| Zeichen | einfach | doppelt |
+|---------|---------|---------|
+| `!`  | Variable anlegen (8) | Konstante anlegen (8.1) |
+| `\|` | Tag setzen (9.1) | Tag mit Schreibschutz (9.4) |
+| `:`  | eigene Funktion neu ablegen (10.2) | eigene Funktion ablegen oder ersetzen (10.2) |
+| `~`  | Ungeschütztes entfernen | Geschütztes entfernen |
+| `=`  | Elemente schreiben | alle Elemente mit dem Tos füllen |
+| `+` `-` | Elemente um Werte vom Stack ändern | Elemente um 1 ändern |
+| `*` `/` | Elemente um Werte vom Stack ändern | Fehler |
+
+Entfernen mit der falschen Form ist ein Fehler, der die richtige nennt:
+
+| Ziel | `'~` | `'~~` |
+|------|------|-------|
+| Variable | entfernen | Fehler |
+| Konstante | Fehler | entfernen |
+| Tag | entfernen, die Werte bleiben | Fehler |
+| Tag mit Schreibschutz | Fehler | entfernen, die Werte bleiben |
+| eigene Funktion | entfernen | Fehler |
+| Funktion aus einer Bibliothek (10.6) | Fehler | entfernen |
+
+Gemischte Paare wie `'+-x` sind ein Fehler („Operator ist für Variablen nicht erlaubt“).
+
+> **Warum so?** Was geschützt angelegt wurde (`'!!`, `'||`, Bibliothek), entfernt man nur bewusst mit der
+> doppelten Form. `'==x` passt nicht ganz zur Regel „stärker“, ist aber zum Füllen von Vektoren sehr nützlich.
 
 ---
 
@@ -445,12 +481,13 @@ Operationen, die die Zelle nicht beim Namen nennen.
 |---------|-----------|
 | `'\|\|x`  | markiert die Tos-Zelle mit Schreibschutz; ein vorhandener Tag, eine Variable oder Konstante x wird ersetzt |
 | `n:'\|\|x` | markiert einen Block aus n Zellen mit Schreibschutz |
+| `'~~x`   | entfernt den Tag mit Schreibschutz, die Werte bleiben; `'~x` ist hier ein Fehler |
 
 | erlaubt | Fehler |
 |---------|--------|
 | Zugriff über den Namen: `'x`, `'=x`, `'+x`, `'-x`, `'*x`, `'/x` | `S`, `R`, `~R`, wenn eine geschützte Zelle im betroffenen Bereich liegt |
 | `'S`, `'R`, `'~R`: Der Wert wandert mit seinem Tag und bleibt unverändert | `~` (Vorzeichenwechsel), wenn der Tos eine geschützte Zelle ist |
-| Entfernen und Ersetzen: `'~x`, `n:'D`, `'C`, `'\|x`, `'!x` | |
+| Entfernen und Ersetzen: `'~~x`, `n:'D`, `'C`, `'\|x`, `'!x` | `'~x` (entfernen mit `'~~x`) |
 
 - **Wie bei jedem Tag** sind Verbrauchen und Überschreiben ohnehin ein Fehler (9.2).
 - **Schutz aufheben:** `'|x` setzt den Tag ohne Schreibschutz neu und hebt den Schutz so auf.
@@ -478,11 +515,14 @@ Funktionen haben einen eigenen Namensraum, denn sie werden ohne `'` aufgerufen.
 
 | Eingabe | Bedeutung |
 |---------|-----------|
-| `{…}':name` | legt den obersten Block als eigene Funktion `name` ab; eine vorhandene wird ersetzt |
+| `{…}':name` | legt den obersten Block als eigene Funktion `name` ab; gibt es `name` schon, ist das ein Fehler |
+| `{…}'::name` | legt die Funktion ab oder ersetzt eine vorhandene eigene Funktion |
 | `name` | ruft die Funktion auf, als hätte man ihren Code an dieser Stelle eingetippt |
 | `'~name` | entfernt die Funktion |
 
-- **Eingebaute Funktionen** können nicht überschrieben werden.
+- **Eingebaute Funktionen** können nicht überschrieben werden, Funktionen aus Bibliotheken ebenfalls nicht (10.6).
+- **Ersetzen nur ausdrücklich:** Wer eine Funktion beim Entwickeln neu fasst, schreibt `'::name`. So
+  überschreibt `':` nie versehentlich eine Funktion, die man noch braucht.
 - **Namen mit `rpn` am Anfang** sind für das System reserviert (z.B. `rpnjson`, 10.5); eigene Funktionen dürfen
   nicht so heißen.
 - **Verschachtelte Aufrufe:** Eigene Funktionen dürfen weitere eigene Funktionen aufrufen, auch sich selbst. Mehr als 100 verschachtelte Aufrufe sind ein Fehler.
@@ -548,6 +588,19 @@ So bringen Bibliotheken Versionsangaben und Hilfetexte mit, ohne dass die Gramma
 - **Fehler:** Ist der Inhalt kein gültiges JSON-Objekt, ist das ein Fehler („Ungültiges JSON“).
 - **Eigene Hilfe** gilt nur für eigene Namen und Themen; eingebaute Einträge gehen vor.
 
+### 10.6 Funktionen aus Bibliotheken
+
+Eine Bibliothek ist ein Block, der mit `version` in `rpnjson` beginnt und beim Laden mit `X` ausgeführt wird.
+Jede Funktion, die der Block ablegt, gehört zu dieser Bibliothek: vom `version`-Eintrag bis zum Ende der
+Ausführung des Blocks.
+
+- **Geschützt:** Funktionen aus Bibliotheken lassen sich weder mit `':` noch mit `'::` ersetzen. Entfernen geht
+  nur bewusst mit `'~~name`, z.B. weil eine Funktion nicht interessiert. Zurück kommt sie, wenn man die
+  Bibliothek erneut lädt.
+- **Namenskonflikt:** Legt eine Bibliothek einen Namen ab, den es schon als eigene Funktion oder in einer
+  anderen Bibliothek gibt, ist das ein Fehler („Name ist schon vergeben“), und der Rest des Blocks wird nicht
+  mehr ausgeführt. Dieselbe Bibliothek erneut zu laden ist kein Konflikt; ihre Funktionen werden dabei ersetzt.
+
 ## 11. Kontrollstrukturen
 
 Kontrollstrukturen nehmen ihre Blöcke vom Code-Stack. `if`, `ifel` und `loop` nehmen außerdem einen
@@ -596,7 +649,7 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
 | 3 | Vorzeichen oder Ziffer für Exponent erwartet |
 | 4 | Ziffer für Exponent nach Vorzeichen fehlt |
 | 5 | Nach ~\| muss ein Operator folgen |
-| 9 | Ungültiger Variablentyp (nacktes ') |
+| 9 | Ungültiges Zeichen nach ' |
 | A | Bezeichner nach Variablen-Präfix fehlt |
 | B | Ungültiges Zeichen im Tag |
 | X | Nicht implementiert |
@@ -624,6 +677,11 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
 | `code0`   | Der Code-Stack ist leer |
 | `code2`   | Auf dem Code-Stack fehlen Blöcke |
 | `fktName` | Eingebaute Funktionen können nicht überschrieben werden |
+| `fktDa`   | Funktion gibt es schon, ersetzen mit '::name |
+| `bibFkt`  | Funktion gehört zu einer Bibliothek |
+| `konflikt` | Name ist schon vergeben |
+| `geschuetzt` | Geschützt, entfernen mit '~~ |
+| `ungeschuetzt` | Nicht geschützt, entfernen mit '~ |
 | `tag`     | Tag blockiert den Stack |
 | `voll`    | Stack ist voll, ein Tag würde überschrieben |
 | `tagC`    | Es gibt Tags, Stack und Tags löschen mit 'C |
@@ -688,6 +746,7 @@ kleinbuchstabe  = "a" | "b" | … | "z" ;
 grossbuchstabe  = "A" | "B" | … | "Z" ;
 operator_symbol = "+" | "-" | "*" | "/" | "^" | "%" | "!"
                 | "<" | ">" | "=" | "&" | "²" | "³" | "°" | ":" ;
+modifikator     = "!" | "=" | "+" | "-" | "*" | "/" | "~" ;   (* nur nach ' *)
 
 enter           = " " ;
 newline         = "\n" ;
@@ -722,11 +781,13 @@ Operator        = operator_symbol
 
 (* --- Variablen, Tags, eigene Funktionen ablegen --- *)
 Tag             = praefix_var , praefix_split , [ praefix_split ] , name ;   (* '|x, '||x mit Schreibschutz *)
-Var_Normal      = praefix_var , [ praefix_inv | operator_symbol | "!!" ] , name ;
-                  (* 'x lesen, '!x anlegen, '!!x Konstante anlegen, '=x schreiben, '+x ändern,
-                     '~x entfernen, ':x Funktion ablegen *)
+Ablegen         = praefix_var , ":" , [ ":" ] , name ;                (* ':f neu, '::f ersetzen *)
+Var_Normal      = praefix_var , [ modifikator , [ modifikator ] ] , name ;
+                  (* 'x lesen, '!x anlegen, '!!x Konstante, '=x schreiben, '==x füllen, '+x ändern,
+                     '++x um 1 ändern, '~x entfernen, '~~x Geschütztes entfernen. Belegt sind die Paare
+                     aus 8.2; alle anderen (z.B. '+-x, '**x) meldet der Rechner als Fehler *)
 Argument        = praefix_var , ziffer ;                              (* noch erkannt, meldet einen Fehler *)
-Variable        = Tag | Var_Normal | Argument ;
+Variable        = Tag | Ablegen | Var_Normal | Argument ;
 
 (* --- Code-Blöcke --- *)
 Code            = code_open , { incode_zeichen | Code } , code_close ;
@@ -738,9 +799,10 @@ Programm        = { Ausdruck } ;
 ```
 
 **Zeichengruppen im Automaten:** Ein Zeichen kann zu mehreren Gruppen gehören. Der Automat probiert sie in der
-Reihenfolge der Symbolliste und nimmt den ersten passenden Übergang. So gehört `!` zu den Operatoren und zusätzlich
-zur Gruppe `bang`, die vor den Operatoren steht. Übergänge mit `bang` gibt es nur nach `'`, wo `'!x` und `'!!x`
-unterschieden werden müssen; überall sonst fällt der Automat auf die Operatoren zurück und `!` bleibt die Fakultät.
+Reihenfolge der Symbolliste und nimmt den ersten passenden Übergang. So gehören `! = + - * / ~` zu den Operatoren
+bzw. zur Tilde und zusätzlich zur Gruppe `varmod`, `:` zusätzlich zur Gruppe `colon`. Beide stehen hinter den
+Operatoren und haben Übergänge nur nach `'`; überall sonst gelten die Operatoren und die Tilde. Nach `'~` bleibt
+ein eigener Zustand, weil dort auch `'~R` (Befehl mit Tags) möglich ist.
 
 Die Grammatik beschreibt, welche Token möglich sind. Welche davon belegt sind (z.B. welche Operatoren), legen
 die Kapitel 4–11 fest.
@@ -759,9 +821,9 @@ die Kapitel 4–11 fest.
 | Funktionen | `pi e ln exp log ~log sin cos tan ~sin ~cos ~tan dms rnd seed ~seed round` |
 | Winkelmodus | `deg rad grd` |
 | Stack | `C D S R ~R Y` · mit Tags `'C 'D 'S 'R '~R` |
-| Variablen | `'!x 'x '=x '+x '-x '*x '/x '~x` · Konstanten `'!!x` |
-| Tags | `'\|x n:'\|x` · mit Schreibschutz `'\|\|x` |
-| Code | `{…}` `':name` `X` `if` `ifel` `loop` `times` `codedrop codeswap codedup codeover` |
+| Variablen | `'!x 'x '=x '==x '+x '-x '*x '/x '++x '--x '~x` · Konstanten `'!!x '~~x` |
+| Tags | `'\|x n:'\|x '~x` · mit Schreibschutz `'\|\|x '~~x` |
+| Code | `{…}` `':name '::name '~name` · aus Bibliotheken `'~~name` · `X` `if` `ifel` `loop` `times` `codedrop codeswap codedup codeover` |
 
 ## Anhang C: Beispiele
 

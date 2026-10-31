@@ -216,7 +216,6 @@ class RpnApi {
   set appVersion(String? v) => calculator.appVersion = v;
 
   final Map<String, String> _hinzugefuegt = {};
-  final Set<String> _geladeneBibliotheksFunktionen = {};
 
   /// Alle Bibliotheken, mitgelieferte zuerst, jeweils nach Namen.
   List<({String name, bool mitgeliefert})> bibliotheken() => [
@@ -236,15 +235,22 @@ class RpnApi {
     return null;
   }
 
-  /// Lädt eine Bibliothek in den Rechner. Liefert null oder den Fehler.
+  /// Lädt eine Bibliothek in den Rechner. Liefert null oder den Fehler. Gibt es einen ihrer Namen schon
+  /// (eigene Funktion oder andere Bibliothek), wird sie gar nicht geladen (doc/reference.md 10.6).
   String? ladeBibliothek(String name) {
     final text = bibliothek(name);
     if (text == null) return "Unbekannte Bibliothek: $name";
-    final fehler = _ladeText(text);
-    if (fehler == null && mitgelieferteBibliotheken.containsKey(name)) {
-      _geladeneBibliotheksFunktionen.addAll(bibliotheksFunktionen(name)); // „Funktionen speichern“ lässt sie aus
+    final probe = RpnApi();
+    if (probe._ladeText(text) == null) {
+      final c = calculator;
+      for (final f in probe.calculator.eigeneFunktionen.keys) {
+        if (c.eigeneFunktionen.containsKey(f) && c.herkunft[f] != probe.calculator.herkunft[f]) {
+          final von = c.herkunft[f];
+          return "${c.errorMsg["konflikt"]}: $f (${von == null ? "eigene Funktion" : "Bibliothek $von"})";
+        }
+      }
     }
-    return fehler;
+    return _ladeText(text);
   }
 
   /// Die Namen der Funktionen einer Bibliothek in der Reihenfolge der Datei.
@@ -258,8 +264,8 @@ class RpnApi {
   /// Die Versionsangabe einer geladenen Bibliothek oder null.
   Map<String, Object?>? bibliotheksVersion(String name) => calculator.versionen[name];
 
-  /// Funktionen aus geladenen mitgelieferten Bibliotheken; „Funktionen speichern“ lässt sie aus.
-  Set<String> get geladeneBibliotheksFunktionen => Set.unmodifiable(_geladeneBibliotheksFunktionen);
+  /// Funktionen aus geladenen Bibliotheken (mit version-Eintrag); „Funktionen speichern“ lässt sie aus.
+  Set<String> get geladeneBibliotheksFunktionen => Set.unmodifiable(calculator.herkunft.keys);
 
   /// Hinweise seit dem letzten Abruf, z.B. unbekannte Schlüssel in rpnjson; danach leer.
   List<String> hinweise() {
@@ -374,7 +380,6 @@ class RpnApi {
   void reset() {
     calculator.reset();
     parser.reset();
-    _geladeneBibliotheksFunktionen.clear(); // die Session ersetzt den ganzen Rechner
     _neueZeile();
   }
 

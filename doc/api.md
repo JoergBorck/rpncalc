@@ -419,9 +419,9 @@ Gespeicherte Sessions haben die Endung `.rpn` und erscheinen deshalb nicht als B
   eigenen Funktionen. Ein eigener Menüpunkt „Funktionen laden“ ist deshalb nicht nötig.
 - **Eigene Bibliotheken:** „Funktionen speichern“ schlägt `funktionen.rpnlib` vor. So erscheinen selbst
   gespeicherte Funktionen beim nächsten Mal ebenfalls im Menü.
-- **Mitgelieferte Bibliotheken:** Die Bibliotheken im Verzeichnis `library` gehören zum Programm. rpncalc merkt
-  sich, welche davon geladen sind, und „Funktionen speichern“ lässt jede Funktion aus, deren Name in einer
-  dieser Bibliotheken vorkommt; alle anderen werden gespeichert. So landen in `funktionen.rpnlib` nur die
+- **Mitgelieferte Bibliotheken:** Die Bibliotheken im Verzeichnis `library` gehören zum Programm. Der Rechner
+  merkt sich zu jeder Funktion, aus welcher Bibliothek sie stammt (reference.md 10.6), und „Funktionen
+  speichern“ lässt diese Funktionen aus; alle anderen werden gespeichert. So landen in `funktionen.rpnlib` nur die
   eigenen. „Session speichern“ speichert weiterhin alles, und „Session laden“ vergisst die geladenen
   Bibliotheken (die Session ersetzt den ganzen Rechner).
 
@@ -663,14 +663,15 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
 | `List<({String name, bool mitgeliefert})> bibliotheken()` | alle Bibliotheken, mitgelieferte zuerst, jeweils nach Namen |
 | `String? bibliothek(String name)` | der Text einer Bibliothek oder `null` |
 | `String? bibliothekHinzufuegen(String name, String text)` | meldet eine Bibliothek an; eine hinzugefügte mit gleichem Namen wird ersetzt. Liefert `null` oder einen Fehler, z.B. wenn eine mitgelieferte so heißt oder der Text kein gültiges Skript aus Funktionen ist |
-| `String? ladeBibliothek(String name)` | lädt die Bibliothek in den Rechner wie `importieren(text, ersetzen: false)`; liefert `null` oder den Fehler |
+| `String? ladeBibliothek(String name)` | lädt die Bibliothek in den Rechner wie `importieren(text, ersetzen: false)`; liefert `null` oder den Fehler. Gibt es einen ihrer Namen schon als eigene Funktion oder in einer anderen Bibliothek, wird sie gar nicht geladen („Name ist schon vergeben“) |
 | `List<String> bibliotheksFunktionen(String name)` | die Namen ihrer Funktionen in der Reihenfolge der Datei, z.B. für die Funktionstasten |
 | `Map<String, Object?>? bibliotheksVersion(String name)` | die Versionsangabe einer geladenen Bibliothek |
 | `List<String> hinweise()` | Hinweise seit dem letzten Abruf, z.B. unbekannte Schlüssel in `rpnjson`; danach leer |
 | `Export exportiereBibliothek(String name, {String version, Set<String> ohne})` | die eigenen Funktionen als Bibliothek im obigen Aufbau, mit Versionsangabe und eigener Hilfe |
 
-- **Geladen merken:** Der Rechner merkt sich, welche mitgelieferten Bibliotheken geladen sind. „Funktionen
-  speichern“ lässt deren Funktionen aus (Kapitel 7); das ersetzt die heutige Erkennung über das Verzeichnis.
+- **Herkunft:** Der Rechner merkt sich zu jeder Funktion die Bibliothek, aus der sie stammt
+  (`geladeneBibliotheksFunktionen`). Solche Funktionen sind geschützt (reference.md 10.6), und „Funktionen
+  speichern“ lässt sie aus (Kapitel 7).
 - **Protokoll** (6.1): `{"bibliotheken":true}` → `{"bibliotheken":[…]}`; `{"ladeBibliothek":"statistik"}` →
   `{"zustand":{…}}` (ein Fehler steht im Zustand wie bei `importieren`).
 - **Konsole:** Das Menü „Bibliotheken“ zeigt die mitgelieferten über die API und dazu die selbst gespeicherten
@@ -759,3 +760,8 @@ Die Nummern bleiben fest; erledigte Punkte wandern mit ihrer Nummer nach Kapitel
 
 13\. **Hilfetexte in Bibliotheken:** entschieden: `{json}rpnjson` mit den Schlüsseln `version` und
     `hilfe`, eine Bibliothek ist ein Block, der beim Laden mit `X` ausgeführt wird (9.1, reference.md 10.5).
+
+15\. **Überschreiben schützen, doppelte Modifikatoren:** umgesetzt. Jeder Modifikator nach `'` darf einfach
+    oder doppelt stehen, die doppelte Form ist die stärkere (`'::` ersetzen, `'~~` Geschütztes entfernen, `'==`
+    füllen, `'++`/`'--` um 1 ändern). `':` legt nur neu an; Funktionen aus Bibliotheken sind geschützt, ein
+    Namenskonflikt beim Laden ist ein Fehler. Siehe reference.md 8.2, 10.2 und 10.6.

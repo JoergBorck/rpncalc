@@ -6,13 +6,13 @@ const String gbu     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const String ops     = "+*-/^%!<>=&²³°:"; // ":" übergibt den Tos an die Argumentliste des Calculators
 const String tren    = " \n";
 const String special = ".ê~|'{}_"; // "_" trennt Tokens, ohne selbst etwas zu tun
+const String varmod  = "!=+-*/~"; // Modifikatoren für Variablen nach ' (doc/reference.md 8.2)
 
 const SymbolListe rpnSymbols = [
   ("zif"            , zif),
   ("kbu"            , kbu),
   ("gbu"            , gbu),
   ("buc"            , kbu+gbu),
-  ("bang"           , "!" ), // nur nach ' für '!!x; überall sonst gilt "!" als Operator (ops)
   ("ops"            , ops), 
   ("enter"          , " " ),
   ("nl"             , "\n"),
@@ -26,6 +26,9 @@ const SymbolListe rpnSymbols = [
   ("close"          , "}" ),
   ("etx"            , etx ),
   ("sep"            , "_" ),
+  // nur nach ' belegt; sie stehen hinter ops und tilde, damit überall sonst diese gelten
+  ("varmod"         , varmod),
+  ("colon"          , ":" ),
   ("alle"           , zif + kbu + gbu + ops + tren + special),
 ];
 
@@ -40,7 +43,7 @@ const Map<String, String> rpnFehler = {
   "X3": "Vorzeichen oder Ziffer für Exponent erwartet",
   "X4": "Ziffer für Exponent nach Vorzeichen fehlt",
   "X5": "Nach ~| muss ein Operator folgen",
-  "X9": "Ungültiger Variablentyp (nacktes ')",
+  "X9": "Ungültiges Zeichen nach '",
   "XA": "Bezeichner nach Variablen-Präfix fehlt",
   "XB": "Ungültiges Zeichen im Tag",
 };
@@ -90,21 +93,27 @@ const UebergangsTabelle rpnGramma = {
 ('q_Split'         , 'ops'   ) :('q0'              , '+|+o!O__') , // Token fertig (|op)
 ('q_Split'         , 'alle'  ) :('q0'              , '+|!O?___') , // Token fertig (Einzelnes | als Operator)
 ('q_VarStart'      , 'zif'   ) :('q0'              , '+v!V____') , // Argument-Zugriff ('3), immer genau eine Ziffer
-('q_VarStart'      , 'tilde' ) :('q_VarInv'        , '+v______') , // Variable mit Invers-Präfix (oder '~Befehl)
+('q_VarStart'      , 'tilde' ) :('q_VarInv'        , '+v______') , // ~ als Modifikator oder '~Befehl
 ('q_VarStart'      , 'gbu'   ) :('q0'              , "+'+n!B__") , // Befehl mit Tags ('D, 'S, 'R, 'C)
-('q_VarStart'      , 'bang'  ) :('q_VarBang'       , '+v______') , // Anlegen ('!x) oder Konstante ('!!x)
-('q_VarStart'      , 'ops'   ) :('q_VarNormPref'   , '+v______') , // Variable mit Zuweisungs-Operator
+('q_VarStart'      , 'varmod') :('q_VarMod'        , '+v______') , // Modifikator ('!x, '=x, '+x …)
+('q_VarStart'      , 'colon' ) :('q_VarDef'        , '+v______') , // eigene Funktion ablegen (':f)
 ('q_VarStart'      , 'split' ) :('q_TagSplit'      , '________') , // Start eines Stack-Tags ('|)
 ('q_VarStart'      , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Direkter Variablenname mit Kleinbuchstabe
-('q_VarStart'      , 'alle'  ) :('q0'              , 'X9______') , // Ungültiger Variablentyp (nacktes ')
-('q_VarInv'        , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Variable schreiben ('~x)
+('q_VarStart'      , 'alle'  ) :('q0'              , 'X9______') , // Ungültiges Zeichen nach '
 ('q_VarInv'        , 'gbu'   ) :('q0'              , "+'+~!B__") , // Umkehrbefehl mit Tags ('~R)
+('q_VarInv'        , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Entfernen ('~x)
+('q_VarInv'        , 'varmod') :('q_VarMod2'       , '+v______') , // zweiter Modifikator ('~~x)
 ('q_VarInv'        , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
-('q_VarBang'       , 'bang'  ) :('q_VarNormPref'   , '+v______') , // Konstante anlegen ('!!x)
-('q_VarBang'       , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Variable anlegen ('!x)
-('q_VarBang'       , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
-('q_VarNormPref'   , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Identifier nach dem Präfix
-('q_VarNormPref'   , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
+('q_VarMod'        , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Identifier nach dem Modifikator
+('q_VarMod'        , 'varmod') :('q_VarMod2'       , '+v______') , // zweiter Modifikator; welche Paare gelten, prüft der Rechner
+('q_VarMod'        , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
+('q_VarMod2'       , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Identifier nach dem zweiten Modifikator
+('q_VarMod2'       , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
+('q_VarDef'        , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Name der Funktion (':f)
+('q_VarDef'        , 'colon' ) :('q_VarDef2'       , '+v______') , // Funktion ersetzen ('::f)
+('q_VarDef'        , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
+('q_VarDef2'       , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Name der Funktion ('::f)
+('q_VarDef2'       , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
 ('q_VarNormIdent'  , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Verarbeitet langen Variablennamen
 ('q_VarNormIdent'  , 'alle'  ) :('q0'              , '!V?_____') , // Token fertig (Var_Normal)
 ('q_TagSplit'      , 'kbu'   ) :('q_TagIdent'      , 'St+v____') , // Direkt der Identifier des Tags ('|tmp)
