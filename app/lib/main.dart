@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 
 import 'anzeige.dart';
 import 'farben.dart';
+import 'hilfe.dart';
 import 'modell.dart';
 import 'tastenfeld.dart';
+import 'tipp.dart';
 
 void main() => runApp(const RpnApp());
 
@@ -16,8 +18,38 @@ class RpnApp extends StatelessWidget {
     title: "RPN-Rechner",
     debugShowCheckedModeBanner: false,
     theme: ThemeData(brightness: Brightness.dark, scaffoldBackgroundColor: Farben.gehaeuse, useMaterial3: true),
+    // ganz außen, damit Tooltips, Menü und Dialoge mitwachsen
+    builder: (context, kind) => _zoom(context, kind!),
     home: const RechnerSeite(),
   );
+
+  static const double breite = 400; // mit dieser Breite rechnet die App, das Fenster vergrößert oder verkleinert
+  static const double minAnzeige = 240; // so viel Höhe braucht die Anzeige mindestens
+  static const double maxDehnung = 1.5; // so viel breiter werden die Tasten, bevor links und rechts Rand bleibt
+
+  /// Zoom (doc/app.md Punkt 5): alles um Fensterbreite / [breite], höchstens so viel, dass Tastenfeld und eine
+  /// Anzeige von [minAnzeige] in die Höhe passen. Höher ziehen gibt der Anzeige mehr Zeilen.
+  static Widget _zoom(BuildContext context, Widget kind) => LayoutBuilder(builder: (context, platz) {
+        final minHoehe = Tastenfeld.hoehe + minAnzeige + 22; // 22: Rand oben und unten
+        final faktor = (platz.maxWidth / breite).clamp(0.0, platz.maxHeight / minHoehe);
+        if (faktor <= 0) return kind;
+        final mq = MediaQuery.of(context);
+        final logisch = Size(platz.maxWidth / faktor, platz.maxHeight / faktor);
+        return FittedBox(
+          child: SizedBox.fromSize(
+            size: logisch,
+            child: MediaQuery(
+              data: mq.copyWith(
+                size: logisch,
+                padding: mq.padding / faktor,
+                viewPadding: mq.viewPadding / faktor,
+                viewInsets: mq.viewInsets / faktor,
+              ),
+              child: kind,
+            ),
+          ),
+        );
+      });
 }
 
 /// Die einzige Seite: Anzeige oben, Tastenfeld unten, das Cursorkreuz dazwischen (doc/app.md Kapitel 1).
@@ -54,13 +86,17 @@ class _RechnerSeiteState extends State<RechnerSeite> {
               ),
             ),
             for (final d in modell.domaenenNamen)
-              ListTile(
-                title: Text(d, style: Schrift.monospace(15, Farben.anzeigeText)),
-                trailing: d == modell.domaene ? const Icon(Icons.check, color: Farben.anzeigeText) : null,
-                onTap: () {
-                  modell.waehleDomaene(d);
-                  Navigator.pop(context);
-                },
+              // Bibliotheken zeigen im Tooltip, wofür sie gedacht sind (doc/app.md 5.1)
+              tippTabelle(
+                AppHilfe.tippBibliothek(modell.api, d),
+                ListTile(
+                  title: Text(d, style: Schrift.monospace(15, Farben.anzeigeText)),
+                  trailing: d == modell.domaene ? const Icon(Icons.check, color: Farben.anzeigeText) : null,
+                  onTap: () {
+                    modell.waehleDomaene(d);
+                    Navigator.pop(context);
+                  },
+                ),
               ),
           ],
         ),
@@ -76,14 +112,16 @@ class _RechnerSeiteState extends State<RechnerSeite> {
       onKeyEvent: _taste,
       child: Scaffold(
         body: SafeArea(
-          child: Padding(
+          child: _handyFormat(Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             child: ListenableBuilder(
               listenable: modell,
               builder: (context, _) => LayoutBuilder(
                 builder: (context, platz) {
-                  // zwei Tasten des oberen Blocks breit, die Unterkante auf Höhe von R1
-                  final taste = (platz.maxWidth - 5 * (Tastenfeld.obenAbstand - 1)) / 6;
+                  // zwei Tasten des oberen Blocks breit, die Unterkante auf Höhe von R1; bei gedehnten Tasten so
+                  // groß wie ohne Dehnung, sonst ragt es zu weit in die Anzeige
+                  final normal = platz.maxWidth.clamp(0.0, Tastenfeld.normalBreite);
+                  final taste = (normal - 5 * (Tastenfeld.obenAbstand - 1)) / 6;
                   final breite = 2 * taste + Tastenfeld.obenAbstand + 14;
                   return Stack(
                     clipBehavior: Clip.none,
@@ -104,11 +142,25 @@ class _RechnerSeiteState extends State<RechnerSeite> {
                 },
               ),
             ),
-          ),
+          )),
         ),
       ),
     );
   }
+
+  /// Begrenzt die Höhe den Zoom, werden die Tasten bis [RpnApp.maxDehnung] breiter, erst danach bleibt Rand
+  /// (RpnApp._zoom). Reicht die Höhe trotzdem nicht (z.B. wegen der Ränder eines Handys), wird die Seite
+  /// verkleinert statt abgeschnitten.
+  Widget _handyFormat(Widget seite) => LayoutBuilder(builder: (context, platz) {
+        final breite = platz.maxWidth.clamp(0.0, RpnApp.breite * RpnApp.maxDehnung);
+        final minHoehe = Tastenfeld.hoehe + RpnApp.minAnzeige + 22; // 22: Rand oben und unten
+        if (platz.maxHeight >= minHoehe) {
+          return Center(child: SizedBox(width: breite, child: seite));
+        }
+        return Center(
+          child: FittedBox(child: SizedBox(width: breite, height: minHoehe, child: seite)),
+        );
+      });
 
   /// Tasten der echten Tastatur: Sondertasten auf die Aktionen der App, alle anderen Zeichen wie getippt.
   /// Mit Strg gedrückte Tasten bleiben dem System (später Strg+C und Strg+V). AltGr meldet Windows als Strg+Alt;
@@ -120,8 +172,10 @@ class _RechnerSeiteState extends State<RechnerSeite> {
     if ((tastatur.isControlPressed && !altGr) || tastatur.isMetaPressed) return KeyEventResult.ignored;
     final k = e.logicalKey;
     final umschalt = tastatur.isShiftPressed;
-    if (k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter) {
-      modell.tastaturReturn();
+    if (k == LogicalKeyboardKey.numpadEnter) {
+      modell.tastaturReturn(); // ENTER und Zeilenumbruch
+    } else if (k == LogicalKeyboardKey.enter) {
+      modell.tastaturZeilenumbruch(); // Return: nur Zeilenumbruch, wie ALPHA ⏎
     } else if (k == LogicalKeyboardKey.backspace) {
       modell.tastaturLoeschen();
     } else if (k == LogicalKeyboardKey.tab) {

@@ -12,7 +12,7 @@ abstract final class KonsolenHilfe {
     ], r"Bedienung der Konsole: [[konsole:q]], [[konsole:c]], [[konsole:v]], [[konsole:tab]], [[konsole:hilfe]]"),
     r"\": Hilfe(r"\", "Befehle der Konsole", [
       Verwendung(r"\q", "zurück zum Menü"),
-      Verwendung(r"\c", "kopiert den Tos in die Zwischenablage"),
+      Verwendung(r"\c", "kopiert x in die Zwischenablage"),
       Verwendung(r"\s", "kopiert den ganzen Stack in die Zwischenablage"),
       Verwendung(r"\v", "fügt die Zahlen aus der Zwischenablage ein"),
       Verwendung(r"\?", "Hilfe"),
@@ -20,7 +20,7 @@ abstract final class KonsolenHilfe {
     "konsole:q": Hilfe("konsole:q", "Zurück zum Menü", [Verwendung(r"\q", "beendet die Eingabe und führt zurück zum Menü")],
         "Strg+C beendet unter Windows das ganze Programm, deshalb gibt es \\q."),
     "konsole:c": Hilfe("konsole:c", "Kopieren", [
-      Verwendung(r"\c", "kopiert den Tos, für ein deutsches Excel mit Dezimalkomma"),
+      Verwendung(r"\c", "kopiert x, für ein deutsches Excel mit Dezimalkomma"),
       Verwendung(r"\s", "kopiert den Stack, der tiefste Wert zuerst, getrennt mit ;"),
     ], "Ein offenes Token wird vorher abgeschlossen: Nach 2.25 kopiert \\c also 2,25. Siehe [[konsole:v]]."),
     "konsole:v": Hilfe("konsole:v", "Einfügen", [Verwendung(r"\v", "fügt alle Zahlen aus der Zwischenablage ein")],

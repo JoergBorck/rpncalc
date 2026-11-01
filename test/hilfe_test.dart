@@ -39,7 +39,7 @@ void main() {
 
   test('ein Zeichen mit mehreren Bedeutungen: ! ist Fakultät, Variable und Konstante', () {
     final h = api.hilfe("!")!;
-    expect([for (final v in h.verwendungen) v.schreibweise], ["!", "'!x", "'!!x"]);
+    expect([for (final v in h.verwendungen) v.schreibweise], ["!", "'!name", "'!!name"]);
     expect(h.verwendungen.first.stack, "x → x!");
     expect(h.verweise, contains("#variablen"));
   });

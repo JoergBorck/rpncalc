@@ -14,7 +14,7 @@ void main() {
     final z = await zeilen("!");
     expect(z.first, "!  Fakultät, Variablen und Konstanten anlegen");
     expect(z[1], matches(RegExp(r"^   !\s+x → x!\s+Fakultät$")));
-    expect(z[2], matches(RegExp(r"^   '!x\s+n \(1\)\s+legt die Variable x")));
+    expect(z[2], matches(RegExp(r"^   '!name\s+x → –\s+anzahl \(1\)\s+legt die Variable name")));
     expect(z[1].indexOf("Fakultät"), z[2].indexOf("legt"), reason: "die Spalten stehen untereinander");
     expect(z.join(" ").replaceAll(RegExp(" +"), " "),
         contains("Siehe auch: Namen: Variablen, Konstanten, Tags (\\?'), Variablen und Konstanten (\\?#variablen)"));

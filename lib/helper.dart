@@ -13,6 +13,14 @@ String str(num value) {
 /// Zahl für die Anzeige: wie str(), aber ganze Zahlen ohne ".0".
 String zahl(num w) => str(w).replaceAll(RegExp(r"\.0$"), "");
 
+/// Name einer Stackposition (doc/reference.md 2.1): x, y, z, t für 0 bis 3, darunter ≡₄, ≡₅ …;
+/// ohne [symbol] nur der Index (₄, ₅ …), z.B. in einer Spalte, die ohnehin zum Stack gehört.
+String positionsName(int p, {bool symbol = true}) {
+  if (p >= 0 && p < 4) return "xyzt"[p];
+  final index = p.toString().split("").map((c) => "₀₁₂₃₄₅₆₇₈₉"[int.parse(c)]).join();
+  return symbol ? "≡$index" : index;
+}
+
 
 extension TimesExtension on int {
   // Definiert die .times() Methode für alle Integers

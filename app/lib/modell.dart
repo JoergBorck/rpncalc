@@ -122,8 +122,20 @@ class RechnerModell extends ChangeNotifier {
 
   /// Beschriftung einer Taste in den aktuellen Umschaltungen.
   Beschriftung beschriftung(Taste t) {
+    // im Hilfe-Modus tragen MENÜ, ALPHA und ⌫ ihre Aufgabe dort (doc/app.md 5.2)
+    if (hilfeModus) {
+      final text = switch (t.aktion) {
+        Aktion.menue => hilfeLesen ? "ANFANG" : "BEENDEN",
+        Aktion.alpha => hilfeLesen ? "INSPEKT" : "LESEN",
+        Aktion.loeschen when hilfeLesen => "BEENDEN",
+        _ => null,
+      };
+      if (text != null) return (text: text, modus: Modus.normal, gedimmt: false);
+    }
     if (alpha && t.buchstabe != null) return (text: gross ? t.buchstabe!.toUpperCase() : t.buchstabe!, modus: Modus.alpha, gedimmt: false);
     if (alpha && t.aktion == Aktion.enter) return (text: "⏎", modus: Modus.alpha, gedimmt: false);
+    // ~ wirkt auch auf die Shift-Funktion: ~ ⇧ ÷ ist ≤ (geschrieben ~>)
+    if (shiftWirkt && tilde && t.shiftTilde != null) return (text: t.shiftTilde!, modus: Modus.tilde, gedimmt: false);
     if (shiftWirkt && t.shift != null) return (text: t.shift!, modus: Modus.shift, gedimmt: false);
     if (tilde && strich) return t.beide != null ? (text: t.beide!, modus: Modus.tilde, gedimmt: false) : _gedimmt(t);
     if (tilde) {
@@ -144,11 +156,20 @@ class RechnerModell extends ChangeNotifier {
 
   // ---------- Hilfe-Modus (doc/app.md 5.2) ----------
 
-  /// Shift+MENÜ schaltet ihn ein, ⌫ aus. Solange er an ist, wird nichts eingegeben.
+  /// Shift+MENÜ (F1) schaltet ihn ein, BEENDEN aus. Solange er an ist, wird nichts eingegeben.
   bool hilfeModus = false;
 
-  /// Nach MENÜ: die Einzelheiten (Text) der gezeigten Seite.
-  bool hilfeDetails = false;
+  /// Lese-Modus: Tasten lösen keine Hilfe aus, die Seite zeigt den vollen Text; sonst der Inspekt-Modus.
+  bool hilfeLesen = false;
+
+  /// Der volle Text (Einzelheiten) gehört zum Lese-Modus.
+  bool get hilfeDetails => hilfeLesen;
+
+  /// Im Lese-Modus der mit TAB gewählte Verweis der gezeigten Seite, sonst -1.
+  int hilfeVerweis = -1;
+
+  /// Blättert den Hilfeschirm im Lese-Modus (▲ ▼).
+  final ScrollController hilfeScroll = ScrollController();
 
   /// Die gezeigten Hilfeseiten, die letzte ist sichtbar; ◄ geht zurück. Leer: kein Hilfeschirm.
   final List<List<Hilfe>> _hilfeSeiten = [];
@@ -156,11 +177,23 @@ class RechnerModell extends ChangeNotifier {
   /// Die sichtbare Hilfeseite oder null, wenn kein Hilfeschirm offen ist.
   List<Hilfe>? get hilfeSeite => _hilfeSeiten.isEmpty ? null : _hilfeSeiten.last;
 
-  /// Zeigt eine Hilfeseite, z.B. zu einem Element der Anzeige oder einem Verweis.
-  void zeigeHilfe(List<Hilfe> seite) {
+  /// Die Verweise der sichtbaren Seite in ihrer Reihenfolge, jeder nur einmal.
+  List<String> get hilfeVerweise => <String>{for (final h in hilfeSeite ?? const <Hilfe>[]) ...h.verweise}.toList();
+
+  /// Der letzte Tooltip einer Taste: mit seiner Seite startet die Hilfe, wenn er höchstens 10 s her ist.
+  (Taste, DateTime)? _letzterTooltip;
+  void tooltipGezeigt(Taste t) => _letzterTooltip = (t, DateTime.now());
+
+  void _neueSeite(List<Hilfe> seite) {
     if (seite.isEmpty) return;
     _hilfeSeiten.add(seite);
-    hilfeDetails = false;
+    hilfeVerweis = -1;
+    if (hilfeScroll.hasClients) hilfeScroll.jumpTo(0);
+  }
+
+  /// Zeigt eine Hilfeseite, z.B. zu einem Element der Anzeige oder einem Verweis.
+  void zeigeHilfe(List<Hilfe> seite) {
+    _neueSeite(seite);
     notifyListeners();
   }
 
@@ -170,32 +203,73 @@ class RechnerModell extends ChangeNotifier {
   /// Ein Tipp auf den Hilfeschirm schließt ihn, der Hilfe-Modus bleibt.
   void hilfeSchliessen() {
     _hilfeSeiten.clear();
-    hilfeDetails = false;
+    hilfeVerweis = -1;
     notifyListeners();
   }
 
+  /// Startet die Hilfe im Inspekt-Modus mit der Seite des letzten Tooltips (höchstens 10 s her) oder der Startseite.
+  void _hilfeStarten() {
+    hilfeModus = true;
+    hilfeLesen = shift = false;
+    _hilfeSeiten.clear();
+    final letzter = _letzterTooltip;
+    if (letzter != null && DateTime.now().difference(letzter.$2) <= const Duration(seconds: 10)) {
+      _neueSeite(AppHilfe.fuerTaste(api, letzter.$1));
+    }
+    if (_hilfeSeiten.isEmpty) _neueSeite(AppHilfe.nachschlagen(api, "#"));
+  }
+
   void _hilfeBeenden() {
-    hilfeModus = hilfeDetails = false;
+    hilfeModus = hilfeLesen = false;
+    hilfeVerweis = -1;
     _hilfeSeiten.clear();
   }
 
-  /// Im Hilfe-Modus zeigt jede Taste ihre Hilfe; MENÜ die Einzelheiten bzw. die Startseite, ⌫ beendet.
+  void _waehleVerweis({bool rueckwaerts = false}) {
+    final n = hilfeVerweise.length;
+    if (n == 0) return;
+    hilfeVerweis = hilfeVerweis < 0 ? (rueckwaerts ? n - 1 : 0) : (hilfeVerweis + (rueckwaerts ? n - 1 : 1)) % n;
+  }
+
+  void _folgeGewaehltem() {
+    final v = hilfeVerweise;
+    if (hilfeVerweis >= 0 && hilfeVerweis < v.length) _neueSeite(AppHilfe.nachschlagen(api, v[hilfeVerweis]));
+  }
+
+  /// Inspekt-Modus: jede Taste zeigt ihre Hilfe (auch ⌫ und SHIFT), BEENDEN (MENÜ) beendet, LESEN (ALPHA) wechselt
+  /// in den Lese-Modus. Lese-Modus: TAB wählt einen Verweis, ENTER folgt ihm, ANFANG (MENÜ) zeigt die Startseite,
+  /// BEENDEN (⌫) beendet, ALPHA geht zurück; andere Tasten tun nichts.
   void _hilfeTaste(Taste t) {
+    if (hilfeLesen) {
+      switch (t.aktion) {
+        case Aktion.alpha:
+          hilfeLesen = false;
+          hilfeVerweis = -1;
+        case Aktion.menue:
+          _neueSeite(AppHilfe.nachschlagen(api, "#"));
+        case Aktion.loeschen:
+          _hilfeBeenden();
+        case Aktion.shift:
+          shift = !shift; // für Shift+TAB
+          return;
+        case Aktion.tab:
+          _waehleVerweis(rueckwaerts: shift);
+        case Aktion.enter:
+          _folgeGewaehltem();
+        default:
+      }
+      shift = false;
+      return;
+    }
     switch (t.aktion) {
-      case Aktion.loeschen:
-        _hilfeBeenden();
+      case Aktion.alpha:
+        hilfeLesen = true;
+        hilfeVerweis = -1;
+        if (_hilfeSeiten.isEmpty) _neueSeite(AppHilfe.nachschlagen(api, "#")); // Schirm war mit einem Tipp geschlossen
       case Aktion.menue:
-        if (_hilfeSeiten.isEmpty) {
-          _hilfeSeiten.add(AppHilfe.nachschlagen(api, "#"));
-        } else {
-          hilfeDetails = !hilfeDetails;
-        }
+        _hilfeBeenden();
       default:
-        final seite = AppHilfe.fuerTaste(api, t);
-        if (seite.isNotEmpty) {
-          _hilfeSeiten.add(seite);
-          hilfeDetails = false;
-        }
+        _neueSeite(AppHilfe.fuerTaste(api, t));
     }
   }
 
@@ -220,10 +294,7 @@ class RechnerModell extends ChangeNotifier {
         shift = false;
       case Aktion.menue:
         // Shift+MENÜ ist die Hilfe; MENÜ allein öffnet die Oberfläche (Domänen)
-        if (shiftWirkt) {
-          hilfeModus = true;
-          shift = false;
-        }
+        if (shiftWirkt) _hilfeStarten();
       case Aktion.maximieren:
         // nur Eingabe und Stack; die Seiten Funktionen und Variablen haben schon die ganze Breite
         if (bereich == Bereich.eingabe || bereich == Bereich.stack) maximiert = !maximiert;
@@ -270,7 +341,10 @@ class RechnerModell extends ChangeNotifier {
     }
     final shiftWirkt = this.shiftWirkt; // vor _ende, das Alpha beendet
     final String text;
-    if (shiftWirkt && t.shift != null) {
+    if (shiftWirkt && tilde && t.shiftTildeEingabe != null) {
+      zustand = api.loeschen(zeilen: _stackZeilen); // das offene ~ weicht dem Zeichen (≤ statt ~>)
+      text = t.shiftTildeEingabe!;
+    } else if (shiftWirkt && t.shift != null) {
       text = t.shiftEingabe!;
     } else if (tilde && t.tildeEingabe != null) {
       text = t.tildeEingabe!;
@@ -374,9 +448,12 @@ class RechnerModell extends ChangeNotifier {
 
   /// Der Stack-Wert in der sichtbaren Zeile [r]; ein offenes Token belegt die oberste Zeile.
   StackZeile? stackZeile(int r) {
-    final p = stackVersatz + r - (offenesToken == null ? 0 : 1);
+    final p = stackPosition(r);
     return p >= 0 && p < zustand.stack.length ? zustand.stack[p] : null;
   }
+
+  /// Die Stackposition, die in Zeile [r] steht (auch wenn sie leer ist); -1 für die Zeile des offenen Tokens.
+  int stackPosition(int r) => stackVersatz + r - (offenesToken == null ? 0 : 1);
 
   /// Erstes sichtbares Zeichen der Zeile [r]; ohne Schieben bei der aktuellen Zeile das Ende.
   int eingabeVon(int r) => _von(eingabeText(r), _platz(platzEingabe, r), _eingabeGeschoben[r] ?? (r == 0 ? 1 << 30 : 0));
@@ -422,12 +499,19 @@ class RechnerModell extends ChangeNotifier {
 
   void pfeil(AxisDirection richtung) {
     if (hilfeModus) {
-      // ◄ geht im Hilfeschirm zurück, die anderen Pfeile zeigen die Hilfe zum Cursorkreuz
-      if (richtung == AxisDirection.left && _hilfeSeiten.isNotEmpty) {
-        _hilfeSeiten.removeLast();
-        hilfeDetails = false;
-      } else if (richtung != AxisDirection.left) {
-        _hilfeSeiten.add(AppHilfe.nachschlagen(api, "app:cursorkreuz"));
+      // ◄ geht zurück, die erste Seite bleibt; im Lese-Modus blättern ▲ ▼ und ► folgt dem gewählten Verweis
+      // (ohne Auswahl wählt er den ersten), sonst Hilfe zum Cursorkreuz
+      if (richtung == AxisDirection.left) {
+        if (_hilfeSeiten.length > 1) _hilfeSeiten.removeLast();
+        hilfeVerweis = -1;
+      } else if (!hilfeLesen) {
+        _neueSeite(AppHilfe.nachschlagen(api, "app:cursorkreuz"));
+      } else if (richtung == AxisDirection.right) {
+        hilfeVerweis < 0 ? _waehleVerweis() : _folgeGewaehltem();
+      } else if (hilfeScroll.hasClients) {
+        final p = hilfeScroll.position;
+        final ziel = (p.pixels + (richtung == AxisDirection.down ? 80 : -80)).clamp(0.0, p.maxScrollExtent);
+        hilfeScroll.animateTo(ziel, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
       }
       notifyListeners();
       return;
@@ -480,11 +564,10 @@ class RechnerModell extends ChangeNotifier {
     final vorher = zustand.offen;
     _leuchte(c);
     if (hilfeModus) {
+      if (hilfeLesen) return; // im Lese-Modus tun getippte Zeichen nichts
       final kennung = RegExp(r"^[0-9]$").hasMatch(c) ? "#zahlen" : c;
       final t = tasteFuer(c);
-      final seite = t != null && t.buchstabe != c.toLowerCase() ? AppHilfe.fuerTaste(api, t) : AppHilfe.nachschlagen(api, kennung);
-      if (seite.isNotEmpty) _hilfeSeiten.add(seite);
-      hilfeDetails = false;
+      _neueSeite(t != null && t.buchstabe != c.toLowerCase() ? AppHilfe.fuerTaste(api, t) : AppHilfe.nachschlagen(api, kennung));
       notifyListeners();
       return;
     }
@@ -501,6 +584,11 @@ class RechnerModell extends ChangeNotifier {
       case "'":
         _schreibe("'");
         apostroph = true;
+      // ~> ~< ~= getippt: das offene ~ weicht dem besser lesbaren Zeichen (doc/app.md Kapitel 6)
+      case ">" || "<" || "=" when tilde && !strich:
+        zustand = api.loeschen(zeilen: _stackZeilen);
+        tilde = false;
+        _schreibe(const {">": "≤", "<": "≥", "=": "≠"}[c]!);
       default:
         _schreibe(c);
     }
@@ -508,15 +596,20 @@ class RechnerModell extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Die Taste Enter der Tastatur (Return und Enter auf dem Ziffernblock) tut, was ihr Name sagt: ENTER
-  /// (Leerzeichen), dann bricht sie die Zeile um. Das Enter bleibt am Zeilenende vorgemerkt, das erste Token der
-  /// nächsten Zeile entscheidet: „5 Enter +“ ergibt 10, „5 Enter 3 +“ ergibt 8 (doc/app.md Kapitel 6).
-  void tastaturReturn() {
+  /// Enter auf dem Ziffernblock tut, was sein Name sagt: ENTER (Leerzeichen), dann bricht es die Zeile um. Das
+  /// Enter bleibt am Zeilenende vorgemerkt, das erste Token der nächsten Zeile entscheidet: „5 Enter +“ ergibt 10,
+  /// „5 Enter 3 +“ ergibt 8 (doc/app.md Kapitel 6).
+  void tastaturReturn() => _zeilenende(" \n");
+
+  /// Return bricht nur die Zeile um, wie ALPHA ⏎ (doc/app.md Kapitel 6).
+  void tastaturZeilenumbruch() => _zeilenende("\n");
+
+  void _zeilenende(String text) {
     final vorher = zustand.offen;
     _leuchteAuf(_enter, _kurz);
     if (hilfeModus) return druecke(_enter);
     shift = false;
-    _schreibe(" \n");
+    _schreibe(text);
     _nameFertig(vorher);
     notifyListeners();
   }
@@ -530,6 +623,10 @@ class RechnerModell extends ChangeNotifier {
 
   /// Tab und Umschalt+Tab wechseln den Bereich.
   void tastaturTab({bool rueckwaerts = false}) {
+    if (hilfeModus && hilfeLesen) {
+      _waehleVerweis(rueckwaerts: rueckwaerts);
+      return notifyListeners();
+    }
     if (hilfeModus) return druecke(const Taste("TAB", aktion: Aktion.tab));
     final n = Bereich.values.length;
     bereich = Bereich.values[(bereich.index + (rueckwaerts ? n - 1 : 1)) % n];
@@ -538,24 +635,14 @@ class RechnerModell extends ChangeNotifier {
 
   /// F1 schaltet den Hilfe-Modus an und aus.
   void tastaturHilfe() {
-    if (hilfeModus) {
-      _hilfeBeenden();
-    } else {
-      hilfeModus = true;
-      shift = false;
-    }
+    hilfeModus ? _hilfeBeenden() : _hilfeStarten();
     notifyListeners();
   }
 
-  /// Esc im Hilfe-Modus: erst den Hilfeschirm schließen, beim zweiten Mal den Modus beenden.
+  /// Esc beendet die Hilfe.
   void tastaturEsc() {
     if (!hilfeModus) return;
-    if (_hilfeSeiten.isNotEmpty) {
-      _hilfeSeiten.clear();
-      hilfeDetails = false;
-    } else {
-      _hilfeBeenden();
-    }
+    _hilfeBeenden();
     notifyListeners();
   }
 
@@ -565,6 +652,10 @@ class RechnerModell extends ChangeNotifier {
     final alle = [...obereTasten, ...untereTasten].expand((r) => r);
     for (final t in alle) {
       if (t.funktion == null && !t.reserviert && t.text.isNotEmpty && (t.eingabe == c || t.text == c)) return t;
+    }
+    // Zeichen auf Shift und ~ Shift der Rechenspalte: < > = & und ≤ ≥ ≠
+    for (final t in alle) {
+      if (t.shift != null && (t.shiftEingabe == c || t.shiftTildeEingabe == c)) return t;
     }
     // Buchstaben: die Taste, die ihn im Alpha-Modus schreibt
     for (final t in alle) {
@@ -609,6 +700,7 @@ class RechnerModell extends ChangeNotifier {
     for (final t in _leuchtend.values) {
       t.cancel();
     }
+    hilfeScroll.dispose();
     super.dispose();
   }
 
@@ -618,6 +710,20 @@ class RechnerModell extends ChangeNotifier {
     bereich = b;
     notifyListeners();
   }
+
+  /// Tipp in Eingabe oder Stack: wählt den Bereich sofort; ein zweiter Tipp kurz danach (Doppelklick) wirkt wie
+  /// die Taste `[ ]` / `[|]` (doc/app.md 3.5). Selbst erkannt, damit der erste Tipp nicht auf den zweiten wartet.
+  void tippeBereich(Bereich b) {
+    final jetzt = DateTime.now();
+    final letzter = _letzterTipp;
+    final doppelt = letzter != null && letzter.$1 == b && jetzt.difference(letzter.$2) < const Duration(milliseconds: 400);
+    _letzterTipp = doppelt ? null : (b, jetzt);
+    if (!doppelt) return waehleBereich(b);
+    bereich = b;
+    druecke(const Taste("", aktion: Aktion.maximieren));
+  }
+
+  (Bereich, DateTime)? _letzterTipp;
 
   /// Wählt die Domäne der Funktionstasten; eine Bibliothek wird dabei einmal geladen.
   void waehleDomaene(String name) {

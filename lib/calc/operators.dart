@@ -40,6 +40,10 @@ mixin Operatoren on Kern, Funktionen {
     "~<" : (a) { ops=2; result(_wahr(x >= y)); },
     "~>" : (a) { ops=2; result(_wahr(x <= y)); },
     "~=" : (a) { ops=2; result(_wahr(x != y)); },
+    // dieselben Vergleiche als Zeichen, besser lesbar (doc/reference.md 4)
+    "≤"  : (a) { ops=2; result(_wahr(x <= y)); },
+    "≥"  : (a) { ops=2; result(_wahr(x >= y)); },
+    "≠"  : (a) { ops=2; result(_wahr(x != y)); },
     // Logik auf Wahrheitswerten (0 = falsch, alles andere wahr), nicht bitweise
     "&"  : (a) { ops=2; result(_wahr(x != 0 && y != 0)); },  // und
     "~&" : (a) { ops=2; result(_wahr(x != 0 || y != 0)); },  // oder

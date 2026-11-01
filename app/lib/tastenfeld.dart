@@ -22,6 +22,13 @@ class Tastenfeld extends StatelessWidget {
   static const double hoehe =
       randOben + 5 * obenHoehe + 4 * obenAbstand + blockAbstand + 4 * untenHoehe + 3 * untenAbstand + randUnten;
 
+  /// Breite ohne Dehnung (doc/app.md Punkt 5): 400 Punkte abzüglich des Rands der Seite; breiter werden nur die
+  /// Tasten, das Cursorkreuz behält seine Größe, die beiden kleinen Tasten darunter füllen den Platz neben ihm.
+  static const double normalBreite = 376;
+
+  /// Spaltenbreite des oberen Blocks ohne Dehnung.
+  static const double normalSpalte = (normalBreite - 5 * (obenAbstand - 1)) / 6;
+
   /// Unterkante von R1, gemessen von der Oberkante des Tastenfelds.
   static const double r1Unten = randOben + obenHoehe;
 
@@ -38,6 +45,10 @@ class Tastenfeld extends StatelessWidget {
     );
     final fk = m.funktionstasten;
     Widget oben(Taste t) {
+      // ⌫ ist im Lese-Modus BEENDEN und dann blau wie MENÜ: Blau sind die Tasten mit einer Aufgabe in der Hilfe
+      if (t.aktion == Aktion.loeschen) {
+        return TasteWidget(t, m, hoehe: obenHoehe, an: m.hilfeLesen, anFarbe: Farben.hilfe);
+      }
       if (t.funktion == null) return TasteWidget(t, m, hoehe: obenHoehe);
       final belegt = fk[t.funktion!];
       if (belegt == null) {
@@ -122,7 +133,7 @@ class Tastenfeld extends StatelessWidget {
             m,
             hoehe: obenHoehe,
             farbe: Farben.alpha,
-            an: m.alpha,
+            an: m.alpha || m.hilfeLesen, // im Hilfe-Modus: Lese-Modus
           ),
           _Ecke(m, rechts: false), // Platzhalter rechts neben ALPHA
           _Ecke(m, rechts: true), // Maximieren links neben TAB
@@ -257,7 +268,8 @@ class TasteWidget extends StatelessWidget {
           height: hoehe,
           child: Stack(
             children: [
-              if (zeigeKlein && t.shift != null && !(m.shift))
+              // im Hilfe-Modus ohne Shift-Hinweis: MENÜ, ALPHA und ⌫ tragen dort ihre Aufgabe (doc/app.md 5.2)
+              if (zeigeKlein && t.shift != null && !(m.shift) && !m.hilfeModus)
                 Positioned(
                   left: 6,
                   top: t.aktion == Aktion.tab ? -3 : 3,
@@ -320,7 +332,9 @@ class TasteWidget extends StatelessWidget {
     );
     // Tooltip mit den Kurztexten aller Belegungen (doc/app.md 5.1): am PC beim Darüberfahren, am Handy
     // bei langem Drücken
-    return tipp(AppHilfe.kurztexte(m.api, t).join("\n"), knopf);
+    // SHIFT und MENÜ öffnen die Hilfe; auf ihnen ruht der Zeiger dabei, ihr Tooltip soll nicht als angeschaut gelten
+    final merken = t.aktion != Aktion.shift && t.aktion != Aktion.menue;
+    return tippTabelle(AppHilfe.tippBereiche(m.api, t), knopf, beiAnzeige: merken ? () => m.tooltipGezeigt(t) : null);
   }
 
   /// Im Alpha-Modus schreibt eine Funktionstaste ihren Buchstaben, nicht ihre Belegung.
@@ -438,14 +452,15 @@ class _Ecke extends StatelessWidget {
   Widget build(BuildContext context) {
     // zeigt, was ein Druck bewirkt: geteilt → maximieren [ ], maximiert → wieder teilen [|]
     final wirkt = rechts && (m.bereich == Bereich.eingabe || m.bereich == Bereich.stack);
-    final taste = Material(
+    // bei gedehnten Tasten wächst die Spalte, das Cursorkreuz nicht: die Taste füllt den zusätzlichen Platz
+    Widget taste(double spalte) => Material(
       color: Farben.funktion, // wie das Cursorkreuz; der Platzhalter bleibt ohne Beschriftung
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
         onTap: wirkt || (rechts && m.hilfeModus) ? () => m.druecke(const Taste("", aktion: Aktion.maximieren)) : null,
         child: SizedBox(
-          width: 30,
+          width: 30 + math.max(0, spalte - Tastenfeld.normalSpalte),
           height: 22,
           child: rechts
               ? CustomPaint(painter: _Layout(geteilt: m.maximiert, farbe: wirkt ? Farben.tasteText : Farben.gedimmt))
@@ -453,12 +468,16 @@ class _Ecke extends StatelessWidget {
         ),
       ),
     );
-    return SizedBox(
-      height: Tastenfeld.obenHoehe,
-      child: Align(
-        alignment: rechts ? Alignment.bottomRight : Alignment.bottomLeft,
-        // zeigt, was ein Druck bewirkt (doc/app.md 7, Punkt 10)
-        child: rechts ? tipp(m.maximiert ? "[|] 2 Seiten" : "[ ] Vollbild für die markierte Seite", taste) : taste,
+    return LayoutBuilder(
+      builder: (context, platz) => SizedBox(
+        height: Tastenfeld.obenHoehe,
+        child: Align(
+          alignment: rechts ? Alignment.bottomRight : Alignment.bottomLeft,
+          // zeigt, was ein Druck bewirkt (doc/app.md 7, Punkt 10)
+          child: rechts
+              ? tipp(m.maximiert ? "[|] 2 Seiten" : "[ ] Vollbild für die markierte Seite", taste(platz.maxWidth))
+              : taste(platz.maxWidth),
+        ),
       ),
     );
   }

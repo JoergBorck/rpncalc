@@ -71,6 +71,66 @@ void main() {
     });
   });
 
+  group('Hilfe der mitgelieferten Bibliotheken', () {
+    // was ein Beispiel voraussetzt: die Statistik eine leere Messreihe und fünf Wertepaare auf dem Stack
+    const vorbereitung = {"statistik": "sclr_2 1 4 2 5 3 4 4 5 5_"};
+    for (final name in mitgelieferteBibliotheken.keys) {
+      test('$name: jede Funktion hat eine Hilfe, jedes Beispiel läuft ohne Fehler', () {
+        final api = RpnApi()..ladeBibliothek(name);
+        for (final f in api.bibliotheksFunktionen(name)) {
+          final h = api.hilfe(f);
+          expect(h?.verwendungen, isNotEmpty, reason: "Hilfe zu $f");
+          for (final v in h!.verwendungen.where((v) => v.argumentListe.isNotEmpty)) {
+            final probe = RpnApi()..ladeBibliothek(name);
+            final z = probe.eingabe("${vorbereitung[name] ?? ""}${v.beispielEingabe}");
+            expect(z.fehler, isNull, reason: "${v.beispielEingabe}: ${z.fehler?.text}");
+            expect(z.stack, isNotEmpty, reason: "${v.beispielEingabe} liefert ein Ergebnis");
+          }
+        }
+      });
+    }
+
+    test('jede Funktion verweist auf ihre Übersicht, jeder Verweis hat ein Ziel', () {
+      for (final name in mitgelieferteBibliotheken.keys) {
+        final api = RpnApi()..ladeBibliothek(name);
+        expect(api.hilfe("#$name"), isNotNull, reason: "Übersicht #$name");
+        for (final k in api.calculator.eigeneHilfen.keys) {
+          final h = api.hilfe(k)!;
+          for (final v in h.verweise) {
+            expect(api.hilfe(v), isNotNull, reason: "$k → $v");
+          }
+          if (!k.startsWith("#")) expect(h.verweise, contains("#$name"), reason: "$k verweist auf die Bibliothek");
+        }
+      }
+    });
+
+    test('die Hilfe einer Bibliothek lässt sich lesen, bevor sie geladen ist', () {
+      final api = RpnApi();
+      expect(api.hilfe("#statistik")?.titel, "Bibliothek: Statistik");
+      expect(api.hilfe("eigen")?.verwendungen.single.beispielEingabe, "0.5:200:eigen");
+      expect(api.calculator.eigeneFunktionen, isEmpty, reason: "nur gelesen, nicht geladen");
+      expect(api.eingabe("0.5:200:eigen").fehler?.code, "fkt?", reason: "benutzen geht erst nach dem Laden");
+    });
+
+    test('Kurzinfo für Menüs und Tooltips, ohne die Bibliothek zu laden', () {
+      final api = RpnApi();
+      final info = api.bibliotheksInfo("schwingungen")!;
+      expect(info.beschreibung, startsWith("Mechanische Schwingungen"));
+      expect([info.version, info.funktionen], ["1.1.0", 25]);
+      expect(api.calculator.eigeneFunktionen, isEmpty, reason: "nur gefragt, nicht geladen");
+      expect(api.bibliotheksInfo("gibtsnicht"), isNull);
+    });
+
+    test('die Werte in den Beispielen stimmen (Schwingungen)', () {
+      num tos(String eingabe) => (RpnApi()..ladeBibliothek("schwingungen")).eingabe(eingabe).stack.first.wert;
+      expect(tos("0.5:200:eigen"), closeTo(20, 1e-9));
+      expect(tos("0.05:20:0:0.1:ha"), closeTo(8.323, 1e-3));
+      expect(tos("1pendel"), closeTo(3.132, 1e-3));
+      expect(tos("0.05:0:20:2:0.5:dx"), closeTo(-0.01684, 1e-5));
+      expect(tos("1:0.5:20:2:15:1:fx"), closeTo(-0.005489, 1e-6));
+    });
+  });
+
   group('Bibliotheken des Rechners', () {
     test('mitgeliefert, laden, Funktionen in der Reihenfolge der Datei', () {
       final api = RpnApi();
@@ -80,7 +140,7 @@ void main() {
       expect(api.calculator.eigeneFunktionen, isEmpty, reason: "nur gefragt, nicht geladen");
       expect(api.ladeBibliothek("statistik"), isNull);
       expect(api.calculator.eigeneFunktionen.keys, contains("mean"));
-      expect(api.bibliotheksVersion("statistik")!["bibliothek"], "1.0.0");
+      expect(api.bibliotheksVersion("statistik")!["bibliothek"], "1.1.0");
       expect(api.geladeneBibliotheksFunktionen, contains("mean"));
       expect(api.ladeBibliothek("gibtsnicht"), "Unbekannte Bibliothek: gibtsnicht");
     });

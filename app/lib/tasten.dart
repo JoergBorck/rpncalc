@@ -14,6 +14,8 @@ class Taste {
   final String? _shiftEingabe;
   final String? tilde;
   final String? tildeEingabe;
+  final String? shiftTilde; // Beschriftung von ~ mit der Shift-Funktion, z.B. ≤ für ~>
+  final String? shiftTildeEingabe; // statt ~ und Shift-Funktion geschrieben, z.B. ≤ (sonst ~ und shift)
   final String? strich;
   final String? beide;
   final String? buchstabe; // im Alpha-Modus
@@ -22,7 +24,7 @@ class Taste {
   final int? funktion;     // Platz einer Funktionstaste F1–F10 (0–9)
   final bool name;         // schreibt einen Namen, der mit "_" abgeschlossen wird (doc/app.md 4.1)
 
-  const Taste(this.text, {this._eingabe, this.shift, this._shiftEingabe, this.tilde, this.tildeEingabe,
+  const Taste(this.text, {this._eingabe, this.shift, this._shiftEingabe, this.tilde, this.tildeEingabe, this.shiftTilde, this.shiftTildeEingabe,
       this.strich, this.beide, this.buchstabe, this.aktion = Aktion.schreiben, this.reserviert = false,
       this.funktion, this.name = false});
 
@@ -36,7 +38,7 @@ class Taste {
 
   String get eingabe => _eingabe ?? text;
   String? get shiftEingabe => _shiftEingabe ?? shift;
-  bool get erlaubtTilde => tilde != null || beide != null;
+  bool get erlaubtTilde => tilde != null || beide != null || shiftTilde != null;
   bool get erlaubtStrich => strich != null || beide != null;
 }
 
@@ -73,22 +75,22 @@ const List<List<Taste>> untereTasten = [
   [
     Taste("ENTER", eingabe: " ", shift: "_", aktion: Aktion.enter),
     Taste("7"), Taste("8"), Taste("9"),
-    Taste("÷", eingabe: "/", tilde: "1/x", strich: "|/", buchstabe: "w"),
+    Taste("÷", eingabe: "/", tilde: "1/x", strich: "|/", shift: ">", shiftTilde: "≤", shiftTildeEingabe: "≤", buchstabe: "w"),
   ],
   [
     Taste(":", tilde: "~:", strich: "|:", beide: "~|:"),
     Taste("4"), Taste("5"), Taste("6"),
-    Taste("×", eingabe: "*", buchstabe: "x"),
+    Taste("×", eingabe: "*", shift: "&", shiftTilde: "oder", buchstabe: "x"), // und wie das Produkt: 1·1 = 1
   ],
   [
     Taste("|", aktion: Aktion.strich, strich: "|x|"),
     Taste("1"), Taste("2"), Taste("3"),
-    Taste("−", eingabe: "-", buchstabe: "y"),
+    Taste("−", eingabe: "-", shift: "<", shiftTilde: "≥", shiftTildeEingabe: "≥", buchstabe: "y"),
   ],
   [
     Taste("~", aktion: Aktion.tilde),
     Taste("ê"), Taste("0"), Taste("."),
-    Taste("+", buchstabe: "z"),
+    Taste("+", shift: "=", shiftTilde: "≠", shiftTildeEingabe: "≠", buchstabe: "z"), // = wie auf Taschenrechnern bei +
   ],
 ];
 
@@ -112,10 +114,10 @@ const Map<String, List<Taste?>> domaenen = {
     Taste.fn("ifel"),
     Taste.fn("loop"),
     Taste.fn("times"),
-    Taste("<", tilde: "≥"),
-    Taste(">", tilde: "≤"),
-    Taste("=", tilde: "≠"),
-    Taste("&", tilde: "oder"),
+    null, // < > = & liegen auf Shift der Rechenspalte (doc/app.md 3.1)
+    null,
+    null,
+    null,
     null,
   ],
 };

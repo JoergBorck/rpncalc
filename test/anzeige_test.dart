@@ -111,7 +111,7 @@ void main() {
 
     test('grau über dem Tos, nur solange ein Token offen ist', () {
       final zeilen = Anzeige.uebersicht(getippt("1 22 333"), farbe: false, ansicht: Ansicht()).split("\n");
-      expect(zeilen.take(3).map((z) => z.split("│").first.trimRight()), [" >:              333", " 0:               22", " 1:                1"]);
+      expect(zeilen.take(3).map((z) => z.split("│").first.trimRight()), [" >:              333", " x:               22", " y:                1"]);
       expect(Anzeige.uebersicht(getippt("1 22 333+"), farbe: false, ansicht: Ansicht()), isNot(contains(">:")));
       expect(Anzeige.uebersicht(getippt("4 "), farbe: false, ansicht: Ansicht()), isNot(contains(">:")),
           reason: "ein vorgemerktes Enter allein ist kein offenes Token");
@@ -133,7 +133,7 @@ void main() {
       final z = getippt("1 2 3 4 5 6 7 8 9 10 11", zeilen: 20);
       final zeilen = Anzeige.uebersicht(z, farbe: false, ansicht: Ansicht()).split("\n");
       expect(zeilen.first, startsWith(" >:"));
-      expect(zeilen[7], startsWith(" 6:"), reason: "eine Stackzeile weniger");
+      expect(zeilen[7], startsWith(" ₆:"), reason: "eine Stackzeile weniger");
       expect(zeilen[8], startsWith(" … 3 weitere"));
       final geblaettert = Anzeige.uebersicht(z, farbe: false, ansicht: Ansicht()..stackVersatz = 1);
       expect(geblaettert, isNot(contains(">:")));
@@ -157,13 +157,13 @@ void main() {
     test('Stack ab einer tieferen Position', () {
       final zeilen = Anzeige.uebersicht(api.zustand(zeilen: 20), farbe: false, ansicht: Ansicht()..stackVersatz = 3)
           .split("\n");
-      expect(zeilen.first, startsWith(" 3:"));
-      expect(zeilen[7], startsWith("10:"));
+      expect(zeilen.first, startsWith(" t:"), reason: "Position 3 heißt t");
+      expect(zeilen[7], startsWith("₁₀:"));
       expect(zeilen[8], startsWith(" … 1 weitere"));
       // nicht weiter als bis der unterste Wert (Position 11) in der letzten Zeile steht
       final ende = Anzeige.uebersicht(api.zustand(zeilen: 20), farbe: false, ansicht: Ansicht()..stackVersatz = 10)
           .split("\n");
-      expect([ende.first.substring(0, 3), ende[7].substring(0, 3), ende.length], [" 4:", "11:", 8]);
+      expect([ende.first.substring(0, 3), ende[7].substring(0, 3), ende.length], [" ₄:", "₁₁:", 8]);
       expect(Anzeige.kompakt(api.zustand(zeilen: 20), farbe: false, versatz: 3), endsWith("… [6] [7] [8] [9] …<tos"));
     });
 

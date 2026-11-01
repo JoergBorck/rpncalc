@@ -3,7 +3,7 @@ import 'dea.dart';
 const String zif     = "0123456789";
 const String kbu     = "abcdefghijklmnopqrstuvwxyz";
 const String gbu     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const String ops     = "+*-/^%!<>=&²³°:"; // ":" übergibt den Tos an die Argumentliste des Calculators
+const String ops     = "+*-/^%!<>=&²³°:≤≥≠"; // ":" übergibt den Tos an die Argumentliste; ≤ ≥ ≠ wie ~> ~< ~=
 const String tren    = " \n";
 const String special = ".ê~|'{}_"; // "_" trennt Tokens, ohne selbst etwas zu tun
 const String varmod  = "!=+-*/~"; // Modifikatoren für Variablen nach ' (doc/reference.md 8.2)

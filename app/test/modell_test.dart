@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rpncalc_app/anzeige.dart';
 import 'package:rpncalc_app/main.dart';
 import 'package:rpncalc_app/modell.dart';
 import 'package:rpncalc_app/tasten.dart';
+import 'package:rpncalc_app/tastenfeld.dart';
 
 /// Verhalten der Oberfläche über dem Rechner, siehe doc/app.md.
 void main() {
@@ -37,6 +39,22 @@ void main() {
     expect(stack(), [3]);
     expect(m.tilde, isFalse);
     expect(m.zeile, "9~²");
+  });
+
+  test('Vergleiche auf Shift der Rechenspalte, ~ kehrt auch die Shift-Funktion um (doc/app.md 3.1)', () {
+    tippe(["3", "ENTER", "3", "SHIFT", "+"]);
+    expect(m.zeile, "3 3=");
+    expect(stack(), [1]);
+    tippe(["ENTER", "2"]);
+    m.druecke(taste("~"));
+    expect(m.beschriftung(taste("+")).gedimmt, isTrue, reason: "~+ hat keine Bedeutung");
+    tippe(["SHIFT"]);
+    expect([for (final t in ["÷", "×", "−", "+"]) m.beschriftung(taste(t)).text], ["≤", "oder", "≥", "≠"]);
+    tippe(["+"]);
+    expect(m.zeile.endsWith("2≠"), isTrue, reason: "die Taste schreibt das Zeichen statt ~=: ${m.zeile}");
+    expect(stack().last, 1, reason: "1 ist ungleich 2");
+    tippe(["SHIFT"]);
+    expect([for (final t in ["÷", "×", "−"]) m.beschriftung(taste(t)).text], [">", "&", "<"]);
   });
 
   test('~ und | zusammen, || ist der Betrag', () {
@@ -246,6 +264,56 @@ void main() {
     }
     expect(find.text("7"), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Doppelklick in Eingabe oder Stack wechselt zwischen [ ] und [|] (doc/app.md 3.5)', (tester) async {
+    tester.view.physicalSize = const Size(400 * 3, 860 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    Future<void> doppelklick(Offset o) async {
+      await tester.tapAt(o);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(o);
+      await tester.pumpAndSettle();
+    }
+
+    final stackNamen = find.text("y").evaluate().length; // y steht nur am Stack und auf der Taste −
+    await doppelklick(const Offset(60, 120)); // in die Eingabe
+    expect(find.text("y").evaluate().length, stackNamen - 1, reason: "Eingabe maximiert, der Stack ist weg");
+    await doppelklick(const Offset(60, 120));
+    expect(find.text("y").evaluate().length, stackNamen, reason: "wieder geteilt");
+    await doppelklick(const Offset(340, 120)); // in den Stack
+    expect(find.text("Eingabe"), findsNothing, reason: "Stack maximiert, die Eingabe ist weg");
+    expect(find.text("Stack"), findsOneWidget);
+  });
+
+  testWidgets('Zoom:breiter vergrößert alles, höher nur die Anzeige, niedrig erst breitere Tasten (doc/app.md Punkt 5)', (tester) async {
+    addTearDown(tester.view.reset);
+    tester.view.devicePixelRatio = 1;
+    // der Zoom als Höhe des Tastenfelds (sie hängt nur vom Faktor ab), dazu die Größe der Anzeige
+    Future<(double, Rect)> messe(Size fenster) async {
+      tester.view.physicalSize = fenster;
+      await tester.pumpWidget(const RpnApp());
+      expect(tester.takeException(), isNull, reason: "kein Überlauf bei $fenster");
+      return (tester.getRect(find.byType(Tastenfeld)).height / Tastenfeld.hoehe, tester.getRect(find.byType(Anzeige)));
+    }
+
+    final (f1, a1) = await messe(const Size(400, 860));
+    expect([f1, a1.width], [closeTo(1, 0.001), closeTo(376, 0.5)]);
+    final (f2, a2) = await messe(const Size(800, 1720));
+    expect(f2, closeTo(2, 0.001), reason: "doppelt so breit: alles doppelt so groß");
+    expect(a2.height, closeTo(2 * a1.height, 1));
+    final (f3, a3) = await messe(const Size(400, 1200));
+    expect(f3, closeTo(1, 0.001), reason: "höher: gleiche Größe");
+    expect(a3.height, greaterThan(a1.height + 300), reason: "höher: mehr Anzeige");
+    final (f4, _) = await messe(const Size(300, 860));
+    expect(f4, closeTo(0.75, 0.001), reason: "schmaler als 400: kleiner");
+    final (f5, a5) = await messe(const Size(1600, 860));
+    expect(f5, lessThan(1.2), reason: "breit, aber niedrig: die Höhe begrenzt");
+    expect(a5.width / f5, closeTo(1.5 * 400 - 24, 0.5), reason: "erst 50 % breitere Tasten, dann Rand");
+    final (f6, a6) = await messe(const Size(500, 860));
+    expect(a6.width, closeTo(500 - 24 * f6, 0.5), reason: "etwas zu niedrig: gedehnt, ohne Rand");
   });
 
   testWidgets('maximierter Stack und maximierte Eingabe lassen sich zeichnen, auch beim Tippen', (tester) async {

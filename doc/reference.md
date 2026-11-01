@@ -21,6 +21,10 @@ ohne Klammern für Ausdrücke aus.
 | Stack       | Der Werte-Stack, auf dem gerechnet wird |
 | Tos         | Top of Stack, das oberste Element (Position 0) |
 | Position    | Abstand zum Tos: 0 ist der Tos, 1 das Element darunter usw. |
+| x, y, z, t  | Namen der Positionen 0 bis 3; x ist der Tos (wie bei HP, aber klein, weil X und Y Befehle sind) |
+| ≡₄, ≡₅ …    | Positionen ab 4; allgemein ≡ₙ für die Position n, z.B. aus einem Argument |
+| Feld        | Variable oder Konstante mit mehreren Elementen; Element 0 ist der Wert, der beim Anlegen in x lag |
+| name        | Platzhalter für den Namen einer Variablen, Konstante, eines Tags oder einer Funktion: `'!name`, `':name` |
 | Füllstand   | Anzahl der belegten Zellen des Stacks (in der API: `tiefe`) |
 | Token       | Ein Baustein der Eingabe: Zahl, Operator, Befehl, Funktion, Variable, Tag oder Code-Block |
 | Identifier  | Funktionen, Befehle, Variablen und Tags; sie verbrauchen Argumente |
@@ -31,6 +35,15 @@ ohne Klammern für Ausdrücke aus.
 Eingaben stehen in `"…"`, der Stack danach in `[…]` mit dem Tos rechts: `"1 2+"` ergibt `[3]`.
 Ein sichtbares Leerzeichen wird als `␣` geschrieben, wo es darauf ankommt.
 
+**Zeichensatz:** Code und Skripte sind UTF-8. Zeichen wie `ê ² ³ °` gibt es auch in der alten Windows-Codepage,
+`≤ ≥ ≠` nicht: Wer eine Datei ausdrücklich als „ANSI“ speichert, verliert sie. Alle üblichen Schriften
+(Consolas, Lucida Console, Courier, Cascadia, Segoe UI, Arial) enthalten sie, Notepad speichert seit Windows 10
+als UTF-8.
+
+**Wirkung auf den Stack:** `y x → y+x` heißt: y und x werden verbraucht, y+x liegt danach in x. Links steht,
+was die Operation nimmt, rechts, was sie zurücklegt, jeweils der Tos rechts. `x → –` heißt: x wird verbraucht,
+nichts kommt zurück. Diese Schreibweise gilt für alle Texte: Referenz, Hilfe, Tooltips.
+
 ---
 
 ## 2. Grundmodell
@@ -38,6 +51,9 @@ Ein sichtbares Leerzeichen wird als `␣` geschrieben, wo es darauf ankommt.
 ### 2.1 Stack
 
 - Der Stack ist ein Ringpuffer mit 1000 Zellen, wie bei den HP-Taschenrechnern.
+- **Namen der Positionen:** x (Tos), y, z, t für die Positionen 0 bis 3, darunter ≡₄, ≡₅ usw. In Texten
+  heißt es also „tauscht x und y“ oder „kopiert ≡₅ nach x“; ≡ₙ steht für eine Position, die ein Argument
+  angibt. ≡₀ bis ≡₃ wären gültig, man schreibt aber die Buchstaben.
 - Läuft er über, wird das älteste Element überschrieben. Der Füllstand bleibt dann bei 1000.
 - Wird von einem leeren Stack etwas genommen, liefert er 0 (wie beim HP). Der Füllstand bleibt bei 0.
 - Getaggte Zellen werden nie überschrieben oder verbraucht (siehe [Kapitel 9](#9-tags)).
@@ -245,6 +261,7 @@ In der Tabelle ist y der Wert unter dem Tos und x der Tos. Die Ergebnisse sind m
 | `~°`     | r φ → x y | polar nach kartesisch |
 | `< > =`  | y x → 1 oder 0 | Vergleiche |
 | `~< ~> ~=` | y x → 1 oder 0 | ≥, ≤, ≠ |
+| `≥ ≤ ≠`   | y x → 1 oder 0 | dasselbe als Zeichen, besser lesbar; die App schreibt diese Zeichen |
 | `&`      | y x → 1 oder 0 | logisches Und (0 ist falsch, alles andere wahr) |
 | `~&`     | y x → 1 oder 0 | logisches Oder |
 | `:`      | x → – | übergibt den Tos als Argument (Kapitel 5) |
@@ -271,14 +288,14 @@ Viele Identifier lassen sich mit Argumenten genauer steuern, z.B. wie viele Elem
 - **Umwandlung:** Wo ganze Zahlen gebraucht werden, wird der Nachkommateil abgeschnitten.
 - **Positionen:** Positionen auf dem Stack zählen immer ab 0 (Tos).
 
-Beispiele mit `S` (Argumente tgt:src:len, Standard 1:0:1):
+Beispiele mit `S` (Argumente ziel:quelle:anzahl, Standard 1:0:1):
 
 | Eingabe     | Wirkung |
 |-------------|---------|
-| `S`         | tauscht Position 0 und 1 |
-| `3:S`       | tauscht Position 0 und 3 |
-| `3:7:S`     | tauscht Position 7 und 3 |
-| `3:7:4:S`   | tauscht die Positionen 7–10 mit 3–6 |
+| `S`         | tauscht x und y |
+| `3:S`       | tauscht x und t |
+| `3:7:S`     | tauscht ≡₇ und t |
+| `3:7:4:S`   | tauscht ≡₇ bis ≡₁₀ mit t bis ≡₆ |
 | `4 7 3:::S` | wie `3:7:4:S`, die Argumente kommen vom Stack, deshalb in umgekehrter Reihenfolge |
 
 > **Warum so?** Argumente sind nicht Teil der Grammatik, sondern werden zur Laufzeit übergeben. So können sie
@@ -340,10 +357,10 @@ Beispiele: `"3.14159 2:round"` ergibt 3,14, `"1234 ~2:round"` ergibt 1200. Ander
 | Befehl | Argumente (Standard) | Bedeutung |
 |--------|----------------------|-----------|
 | `C`    | – | löscht den Stack; Fehler, solange es Tags gibt (dann `'C`) |
-| `D`    | n (1) | entfernt n Elemente |
-| `S`    | tgt:src:len (1:0:1) | tauscht len Elemente ab src mit len Elementen ab tgt |
-| `R`    | items:offset (3:0) | rotiert items Elemente ab offset: das unterste kommt nach oben. `4:R` holt Position 3 in den Tos |
-| `~R`   | items:offset (3:0) | rotiert in die andere Richtung: der Tos wandert nach unten |
+| `D`    | anzahl (1) | entfernt anzahl Elemente |
+| `S`    | ziel:quelle:anzahl (1:0:1) | tauscht anzahl Elemente ab quelle mit anzahl Elementen ab ziel |
+| `R`    | anzahl:ab (3:0) | rotiert anzahl Elemente ab Position ab: das unterste kommt nach oben. `4:R` holt t nach oben |
+| `~R`   | anzahl:ab (3:0) | rotiert in die andere Richtung: der Tos wandert nach unten |
 | `Y`    | quelle:anzahl (1:1) | kopiert anzahl Elemente ab quelle auf den Stack, die Reihenfolge bleibt |
 | `X`    | beliebig | führt den obersten Code-Block aus (Kapitel 11) |
 
@@ -356,27 +373,27 @@ Die Varianten mit `'` davor (`'C 'D 'S 'R '~R`) behandeln Tags mit, siehe [Kapit
 
 ## 8. Variablen
 
-Variablen speichern Werte außerhalb des Stacks. Jede Variable ist ein Vektor aus einem oder mehreren Elementen;
+Variablen speichern Werte außerhalb des Stacks. Jede Variable besteht aus einem oder mehreren Elementen, mit mehreren heißt sie Feld;
 Element 0 ist das Element, das beim Anlegen der Tos war.
 
 | Eingabe | Argumente (Standard) | Bedeutung |
 |---------|----------------------|-----------|
-| `'!x`   | n (1) | legt x mit n Elementen an und verbraucht dafür n Werte vom Stack; ein vorhandenes x wird ersetzt |
-| `'x`    | n:m (0:1) | kopiert m Elemente ab Element n auf den Stack, die Reihenfolge bleibt |
-| `'=x`   | n:m:k (0:1:0) | schreibt m Werte vom Stack in die Elemente ab n (Tos in Element n) |
-| `'==x`  | – | schreibt den Tos in alle Elemente, z.B. `0'==v` |
-| `'+x` `'-x` `'*x` `'/x` | n:m:k (0:1:0) | ändert m Elemente ab n mit Werten vom Stack |
-| `'++x` `'--x` | n:m (0:1) | erhöht bzw. senkt m Elemente ab n um 1 |
-| `'~x`   | – | entfernt x |
+| `'!name`   | anzahl (1) | legt name mit anzahl Elementen an und verbraucht dafür anzahl Werte vom Stack; eine vorhandene Variable dieses Namens wird ersetzt |
+| `'name`    | ab:anzahl (0:1) | kopiert anzahl Elemente ab Element ab auf den Stack, die Reihenfolge bleibt |
+| `'=name`   | ab:anzahl:alle (0:1:0) | schreibt anzahl Werte vom Stack in die Elemente ab Element ab (x in Element ab) |
+| `'==name`  | – | schreibt x in alle Elemente, z.B. `0'==v` |
+| `'+name` `'-name` `'*name` `'/name` | ab:anzahl:alle (0:1:0) | ändert anzahl Elemente ab Element ab mit Werten vom Stack |
+| `'++name` `'--name` | ab:anzahl (0:1) | erhöht bzw. senkt anzahl Elemente ab Element ab um 1 |
+| `'~name`   | – | entfernt name |
 
-- **Argument k:** 0 heißt, jedes Element bekommt seinen eigenen Wert vom Stack; 1 heißt, der Tos gilt für alle Elemente. Andere Werte sind ein Fehler.
+- **Argument alle:** 0 heißt, jedes Element bekommt seinen eigenen Wert vom Stack; 1 heißt, x gilt für alle Elemente. Andere Werte sind ein Fehler.
 - **Schreiben und Ändern** lassen die Werte auf dem Stack. Nur das Anlegen verbraucht sie.
 - **Nicht angelegte Variablen:** Lesen, Schreiben oder Ändern ist ein Fehler.
 - **Elementbereich:** Ein Bereich außerhalb der Elemente ist ein Fehler.
 - **Erlaubte Operatoren:** Nach `'` stehen nur `! = + - * / ~`, einfach oder doppelt (8.2). Andere Zeichen
-  (z.B. `'^x`) sind ein Fehler der Grammatik, nicht belegte Paare (z.B. `'**x`, `'+-x`) ein Fehler des Rechners.
+  (z.B. `'^name`) sind ein Fehler der Grammatik, nicht belegte Paare (z.B. `'**name`, `'+-name`) ein Fehler des Rechners.
 
-Beispiel: `"0 0 0 3:'!s"` legt einen Vektor mit drei Nullen an. `"1 2 3 0:3:'+s"` addiert elementweise.
+Beispiel: `"0 0 0 3:'!s"` legt ein Feld mit drei Nullen an. `"1 2 3 0:3:'+s"` addiert elementweise.
 `"0:3:'s"` liest alle drei Elemente.
 
 > **Warum so?** Schreiben ohne Verbrauchen entspricht STO beim HP. Dass nicht angelegte Variablen ein Fehler
@@ -388,21 +405,21 @@ Eine Konstante ist eine Variable, die nach dem Anlegen nur noch gelesen werden k
 
 | Eingabe | Argumente (Standard) | Bedeutung |
 |---------|----------------------|-----------|
-| `'!!x`  | n (1) | legt die Konstante x mit n Elementen an und verbraucht dafür n Werte vom Stack; ein vorhandenes x wird ersetzt |
-| `'x`    | n:m (0:1) | liest wie bei Variablen |
-| `'~~x`  | – | entfernt die Konstante; `'~x` ist hier ein Fehler |
-| `'!x`   | n (1) | ersetzt die Konstante durch eine gewöhnliche Variable und hebt so den Schreibschutz auf |
+| `'!!name`  | anzahl (1) | legt die Konstante name mit anzahl Elementen an und verbraucht dafür anzahl Werte vom Stack; ein vorhandener Name wird ersetzt |
+| `'name`    | ab:anzahl (0:1) | liest wie bei Variablen |
+| `'~~name`  | – | entfernt die Konstante; `'~name` ist hier ein Fehler |
+| `'!name`   | anzahl (1) | ersetzt die Konstante durch eine gewöhnliche Variable und hebt so den Schreibschutz auf |
 
-- **Schreiben und Ändern** sind ein Fehler: `'=x`, `'==x`, `'+x`, `'-x`, `'*x`, `'/x`, `'++x` und `'--x`.
-- **Entfernen** geht nur mit `'~~x`, dem Gegenstück zu `'!!x`. So verschwindet eine Konstante nicht aus
+- **Schreiben und Ändern** sind ein Fehler: `'=name`, `'==name`, `'+name`, `'-name`, `'*name`, `'/name`, `'++name` und `'--name`.
+- **Entfernen** geht nur mit `'~~name`, dem Gegenstück zu `'!!name`. So verschwindet eine Konstante nicht aus
   Versehen.
-- **Bewusstes Ersetzen bleibt erlaubt:** Neu anlegen mit `'!!x` oder `'!x`, ebenso ein Tag `'|x` mit demselben Namen. Der Schutz gilt
+- **Bewusstes Ersetzen bleibt erlaubt:** Neu anlegen mit `'!!name` oder `'!name`, ebenso ein Tag `'|name` mit demselben Namen. Der Schutz gilt
   versehentlichen Änderungen, nicht dem bewussten Ersetzen.
 
 Beispiel: `"9.81'!!g"` legt die Konstante g an. `"5'=g"` meldet den Fehler „Konstante kann nur gelesen werden: g“.
 
 > **Warum so?** Konstanten wie g oder eine Materialkonstante sollen in Programmen nicht versehentlich überschrieben
-> werden. Ein eigener Befehl zum Aufheben des Schutzes ist nicht nötig, weil `'!x` ohnehin neu anlegt.
+> werden. Ein eigener Befehl zum Aufheben des Schutzes ist nicht nötig, weil `'!name` ohnehin neu anlegt.
 
 ### 8.2 Einfache und doppelte Modifikatoren
 
@@ -430,10 +447,10 @@ Entfernen mit der falschen Form ist ein Fehler, der die richtige nennt:
 | eigene Funktion | entfernen | Fehler |
 | Funktion aus einer Bibliothek (10.6) | Fehler | entfernen |
 
-Gemischte Paare wie `'+-x` sind ein Fehler („Operator ist für Variablen nicht erlaubt“).
+Gemischte Paare wie `'+-name` sind ein Fehler („Operator ist für Variablen nicht erlaubt“).
 
 > **Warum so?** Was geschützt angelegt wurde (`'!!`, `'||`, Bibliothek), entfernt man nur bewusst mit der
-> doppelten Form. `'==x` passt nicht ganz zur Regel „stärker“, ist aber zum Füllen von Vektoren sehr nützlich.
+> doppelten Form. `'==name` passt nicht ganz zur Regel „stärker“, ist aber zum Füllen von Feldern sehr nützlich.
 
 ---
 
@@ -446,11 +463,11 @@ wiederfinden, ohne mitzuzählen, wo es gerade liegt.
 
 | Eingabe | Bedeutung |
 |---------|-----------|
-| `'\|x`  | markiert die Tos-Zelle; ein vorhandener Tag oder eine Variable mit gleichem Namen x wird ersetzt |
-| `n:'\|x` | markiert einen Block aus n Zellen ab dem Tos (Element 0 = Tos) |
-| `'x`, `'=x`, `'+x` … | lesen, schreiben und ändern wie bei Variablen, direkt in den markierten Zellen |
-| `'~x`   | entfernt den Tag (bei einem Block den ganzen Tag); die Werte bleiben auf dem Stack |
-| `'!x`   | ersetzt den Tag durch eine Variable; der Wert wird dabei wie beim Anlegen vom Stack genommen |
+| `'\|name`  | markiert die Tos-Zelle; ein vorhandener Tag oder eine Variable mit gleichem Namen wird ersetzt |
+| `n:'\|name` | markiert einen Block aus n Zellen ab dem Tos (Element 0 = Tos) |
+| `'name`, `'=name`, `'+name` … | lesen, schreiben und ändern wie bei Variablen, direkt in den markierten Zellen |
+| `'~name`   | entfernt den Tag (bei einem Block den ganzen Tag); die Werte bleiben auf dem Stack |
+| `'!name`   | ersetzt den Tag durch eine Variable; der Wert wird dabei wie beim Anlegen vom Stack genommen |
 
 ### 9.2 Schutz
 
@@ -479,18 +496,18 @@ Operationen, die die Zelle nicht beim Namen nennen.
 
 | Eingabe | Bedeutung |
 |---------|-----------|
-| `'\|\|x`  | markiert die Tos-Zelle mit Schreibschutz; ein vorhandener Tag, eine Variable oder Konstante x wird ersetzt |
-| `n:'\|\|x` | markiert einen Block aus n Zellen mit Schreibschutz |
-| `'~~x`   | entfernt den Tag mit Schreibschutz, die Werte bleiben; `'~x` ist hier ein Fehler |
+| `'\|\|name`  | markiert die Tos-Zelle mit Schreibschutz; ein vorhandener Tag, eine Variable oder Konstante dieses Namens wird ersetzt |
+| `n:'\|\|name` | markiert einen Block aus n Zellen mit Schreibschutz |
+| `'~~name`   | entfernt den Tag mit Schreibschutz, die Werte bleiben; `'~name` ist hier ein Fehler |
 
 | erlaubt | Fehler |
 |---------|--------|
-| Zugriff über den Namen: `'x`, `'=x`, `'+x`, `'-x`, `'*x`, `'/x` | `S`, `R`, `~R`, wenn eine geschützte Zelle im betroffenen Bereich liegt |
+| Zugriff über den Namen: `'name`, `'=name`, `'+name`, `'-name`, `'*name`, `'/name` | `S`, `R`, `~R`, wenn eine geschützte Zelle im betroffenen Bereich liegt |
 | `'S`, `'R`, `'~R`: Der Wert wandert mit seinem Tag und bleibt unverändert | `~` (Vorzeichenwechsel), wenn der Tos eine geschützte Zelle ist |
-| Entfernen und Ersetzen: `'~~x`, `n:'D`, `'C`, `'\|x`, `'!x` | `'~x` (entfernen mit `'~~x`) |
+| Entfernen und Ersetzen: `'~~name`, `n:'D`, `'C`, `'\|name`, `'!name` | `'~name` (entfernen mit `'~~name`) |
 
 - **Wie bei jedem Tag** sind Verbrauchen und Überschreiben ohnehin ein Fehler (9.2).
-- **Schutz aufheben:** `'|x` setzt den Tag ohne Schreibschutz neu und hebt den Schutz so auf.
+- **Schutz aufheben:** `'|name` setzt den Tag ohne Schreibschutz neu und hebt den Schutz so auf.
 
 > **Warum so?** Wer den Namen nennt, ändert den Wert bewusst. Gefährlich sind `S` und `R`, die Werte durch eine
 > Zelle schieben, ohne den Tag mitzunehmen: Danach zeigt der Tag still auf einen anderen Wert.
@@ -557,7 +574,7 @@ Sie arbeiten wie `D`, `S` und `Y` auf dem Werte-Stack (Position 0 = oberster Blo
 | Befehl | Argumente (Standard) | Bedeutung |
 |--------|----------------------|-----------|
 | `codedrop` | n (1) | entfernt die obersten n Blöcke |
-| `codeswap` | tgt:src:len (1:0:1) | tauscht Blöcke |
+| `codeswap` | ziel:quelle:anzahl (1:0:1) | tauscht Blöcke |
 | `codedup`  | n (1) | kopiert die obersten n Blöcke |
 | `codeover` | quelle:anzahl (1:1) | kopiert Blöcke ab einer Position nach oben |
 
@@ -574,7 +591,7 @@ So bringen Bibliotheken Versionsangaben und Hilfetexte mit, ohne dass die Gramma
 
 | Schlüssel | Inhalt | Wirkung |
 |---|---|---|
-| `version` | `{"name": "statistik", "bibliothek": "1.0.0", "rechner": "0.1.0", "app": "0.1.0"}` | prüft, ob Rechner und App passen, und merkt sich die Angaben |
+| `version` | `{"name": "statistik", "bibliothek": "1.0.0", "rechner": "0.1.0", "app": "0.1.0", "beschreibung": "…"}` | prüft, ob Rechner und App passen, und merkt sich die Angaben; `beschreibung` ist ein Satz, wofür die Bibliothek gedacht ist (für Menüs und Tooltips) |
 | `hilfe` | Liste von Hilfeeinträgen wie in api.md Kapitel 8: `{"kennung": "sub", "titel": …, "verwendungen": […], "text": …}` | legt die Hilfe zu eigenen Namen ab |
 
 - **Versionen** folgen dem Schema MAJOR.MINOR.PATCH. `rechner` und `app` nennen die Version, die mindestens
@@ -745,7 +762,7 @@ ziffer          = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 kleinbuchstabe  = "a" | "b" | … | "z" ;
 grossbuchstabe  = "A" | "B" | … | "Z" ;
 operator_symbol = "+" | "-" | "*" | "/" | "^" | "%" | "!"
-                | "<" | ">" | "=" | "&" | "²" | "³" | "°" | ":" ;
+                | "<" | ">" | "=" | "&" | "²" | "³" | "°" | ":" | "≤" | "≥" | "≠" ;
 modifikator     = "!" | "=" | "+" | "-" | "*" | "/" | "~" ;   (* nur nach ' *)
 
 enter           = " " ;
@@ -780,12 +797,12 @@ Operator        = operator_symbol
                 | praefix_inv   , praefix_split , operator_symbol ;
 
 (* --- Variablen, Tags, eigene Funktionen ablegen --- *)
-Tag             = praefix_var , praefix_split , [ praefix_split ] , name ;   (* '|x, '||x mit Schreibschutz *)
+Tag             = praefix_var , praefix_split , [ praefix_split ] , name ;   (* '|name, '||name mit Schreibschutz *)
 Ablegen         = praefix_var , ":" , [ ":" ] , name ;                (* ':f neu, '::f ersetzen *)
 Var_Normal      = praefix_var , [ modifikator , [ modifikator ] ] , name ;
-                  (* 'x lesen, '!x anlegen, '!!x Konstante, '=x schreiben, '==x füllen, '+x ändern,
-                     '++x um 1 ändern, '~x entfernen, '~~x Geschütztes entfernen. Belegt sind die Paare
-                     aus 8.2; alle anderen (z.B. '+-x, '**x) meldet der Rechner als Fehler *)
+                  (* 'name lesen, '!name anlegen, '!!name Konstante, '=name schreiben, '==name füllen, '+name ändern,
+                     '++name um 1 ändern, '~name entfernen, '~~name Geschütztes entfernen. Belegt sind die Paare
+                     aus 8.2; alle anderen (z.B. '+-name, '**name) meldet der Rechner als Fehler *)
 Argument        = praefix_var , ziffer ;                              (* noch erkannt, meldet einen Fehler *)
 Variable        = Tag | Ablegen | Var_Normal | Argument ;
 
@@ -815,14 +832,14 @@ die Kapitel 4–11 fest.
 | Trenner | `␣` (Enter) `_` Zeilenende |
 | Rechnen | `+ - * / ^ ~^ ² ³ ~² ~³ ~/ ! ~ \|\|` |
 | Splits und Prozent | `\| \|/ % ~% \|% ~\|%` |
-| Vergleich, Logik | `< > = ~< ~> ~= & ~&` |
+| Vergleich, Logik | `< > = ~< ~> ~= ≥ ≤ ≠ & ~&` |
 | Koordinaten | `° ~°` |
 | Argumente | `:` · im Code `~: ~\|: \|:` |
 | Funktionen | `pi e ln exp log ~log sin cos tan ~sin ~cos ~tan dms rnd seed ~seed round` |
 | Winkelmodus | `deg rad grd` |
 | Stack | `C D S R ~R Y` · mit Tags `'C 'D 'S 'R '~R` |
-| Variablen | `'!x 'x '=x '==x '+x '-x '*x '/x '++x '--x '~x` · Konstanten `'!!x '~~x` |
-| Tags | `'\|x n:'\|x '~x` · mit Schreibschutz `'\|\|x '~~x` |
+| Variablen | `'!name 'name '=name '==name '+name '-name '*name '/name '++name '--name '~name` · Konstanten `'!!name '~~name` |
+| Tags | `'\|name n:'\|name '~name` · mit Schreibschutz `'\|\|name '~~name` |
 | Code | `{…}` `':name '::name '~name` · aus Bibliotheken `'~~name` · `X` `if` `ifel` `loop` `times` `codedrop codeswap codedup codeover` |
 
 ## Anhang C: Beispiele

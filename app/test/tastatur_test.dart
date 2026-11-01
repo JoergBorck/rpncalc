@@ -27,7 +27,15 @@ void main() {
     expect(m.zustand.offen, "pisin", reason: "wer tippt, setzt _ selbst; pisin ist ein Name");
   });
 
-  test('Return bricht die Zeile um, _ wird direkt getippt, Backspace löscht', () {
+  test('~> ~< ~= werden beim Tippen zu ≤ ≥ ≠, ~/ und Co. bleiben', () {
+    tippe("3 5~>");
+    expect(m.zeile, "3 5≤");
+    expect(m.zustand.stack.last.wert, 1);
+    tippe(" 2~< 4~= 8~/");
+    expect(m.zeile, "3 5≤ 2≥ 4≠ 8~/");
+  });
+
+  test('Enter auf dem Ziffernblock bricht nach einem Leerzeichen um, _ wird direkt getippt, Backspace löscht', () {
     tippe("1_2");
     expect(m.zeile, "1_2");
     m.tastaturLoeschen();
@@ -35,6 +43,14 @@ void main() {
     tippe("2");
     m.tastaturReturn();
     expect([m.verlauf.single.text, m.zeile], ["1_2 ", ""], reason: "Enter: Leerzeichen, dann Zeilenumbruch");
+  });
+
+  test('Return bricht nur die Zeile um, wie ALPHA ⏎', () {
+    tippe("{1 2");
+    m.tastaturZeilenumbruch();
+    tippe("+}");
+    expect(m.zustand.codeOffen, isFalse);
+    expect(m.verlauf.single.text, "{1 2", reason: "kein Leerzeichen vor dem Umbruch");
   });
 
   test('Enter wie beim HP: das Enter bleibt vorgemerkt, das nächste Token entscheidet', () {
@@ -82,16 +98,18 @@ void main() {
     expect(m.hilfeSeite!.first.kennung, "!", reason: "im Hilfe-Modus zeigt eine Taste ihre Hilfe");
     expect(m.zeile, "", reason: "eingegeben wird nichts");
     m.tastaturEsc();
-    expect([m.hilfeModus, m.hilfeSeite], [true, null], reason: "erstes Esc schließt den Schirm");
-    m.tastaturEsc();
-    expect(m.hilfeModus, isFalse, reason: "zweites Esc beendet die Hilfe");
+    expect(m.hilfeModus, isFalse, reason: "Esc beendet die Hilfe");
+    m.tastaturHilfe();
+    m.tastaturHilfe();
+    expect(m.hilfeModus, isFalse, reason: "F1 schaltet an und aus");
   });
 
   test('Aufleuchten: Buchstaben auf ihrer Taste, ein fertiger Name auf seiner Funktionstaste', () {
     expect(m.tasteFuer("/")!.text, "÷");
     expect(m.tasteFuer("²")!.text, "x²");
     expect(m.tasteFuer(" ")!.text, "ENTER");
-    expect(m.tasteFuer("<"), isNull, reason: "für < gibt es keinen Knopf");
+    expect([m.tasteFuer("<")!.text, m.tasteFuer("≤")!.text, m.tasteFuer("&")!.text], ["−", "÷", "×"],
+        reason: "Shift und ~ Shift der Rechenspalte");
     tippe("3 30s");
     expect(m.leuchtetBuchstabe("s"), isTrue);
     expect(m.leuchtetTaste(fn("sin")), isFalse, reason: "sin ist noch nicht fertig");

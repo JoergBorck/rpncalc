@@ -1,5 +1,5 @@
 {
-{{"version":{"name":"statistik","bibliothek":"1.0.0","rechner":"0.1.0"}}}rpnjson
+{{"version":{"name":"statistik","bibliothek":"1.1.0","rechner":"0.1.0","beschreibung":"Statistik für Wertepaare (x, y): Mittelwerte, Standardabweichungen, Korrelation und Ausgleichsgerade."}}}rpnjson
 {0 0 0 0 0 0 6:'!ss}':sclr
 {'!tx'!ty'tx'ty*_'ty²_'ty_'tx²_'tx_1_0:6:'+ss_6:D'~tx'~ty_0:'ss}':sadd
 {~::{sadd_D}times_0:'ss}':sall
@@ -10,4 +10,17 @@
 {1:3:5:sq_1:1:2:sq/0:Y_1:'ss_0:'ss/*_3:'ss_0:'ss/S-}':lr
 {lr_SR*+}':yhat
 {lr_RS-S/}':xhat
+{{"hilfe":[
+{"kennung":"#statistik","titel":"Bibliothek: Statistik","text":"Statistik für Wertepaare (x, y). Ablauf: [[sclr]] löscht die Summen, [[sadd]] oder [[sall]] nehmen die Paare auf, danach [[mean]], [[sdev]], [[corr]] und die Ausgleichsgerade [[lr]] mit [[yhat]] und [[xhat]]. Die Summen stehen im Feld ss; [[sq]] ist eine Hilfsfunktion."},
+{"kennung":"sclr","titel":"Summen löschen","verwendungen":[{"schreibweise":"sclr","stack":"","kurz":"löscht die Summen für eine neue Messreihe"}],"text":"Die Summen stehen im Feld ss: n, Σx, Σx², Σy, Σy², Σxy. Vor jeder neuen Messreihe einmal sclr. Siehe [[sadd]]. Zur Übersicht: [[#statistik]]."},
+{"kennung":"sadd","titel":"Wertepaar aufnehmen","verwendungen":[{"schreibweise":"sadd","stack":"y x → n","kurz":"nimmt das Wertepaar (x, y) auf, liefert die Anzahl n"}],"text":"\"2 1sadd\" nimmt x = 1 und y = 2 auf. Für viele Paare auf einmal: [[sall]]. Danach [[mean]], [[sdev]], [[corr]], [[lr]]. Zur Übersicht: [[#statistik]]."},
+{"kennung":"sall","titel":"Wertepaare aufnehmen","verwendungen":[{"schreibweise":"sall","stack":"","kurz":"nimmt mehrere Wertepaare vom Stack auf, liefert n","argumente":[{"name":"anzahl","vorgabe":"","beispiel":"5","wirkung":"nimmt 5 Paare"}],"beispiel":"nimmt die 5 Wertepaare auf, die als y x y x … auf dem Stack liegen"}],"text":"Die Paare liegen je y unter x auf dem Stack, z.B. aus zwei Spalten einer Tabelle (Konsole: \\v). sall ruft sadd in einer Schleife auf. Siehe [[sadd]]. Zur Übersicht: [[#statistik]]."},
+{"kennung":"sq","titel":"Abweichungssumme (Hilfsfunktion)","verwendungen":[{"schreibweise":"sq","stack":"","kurz":"Hilfsfunktion für sdev, corr und lr: Abweichungssumme aus drei Summen","argumente":"a:b:c"}],"text":"Wird von [[sdev]], [[corr]] und [[lr]] benutzt, direkt braucht man sie selten. Zur Übersicht: [[#statistik]]."},
+{"kennung":"mean","titel":"Mittelwerte","verwendungen":[{"schreibweise":"mean","stack":"→ ȳ x̄","kurz":"Mittelwerte von y und x"}],"text":"x̄ liegt danach in x, ȳ in y. Mit den Paaren (1, 2) (2, 4) (3, 5) (4, 4) (5, 5) ergibt mean ȳ = 4 und x̄ = 3. Zur Übersicht: [[#statistik]]."},
+{"kennung":"sdev","titel":"Standardabweichungen","verwendungen":[{"schreibweise":"sdev","stack":"→ s_y s_x","kurz":"Standardabweichungen von y und x (Stichprobe, mit n − 1)"}],"text":"Mit den Paaren aus [[mean]]: s_y = 1,225, s_x = 1,581. Zur Übersicht: [[#statistik]]."},
+{"kennung":"corr","titel":"Korrelation","verwendungen":[{"schreibweise":"corr","stack":"→ r","kurz":"Korrelationskoeffizient r, zwischen −1 und 1"}],"text":"Nahe 1 oder −1: die Punkte liegen fast auf einer Geraden. Mit den Paaren aus [[mean]]: r = 0,7746. Zur Übersicht: [[#statistik]]."},
+{"kennung":"lr","titel":"Ausgleichsgerade","verwendungen":[{"schreibweise":"lr","stack":"→ b a","kurz":"Ausgleichsgerade y = a + b·x: Steigung b, Achsenabschnitt a in x"}],"text":"Mit den Paaren aus [[mean]]: b = 0,6, a = 2,2. Werte auf der Geraden: [[yhat]], [[xhat]]. Zur Übersicht: [[#statistik]]."},
+{"kennung":"yhat","titel":"Schätzwert ŷ","verwendungen":[{"schreibweise":"yhat","stack":"x → ŷ","kurz":"Wert auf der Ausgleichsgeraden: ŷ = a + b·x"}],"text":"\"6yhat\" ergibt mit den Paaren aus [[mean]] 5,8. Siehe [[lr]]. Zur Übersicht: [[#statistik]]."},
+{"kennung":"xhat","titel":"Schätzwert x̂","verwendungen":[{"schreibweise":"xhat","stack":"x → x̂","kurz":"umgekehrt: zum y-Wert in x das x̂ = (x − a) / b"}],"text":"\"5xhat\" ergibt mit den Paaren aus [[mean]] 4,667. Siehe [[lr]]. Zur Übersicht: [[#statistik]]."}
+]}}rpnjson
 }

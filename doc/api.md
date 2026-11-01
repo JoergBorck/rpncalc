@@ -464,9 +464,12 @@ man trotzdem sieht, was gerade entsteht, zeigt die Anzeige das offene Token (`Zu
 
   ```
    >:              333
-   0:               22
-   1:                1
+   x:               22
+   y:                1
   ```
+
+- **Namen der Positionen:** Die Übersicht nennt die Positionen x, y, z, t, darunter ₄, ₅ … wie die App
+  (reference.md 2.1).
 
 - **Kompakte Anzeige:** grau hinter dem Tos: `deg │ [1] [22]<tos >:333`.
 - Die Eingabezeile zeigt das offene Token weiterhin unterstrichen (5.7); die Zeile über dem Stack kommt hinzu.
@@ -484,7 +487,7 @@ man trotzdem sieht, was gerade entsteht, zeigt die Anzeige das offene Token (`Zu
      x!      x → x!            Fakultät
      '!x     n (1)             legt die Variable x mit n Elementen an
      '!!x    n (1)             legt die Konstante x mit n Elementen an
-     "5'!a" legt a = 5 an, "1 2 3 3:'!v" den Vektor v = 3 2 1.
+     "5'!a" legt a = 5 an, "1 2 3 3:'!v" das Feld v = 3 2 1.
      Siehe auch: Namen (\?'), Variablen (\?#variablen), Konstanten (\?#variablen)
   ```
 
@@ -549,9 +552,45 @@ Eine `Verwendung` hat diese Felder:
 | Feld | Bedeutung | Beispiel |
 |---|---|---|
 | `schreibweise` | wie man es schreibt | `'!x` |
-| `stack` | Wirkung auf den Stack, leer wenn keine | `x → x!` |
-| `argumente` | Argumente mit Vorgabe, leer wenn keine | `n (1)` |
-| `kurz` | ein Satz, passt in einen Tooltip | `legt die Variable x mit n Elementen an` |
+| `stack` | Wirkung auf den Stack ohne Argumente, leer wenn keine (Schreibweise wie reference.md 1) | `x → x!` |
+| `kurz` | ein Satz, was es **ohne Argumente** tut; passt in einen Tooltip | `legt die Variable x an` |
+| `argumente` | Liste von `Argument`, siehe unten; leer, wenn es keine gibt | |
+| `beispiel` | ein Satz, was das Beispiel mit allen Argumenten tut; nur zusammen mit `argumente` | |
+| `beispielStack` | Wirkung des Beispiels auf den Stack, leer wenn sie die Spalte sprengen würde | |
+
+Ein `Argument` beschreibt ein Argument, in der Reihenfolge, in der man sie schreibt (`a:b:c:S`):
+
+| Feld | Bedeutung | Beispiel für das erste Argument von `S` |
+|---|---|---|
+| `name` | kurzer Name für die Kurzform | `ziel` |
+| `vorgabe` | Wert, wenn das Argument fehlt | `1` |
+| `beispiel` | Zahl für das Beispiel | `4` |
+| `wirkung` | ein Satz, was das Argument mit der Beispielzahl bewirkt | `tauscht mit ≡₄ statt mit y` |
+| `stack` | Wirkung auf den Stack mit diesem Argument, leer wenn keine oder zu lang | `≡₄ t z y x → x t z y ≡₄` |
+
+Ein vollständiges Beispiel für `S` (Tauschen):
+
+```json
+{"schreibweise":"S", "stack":"y x → x y", "kurz":"tauscht x und y",
+ "argumente":[
+   {"name":"ziel",   "vorgabe":"1", "beispiel":"4", "wirkung":"tauscht mit ≡₄ statt mit y",
+    "stack":"≡₄ t z y x → x t z y ≡₄"},
+   {"name":"quelle", "vorgabe":"0", "beispiel":"1", "wirkung":"tauscht ab y statt ab x"},
+   {"name":"anzahl", "vorgabe":"1", "beispiel":"2", "wirkung":"tauscht je 2 Werte"}],
+ "beispiel":"tauscht y mit ≡₄ und z mit ≡₅"}
+```
+
+- **Abgeleitet:** Die Kurzform für die Konsole entsteht aus Namen und Vorgaben (`ziel:quelle:anzahl (1:0:1)`),
+  die Eingabe des Beispiels aus den Beispielzahlen und der Schreibweise (`4:1:2:S`). Beides steht deshalb nicht
+  im Eintrag.
+- **Tooltip** ([app.md](app.md) 5.1): je Argument eine Zeile `▢:1:S  tauscht ab y statt ab x`, die schon
+  erklärten Argumente als Kästen, zuletzt `4:1:2:S` mit dem `beispiel`. Bei nur einem Argument gibt es nur
+  diese Beispielzeile (`3:D  z y x → –  entfernt x, y und z`). Die Kästen stehen für die Beispielzahlen davor; die letzte Argumentzeile meint deshalb dieselbe Eingabe wie die
+  Beispielzeile und zeigt keinen eigenen Stack. Die Vorgabe steht nicht im Tooltip; was
+  ohne Argument geschieht, sagt schon die erste Zeile. Einschränkungen (z.B. keine negativen Positionen) stehen
+  ebenfalls nicht dort, so wenig wie „Nenner ≠ 0“ beim Teilen.
+- **Ältere Einträge:** Ist `argumente` ein Text (`"n (1)"`, bisheriges Format, z.B. in Bibliotheken), gilt er als
+  Kurzform ohne Einzelheiten; der Tooltip zeigt dann keinen Argument-Bereich.
 
 **Kennungen:**
 - **Zeichen und Namen** wie im Rechner: `!`, `~`, `'`, `sin`, `S`, `round`. Zeichen, die nur zusammen
@@ -566,7 +605,7 @@ Eine `Verwendung` hat diese Felder:
 
 | Methode | Beschreibung |
 |---|---|
-| `Hilfe? hilfe(String kennung)` | der Eintrag zu einer Kennung oder `null` |
+| `Hilfe? hilfe(String kennung)` | der Eintrag zu einer Kennung oder `null`; findet auch die Hilfe verfügbarer Bibliotheken, die nicht geladen sind (z.B. `#statistik`), ohne ihre Funktionen zu laden |
 | `List<String> hilfeKennungen()` | alle eingebauten Kennungen, für eine Übersicht |
 
 - **Eigene Namen:** Für eine eigene Funktion, eine Variable oder einen Tag liefert `hilfe` einen erzeugten
@@ -666,6 +705,7 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
 | `String? ladeBibliothek(String name)` | lädt die Bibliothek in den Rechner wie `importieren(text, ersetzen: false)`; liefert `null` oder den Fehler. Gibt es einen ihrer Namen schon als eigene Funktion oder in einer anderen Bibliothek, wird sie gar nicht geladen („Name ist schon vergeben“) |
 | `List<String> bibliotheksFunktionen(String name)` | die Namen ihrer Funktionen in der Reihenfolge der Datei, z.B. für die Funktionstasten |
 | `Map<String, Object?>? bibliotheksVersion(String name)` | die Versionsangabe einer geladenen Bibliothek |
+| `({String beschreibung, String version, int funktionen})? bibliotheksInfo(String name)` | Kurzinfo, auch ohne die Bibliothek zu laden: der Satz aus `beschreibung`, die Version, die Zahl der Funktionen; für Menüs und Tooltips |
 | `List<String> hinweise()` | Hinweise seit dem letzten Abruf, z.B. unbekannte Schlüssel in `rpnjson`; danach leer |
 | `Export exportiereBibliothek(String name, {String version, Set<String> ohne})` | die eigenen Funktionen als Bibliothek im obigen Aufbau, mit Versionsangabe und eigener Hilfe |
 
@@ -735,9 +775,9 @@ Die Nummern bleiben fest; erledigte Punkte wandern mit ihrer Nummer nach Kapitel
     Offen sind noch die Hilfetexte der Oberflächen (`lib/console/help.dart`, `app/lib/hilfe.dart`) und die
     Fehlermeldungen; für sie ist dasselbe Format vorgesehen, siehe auch Punkt 14.
 
-12\. **Vektoren: Reihenfolge der Elemente und Darstellung:** Heute ist Element 0 der Wert, der beim Anlegen der
+12\. **Felder: Reihenfolge der Elemente und Darstellung:** Heute ist Element 0 der Wert, der beim Anlegen der
     Tos war: `1 2 3 3:'!v` ergibt die Elemente 3 2 1. Was für die Nutzer intuitiver ist, ist noch offen; die
-    Elemente lassen sich ohnehin in jeder Reihenfolge vom Stack holen. Angezeigt werden Vektoren ohne eckige
+    Elemente lassen sich ohnehin in jeder Reihenfolge vom Stack holen. Angezeigt werden Felder ohne eckige
     Klammern, durch Leerzeichen getrennt, weil `[ ]` für Einheiten reserviert ist.
 
 

@@ -9,7 +9,7 @@ import 'version.dart';
 
 export 'calculator.dart' show AngleMode;
 export 'session.dart' show Export;
-export 'hilfe.dart' show Hilfe, Verwendung;
+export 'hilfe.dart' show Argument, Hilfe, Verwendung;
 
 /// Eine Zeile der Stack-Anzeige.
 class StackZeile {
@@ -232,6 +232,7 @@ class RpnApi {
     final fehler = RpnApi()._ladeText(text); // prüfen, ohne diesen Rechner zu verändern
     if (fehler != null) return fehler;
     _hinzugefuegt[name] = text;
+    _bibliotheksHilfen.remove(name);
     return null;
   }
 
@@ -263,6 +264,21 @@ class RpnApi {
 
   /// Die Versionsangabe einer geladenen Bibliothek oder null.
   Map<String, Object?>? bibliotheksVersion(String name) => calculator.versionen[name];
+
+  /// Kurzinfo zu einer Bibliothek, auch wenn sie nicht geladen ist, z.B. für einen Tooltip: der Satz aus
+  /// `beschreibung` im version-Eintrag (leer, wenn es keinen gibt), die Version und die Zahl der Funktionen.
+  ({String beschreibung, String version, int funktionen})? bibliotheksInfo(String name) {
+    final text = bibliothek(name);
+    if (text == null) return null;
+    final probe = RpnApi();
+    if (probe._ladeText(text) != null) return null;
+    final v = probe.calculator.versionen.values.firstOrNull ?? const <String, Object?>{};
+    return (
+      beschreibung: v["beschreibung"] as String? ?? "",
+      version: v["bibliothek"] as String? ?? "",
+      funktionen: probe.calculator.eigeneFunktionen.length,
+    );
+  }
 
   /// Funktionen aus geladenen Bibliotheken (mit version-Eintrag); „Funktionen speichern“ lässt sie aus.
   Set<String> get geladeneBibliotheksFunktionen => Set.unmodifiable(calculator.herkunft.keys);
@@ -305,7 +321,23 @@ class RpnApi {
     if (eingebaut != null) return eingebaut;
     final eigen = calculator.eigeneHilfen[kennung]; // mit rpnjson abgelegt, z.B. aus einer Bibliothek
     if (eigen != null) return Hilfe.fromJson(eigen);
-    return _eigeneHilfe(kennung);
+    return _eigeneHilfe(kennung) ?? _bibliotheksHilfe(kennung);
+  }
+
+  /// Die Hilfen der verfügbaren Bibliotheken, je Bibliothek einmal gelesen (in einem eigenen Rechner, ohne ihre
+  /// Funktionen hier zu laden); so lässt sich eine Bibliothek lesen, bevor man sie benutzt.
+  final Map<String, Map<String, Map<String, Object?>>> _bibliotheksHilfen = {};
+
+  Hilfe? _bibliotheksHilfe(String kennung) {
+    for (final b in bibliotheken()) {
+      final hilfen = _bibliotheksHilfen.putIfAbsent(b.name, () {
+        final probe = RpnApi();
+        return probe._ladeText(bibliothek(b.name)!) == null ? Map.of(probe.calculator.eigeneHilfen) : const {};
+      });
+      final h = hilfen[kennung];
+      if (h != null) return Hilfe.fromJson(h);
+    }
+    return null;
   }
 
   /// Alle eingebauten Kennungen, für eine Übersicht.
@@ -320,7 +352,7 @@ class RpnApi {
         Verwendung("'~$name", "entfernt die Funktion"),
       ], "Code: {${s.code}}\nSiehe [[#funktionen]].");
     }
-    final inhalt = s.werte.map(zahl).join(" "); // Vektoren ohne [ ], die sind für Einheiten reserviert
+    final inhalt = s.werte.map(zahl).join(" "); // Felder ohne [ ], die sind für Einheiten reserviert
     final tag = s.art == SpeicherArt.tag;
     final art = tag ? (s.schreibschutz ? "Tag mit Schreibschutz" : "Tag") : (s.schreibschutz ? "Konstante" : "Variable");
     return Hilfe(name, "$art $name", [

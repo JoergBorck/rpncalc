@@ -105,7 +105,7 @@ class Anzeige {
     final gezeigt = offen != null && z.stack.length >= Ansicht.zeilen ? z.stack.take(Ansicht.zeilen - 1).toList() : z.stack;
     List<String> stack = [
       if (offen != null) _offeneZeile(offen, farbe),
-      for (StackZeile s in gezeigt) "${s.position.toString().padLeft(2)}: ${wert(s)}  ${s.tags.join(",")}",
+      for (StackZeile s in gezeigt) "${positionsName(s.position, symbol: false).padLeft(2)}: ${wert(s)}  ${s.tags.join(",")}",
       if (z.tiefe > gezeigt.length) " … ${z.tiefe - gezeigt.length} weitere",
       if (z.tiefe == 0 && offen == null) " (leer)",
     ];
@@ -132,7 +132,7 @@ class Anzeige {
     final unten = z.tiefe - stackVersatz - sichtbar.length;
     List<String> stack = [
       if (offen != null) _offeneZeile(offen, farbe),
-      for (StackZeile s in sichtbar) "${s.position.toString().padLeft(2)}: ${wert(s)}  ${s.tags.join(",")}",
+      for (StackZeile s in sichtbar) "${positionsName(s.position, symbol: false).padLeft(2)}: ${wert(s)}  ${s.tags.join(",")}",
       if (unten > 0) " … $unten weitere",
       if (z.tiefe == 0 && offen == null) " (leer)",
     ];
@@ -200,7 +200,7 @@ class Anzeige {
 
   static List<String> _modi(Zustand z) => [z.winkel.name, if (z.seed != null) "seed ${z.seed}", if (z.codeOffen) "{ Code offen"];
 
-  /// Variablen als "m = 10", Tags mit "|" davor wie in der Syntax, Vektoren durch Leerzeichen getrennt,
+  /// Variablen als "m = 10", Tags mit "|" davor wie in der Syntax, Felder durch Leerzeichen getrennt,
   /// Konstanten mit "!!" und Tags mit Schreibschutz mit "||" davor,
   /// eigene Funktionen mit ihrem (gekürzten) Code.
   static String _speicher(Speicher s) {
@@ -212,7 +212,7 @@ class Anzeige {
   /// Name und Inhalt getrennt, ungekürzt: ("m = ", "10") bzw. ("f ", "{1+}").
   static (String, String) _teile(Speicher s) {
     if (s.art == SpeicherArt.funktion) return ("${s.name} ", "{${s.code}}".replaceAll("\n", "↵"));
-    String werte = s.werte.map(zahl).join(" "); // Vektoren ohne [ ], die sind für Einheiten reserviert
+    String werte = s.werte.map(zahl).join(" "); // Felder ohne [ ], die sind für Einheiten reserviert
     String praefix = s.art == SpeicherArt.tag ? (s.schreibschutz ? "||" : "|") : (s.schreibschutz ? "!!" : "");
     return ("$praefix${s.name} = ", werte);
   }

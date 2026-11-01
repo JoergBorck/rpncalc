@@ -25,6 +25,13 @@ abstract final class Farben {
   static const hilfe = Color(0xFF8EC9FF);
   static const tipp = Color(0xFFFFE680);      // Tooltips: hellgelb mit schwarzer Schrift
   static const tippText = Color(0xFF14110A);  // Hilfe-Modus: Marke und MENÜ-Taste
+  // im Tooltip (gelber Grund): dunklere Töne der Umschaltfarben, Linien zwischen Funktionen und Bereichen
+  static const tippTilde = Color(0xFF00726B);
+  static const tippStrich = Color(0xFF5B3FB8);
+  static const tippAlpha = Color(0xFF3E7A16);
+  static const tippKasten = Color(0xFF9C8A4A);      // schon erklärte Argumente: ausgegraut
+  static const tippHell = Color(0xFFFFF2B8);        // jede zweite Zeile eines Bereichs: etwas heller
+  static const tippLinieBereich = Color(0xFFC9A93A); // zwischen zwei Bereichen: etwas dunkler
   static const tosHinten = Color(0xFFFFD9AE);
   static const tosText = Color(0xFF1A1208);
   static const fehler = Color(0xFFFF5D5D);

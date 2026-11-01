@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rpncalc/helper.dart' show zahl;
+import 'package:flutter/rendering.dart';
+import 'package:rpncalc/helper.dart' show positionsName, zahl;
 import 'package:rpncalc/rpnapi.dart';
 
 import 'farben.dart';
@@ -62,7 +63,7 @@ class _AnzeigeState extends State<Anzeige> {
                   onPageChanged: (i) => setState(() => _seite = i),
                   children: [_Rechnen(m), _Liste.variablen(m), _Liste.funktionen(m)],
                 ),
-                if (m.hilfeSeite != null) Positioned.fill(child: _Hilfeschirm(m, m.hilfeSeite!)),
+                if (m.hilfeSeite != null) Positioned.fill(child: Hilfeschirm(m, m.hilfeSeite!)),
               ],
             ),
           ),
@@ -130,7 +131,10 @@ class _Statuszeile extends StatelessWidget {
               onTap: m.hilfeModus ? () => m.zeigeHilfe(AppHilfe.nachschlagen(m.api, "#winkel")) : null,
               child: _tippStatus(winkel.$2, Text(winkel.$1, style: klein.copyWith(color: Farben.anzeigeText))),
             ),
-            if (m.hilfeModus) marke("HILFE", Farben.hilfe, "Hilfe-Modus: Taste oder Element antippen, ⌫ beendet"),
+            if (m.hilfeModus)
+              m.hilfeLesen
+                  ? marke("HILFE · LESEN", Farben.hilfe, "Lese-Modus: ▲ ▼ blättern, TAB wählt einen Verweis, ENTER folgt ihm")
+                  : marke("HILFE", Farben.hilfe, "Inspekt-Modus: Taste oder Element antippen; LESEN (ALPHA) zum Lesen"),
             if (m.shift)
               marke(
                 m.alpha ? "ABC" : "SHIFT",
@@ -192,7 +196,13 @@ class _Rechnen extends StatelessWidget {
   static const _groessen = <double>[24, 21, 19, 17, 15.5, 14, 13, 12, 11.5, 11, 10.5, 10, 10, 10];
   static const _zeichenBreite = 0.55; // Breite eines Zeichens der Monospace-Schrift relativ zur Größe
   static const _luecke = 14.0; // zwischen Eingabe und Stack
-  static const _nummer = 30.0; // Breite der Stack-Positionen
+  // Tooltips der beiden Bereiche, auf jeder Zeile und auf dem Namen am Rahmen (doc/app.md 5.1)
+  static const _wechsel = [("TAB", "wählt den Bereich, ebenso Antippen")];
+  static final _tippEingabe = AppHilfe.tippEintrag("app:eingabe", "Eingabe", zusatz: _wechsel);
+  static final _tippStack = AppHilfe.tippEintrag("app:stack", "Stack", zusatz: _wechsel);
+
+  static const _nummer = 24.0;
+  static const _nameUnten = 10.0; // Platz unter den Zeilen, damit der Name am Rahmen die Maus annimmt // Breite der Namen der Stack-Positionen am rechten Rand
 
   static int _zeichen(double breite, double g) => (breite / (g * _zeichenBreite)).floor().clamp(1, 999);
 
@@ -221,8 +231,12 @@ class _Rechnen extends StatelessWidget {
     final fehler = z.fehler != null && !z.zeileFertig;
     final groessen = <double>[];
     double hoehe = fehler ? 14 : 0;
-    for (final g in _groessen) {
-      if (hoehe + g * 1.3 > platz.maxHeight - 12) break; // 8 oben für ENTER↑ auf dem Rahmen
+    // nach der Liste geht es mit der kleinsten Größe weiter, bis die Höhe gefüllt ist (doc/app.md Punkt 23)
+    final maxZeilen = platz.maxHeight.isFinite ? 200 : _groessen.length;
+    for (var i = 0; i < maxZeilen; i++) {
+      final g = _groessen[i.clamp(0, _groessen.length - 1)];
+      // 8 oben für ENTER↑ auf dem Rahmen, unten der Platz für den Namen am Rahmen
+      if (hoehe + g * 1.3 > platz.maxHeight - 12 - _nameUnten) break;
       hoehe += g * 1.3;
       groessen.add(g);
     }
@@ -242,25 +256,32 @@ class _Rechnen extends StatelessWidget {
           height: g * 1.3,
           child: Row(
             children: [
-              // ein Tipp wählt den Bereich, im Hilfe-Modus zeigt er die Hilfe zu Zeile bzw. Wert (doc/app.md 3.3, 5.3);
-              // volle Zeilenhöhe, damit auch leere Zeilen den Tipp annehmen
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => m.hilfeModus ? m.zeigeHilfe(_hilfeEingabe(r)) : m.waehleBereich(Bereich.eingabe),
-                child: SizedBox(
-                  width: links,
-                  height: g * 1.3,
-                  child: r == 0 ? _aktuelleZeile(z, g) : _alteZeile(r, g),
+              // ein Tipp wählt den Bereich, ein Doppelklick maximiert bzw. teilt (3.5); im Hilfe-Modus zeigt er die
+              // Hilfe zu Zeile bzw. Wert (doc/app.md 3.3, 5.3); volle Zeilenhöhe, damit auch leere Zeilen den Tipp
+              // annehmen
+              tippTabelle(
+                _tippEingabe,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => m.hilfeModus ? m.zeigeHilfe(_hilfeEingabe(r)) : m.tippeBereich(Bereich.eingabe),
+                  child: SizedBox(
+                    width: links,
+                    height: g * 1.3,
+                    child: r == 0 ? _aktuelleZeile(z, g) : _alteZeile(r, g),
+                  ),
                 ),
               ),
               SizedBox(width: luecke),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => m.hilfeModus ? m.zeigeHilfe(_hilfeStack(r)) : m.waehleBereich(Bereich.stack),
-                child: SizedBox(
-                  width: rechts,
-                  height: g * 1.3,
-                  child: rechts < _nummer + 12 ? null : _stackZeile(r, g), // zu schmal: leer
+              tippTabelle(
+                _tippStack,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => m.hilfeModus ? m.zeigeHilfe(_hilfeStack(r)) : m.tippeBereich(Bereich.stack),
+                  child: SizedBox(
+                    width: rechts,
+                    height: g * 1.3,
+                    child: rechts < _nummer + 12 ? null : _stackZeile(r, g), // zu schmal: leer
+                  ),
                 ),
               ),
             ],
@@ -299,7 +320,8 @@ class _Rechnen extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: zeilen),
+          // unten etwas Platz, damit der Name auf dem Rahmen ganz im Bereich liegt und die Maus annimmt
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [...zeilen, const SizedBox(height: _nameUnten)]),
           // ein vorgemerktes Enter steht rechts oben auf dem Rahmen der Eingabe, nicht in der Zeile
           if (enter)
             Positioned(
@@ -334,11 +356,8 @@ class _Rechnen extends StatelessWidget {
               left: rahmen.aussenLinks ? rahmen.links + 4 : null,
               right: rahmen.aussenLinks ? null : innen - rahmen.links - rahmen.breite + 4,
               top: hoehe + 2 - 7,
-              child: tipp(
-                [
-                  for (final v in AppHilfe.eintraege[rahmen.hilfe]!.verwendungen) "${v.schreibweise}  ${v.kurz}",
-                  "Wechsel mit TAB oder durch Antippen",
-                ].join("\n"),
+              child: tippTabelle(
+                AppHilfe.tippEintrag(rahmen.hilfe, rahmen.name, zusatz: _wechsel),
                 Container(
                   color: Farben.anzeige,
                   padding: const EdgeInsets.symmetric(horizontal: 3),
@@ -433,8 +452,10 @@ class _Rechnen extends StatelessWidget {
   Widget _stackZeile(int r, double g) {
     final offen = r == 0 && m.offenesToken != null;
     final s = offen ? null : m.stackZeile(r);
-    if (!offen && s == null) return const SizedBox();
-    final tos = s?.position == 0;
+    final position = m.stackPosition(r);
+    // x bis ₆ haben auch leer ihren Namen, damit der Übergang von t zu ₄ klar ist (doc/app.md Kapitel 2)
+    if (!offen && s == null && (position < 0 || position > 6)) return const SizedBox();
+    final tos = s != null && s.position == 0;
     final sicht = RechnerModell.ausschnitt(m.stackText(r), m.stackVon(r), m.platzStack[r]);
     final wert = Text(
       sicht,
@@ -450,19 +471,19 @@ class _Rechnen extends StatelessWidget {
       softWrap: false,
       overflow: TextOverflow.clip,
     );
+    final name = SizedBox(
+      width: _nummer,
+      child: tipp(
+        offen ? "aktuelle Eingabe, liegt noch nicht auf dem Stack" : "",
+        Text(
+          offen ? ">:" : positionsName(position, symbol: false),
+          textAlign: TextAlign.left,
+          style: Schrift.monospace(g * 0.7, Farben.anzeigeBlass),
+        ),
+      ),
+    );
     return Row(
       children: [
-        SizedBox(
-          width: _nummer,
-          child: tipp(
-            offen ? "aktuelle Eingabe, liegt noch nicht auf dem Stack" : "",
-            Text(
-              offen ? ">:" : "${s!.position}:",
-              textAlign: TextAlign.right,
-              style: Schrift.monospace(g * 0.7, Farben.anzeigeBlass),
-            ),
-          ),
-        ),
         Expanded(
           child: Align(
             alignment: Alignment.centerRight,
@@ -475,6 +496,7 @@ class _Rechnen extends StatelessWidget {
                 : Padding(padding: const EdgeInsets.only(right: 4), child: wert),
           ),
         ),
+        name, // die Namen x y z t … stehen am rechten Rand (doc/app.md Kapitel 2)
       ],
     );
   }
@@ -496,7 +518,7 @@ class _Liste extends StatelessWidget {
       if (s.art != SpeicherArt.funktion)
         (
           anzeige: "${s.art == SpeicherArt.tag ? "|" : ""}${s.name}",
-          inhalt: s.werte.map(zahl).join(" "), // Vektoren ohne [ ], die sind für Einheiten reserviert
+          inhalt: s.werte.map(zahl).join(" "), // Felder ohne [ ], die sind für Einheiten reserviert
           name: s.name,
         ),
   ], "Noch keine Variablen. Anlegen z.B. mit 5'!a");
@@ -554,10 +576,12 @@ class _Liste extends StatelessWidget {
 
 /// Der Hilfeschirm über der Anzeige (doc/app.md 5.2): je Eintrag Titel und Verwendungen, nach MENÜ die
 /// Einzelheiten, unten die Verweise zum Antippen. Ein Tipp daneben schließt ihn.
-class _Hilfeschirm extends StatelessWidget {
+class Hilfeschirm extends StatelessWidget {
   final RechnerModell m;
   final List<Hilfe> seite;
-  const _Hilfeschirm(this.m, this.seite);
+  /// Ohne [scrollen] so hoch wie der Inhalt, z.B. für die Bilder des Prüfwerkzeugs (tool/hilfe.dart).
+  final bool scrollen;
+  const Hilfeschirm(this.m, this.seite, {super.key, this.scrollen = true});
 
   @override
   Widget build(BuildContext context) {
@@ -571,13 +595,18 @@ class _Hilfeschirm extends StatelessWidget {
       }
     }
     final einzelheiten = seite.any((h) => h.text.isNotEmpty);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: m.hilfeSchliessen,
+    // im Inspekt-Modus lässt der Schirm Tipps durch, außer auf die Verweise: ein Tipp in die Anzeige zeigt die Hilfe
+    // des Elements darunter; blättern gehört zum Lese-Modus (doc/app.md 5.2)
+    return _NurVerweise(
+      aktiv: m.hilfeModus && !m.hilfeLesen,
       child: Container(
         color: Farben.anzeige.withValues(alpha: 0.97),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+          controller: scrollen ? m.hilfeScroll : null,
+          shrinkWrap: !scrollen,
+          physics: scrollen ? null : const NeverScrollableScrollPhysics(),
+          // unten Platz, damit sich das Ende über das Cursorkreuz hinaus nach oben scrollen lässt; es ragt in die Anzeige
+          padding: EdgeInsets.fromLTRB(12, 6, 12, scrollen ? 110 : 10),
           children: [
             for (final h in seite) ...[
               Text(h.titel, style: titel),
@@ -592,11 +621,7 @@ class _Hilfeschirm extends StatelessWidget {
                           text: v.schreibweise,
                           style: stil.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        if (v.stack.isNotEmpty)
-                          TextSpan(
-                            text: "  ${v.stack}",
-                            style: stil.copyWith(color: Farben.shift),
-                          ),
+                        if (v.stack.isNotEmpty) TextSpan(text: "  ${v.stack}", style: stil), // Orange ist Shift (5.1)
                         if (v.argumente.isNotEmpty) TextSpan(text: "  ${v.argumente}", style: blass),
                         TextSpan(text: "  ${v.kurz}", style: stil),
                       ],
@@ -615,23 +640,24 @@ class _Hilfeschirm extends StatelessWidget {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  for (final v in verweise)
-                    ActionChip(
+                  for (final (i, v) in verweise.indexed)
+                    _Verweis(child: ActionChip(
                       label: Text(AppHilfe.titel(m.api, v), style: Schrift.monospace(11, Farben.anzeigeText)),
                       backgroundColor: const Color(0xFF14211B),
-                      side: const BorderSide(color: Color(0xFF2C4A3C)),
+                      // im Lese-Modus ist der mit TAB gewählte Verweis hervorgehoben
+                      side: i == m.hilfeVerweis
+                          ? const BorderSide(color: Farben.hilfe, width: 2)
+                          : const BorderSide(color: Color(0xFF2C4A3C)),
                       visualDensity: VisualDensity.compact,
                       onPressed: () => m.folgeVerweis(v),
-                    ),
+                    )),
                 ],
               ),
             const SizedBox(height: 8),
             Text(
               [
-                if (einzelheiten) m.hilfeDetails ? "MENÜ: weniger" : "MENÜ: Einzelheiten",
-                "◄ zurück",
-                "Tipp: schließen",
-                "⌫ beendet die Hilfe",
+                if (m.hilfeLesen) ...["▲ ▼ blättern", "TAB Verweis, ENTER folgen", "◄ zurück", "ANFANG", "ALPHA: Inspekt"]
+                else ...[if (einzelheiten) "LESEN (ALPHA): ganzer Text", "Tipp in die Anzeige: deren Hilfe", "◄ zurück", "BEENDEN"],
               ].join(" · "),
               style: blass,
             ),
@@ -641,6 +667,43 @@ class _Hilfeschirm extends StatelessWidget {
     );
   }
 }
+
+/// Lässt, solange [aktiv], alle Tipps durch außer denen auf einen [_Verweis] darin (Inspekt-Modus, doc/app.md 5.2).
+class _NurVerweise extends SingleChildRenderObjectWidget {
+  final bool aktiv;
+  const _NurVerweise({required this.aktiv, super.child});
+
+  @override
+  _RenderNurVerweise createRenderObject(BuildContext context) => _RenderNurVerweise(aktiv);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderNurVerweise renderObject) => renderObject.aktiv = aktiv;
+}
+
+class _RenderNurVerweise extends RenderProxyBox {
+  bool aktiv;
+  _RenderNurVerweise(this.aktiv);
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!aktiv) return super.hitTest(result, position: position);
+    // erst zur Probe: trifft der Tipp einen Verweis, gilt er, sonst geht er an die Anzeige darunter
+    final probe = BoxHitTestResult();
+    if (!super.hitTest(probe, position: position)) return false;
+    if (!probe.path.any((e) => e.target is _RenderVerweis)) return false;
+    return super.hitTest(result, position: position);
+  }
+}
+
+/// Markiert einen Verweis für [_NurVerweise].
+class _Verweis extends SingleChildRenderObjectWidget {
+  const _Verweis({super.child});
+
+  @override
+  RenderProxyBox createRenderObject(BuildContext context) => _RenderVerweis();
+}
+
+class _RenderVerweis extends RenderProxyBox {}
 
 /// Tooltips der Statuszeile stehen unterhalb, über ihr ist kein Platz (doc/app.md 7, Punkt 14).
 Widget _tippStatus(String nachricht, Widget kind) => tipp(nachricht, kind, unten: true);
