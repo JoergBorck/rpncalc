@@ -92,8 +92,8 @@ class UnittestParser {
     ["'~R", "B‖'~R"],
     ["3:'D", "Z‖3.0\tO‖:\tB‖'D"],
     ["'+R", "X‖A"],  // nur ~ ist als Präfix für Befehle erlaubt
-    ["'5", "V‖5"],
-    ["'123", "V‖1\tZ‖23.0"], // Argument-Zugriff hat genau eine Ziffer, danach folgt die Zahl 23
+    ["'5", "X‖9"], // eine Ziffer nach ' ist ungültig (Argumente liest man mit ~:)
+    ["'123", "X‖9"],
     ["'x", "V‖x"],
     ["'myvar", "V‖myvar"],
     ["'~abc", "V‖~abc"],

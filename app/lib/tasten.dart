@@ -32,9 +32,10 @@ class Taste {
   const Taste.f(int nr, String buchstabe) : this("", funktion: nr, buchstabe: buchstabe);
 
   /// Eine Funktion: schreibt ihren Namen, Shift und `~` wie angegeben.
-  const Taste.fn(String text, {String? eingabe, String? shift, String? shiftEingabe, String? tilde, String? tildeEingabe})
+  const Taste.fn(String text,
+      {String? eingabe, String? shift, String? shiftEingabe, String? tilde, String? tildeEingabe, String? shiftTilde})
       : this(text, eingabe: eingabe, shift: shift, shiftEingabe: shiftEingabe, tilde: tilde, tildeEingabe: tildeEingabe,
-             name: true);
+             shiftTilde: shiftTilde, name: true);
 
   String get eingabe => _eingabe ?? text;
   String? get shiftEingabe => _shiftEingabe ?? shift;
@@ -102,9 +103,9 @@ const Map<String, List<Taste?>> domaenen = {
     Taste.fn("round"),
     Taste.fn("dms"),
     Taste.fn("DEG", eingabe: "deg"),
-    Taste.fn("sin", shift: "sinh", tilde: "asin"),
-    Taste.fn("cos", shift: "cosh", tilde: "acos"),
-    Taste.fn("tan", shift: "tanh", tilde: "atan"),
+    Taste.fn("sin", shift: "sinh", tilde: "asin", shiftTilde: "asinh"),
+    Taste.fn("cos", shift: "cosh", tilde: "acos", shiftTilde: "acosh"),
+    Taste.fn("tan", shift: "tanh", tilde: "atan", shiftTilde: "atanh"),
     Taste.fn("ln", shift: "log", tilde: "eˣ"),
     Taste.fn("RAD", eingabe: "rad", shift: "GRD", shiftEingabe: "grd"),
   ],

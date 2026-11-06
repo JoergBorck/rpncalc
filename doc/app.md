@@ -11,6 +11,20 @@ einbindet. Ein klickbares Modell der Oberfläche: https://claude.ai/artifact/XaT
   4 Reihen zu 5 Tasten (Ziffern und Grundrechenarten).
 - Ein **Cursorkreuz** aus vier Tasten (◄ ▲ ► ▼, schräg gestellt) sitzt zwischen beiden und ragt etwas in die Anzeige hinein.
 
+### 1.1 Fenstergröße und Zoom
+
+Unter Windows und im Browser lässt sich das Fenster größer und kleiner ziehen.
+
+- **Zoom:** Die App rechnet mit einer festen Breite von 400 Punkten und wird als Ganzes um den Faktor
+  Fensterbreite / 400 vergrößert oder verkleinert, Tooltips, Menü und Dialoge eingeschlossen. Breiter ziehen
+  vergrößert alles samt Schrift; höher ziehen gibt der Anzeige mehr Zeilen bei gleicher Schrift. Schmaler als
+  400 wird der Rechner kleiner und die Anzeige entsprechend höher.
+- **Dehnung:** Reicht die Höhe nicht für Tastenfeld und eine Anzeige von 240 Punkten, begrenzt sie den Faktor.
+  Dann werden die Tasten breiter, bis die Seite 50 % breiter ist als ohne Dehnung: Die Anzeige bekommt mehr
+  Zeichen je Zeile, das Cursorkreuz bleibt so groß, die beiden kleinen Tasten darunter werden breiter und
+  füllen den Platz neben ihm. Erst danach steht die Seite mittig mit Rand.
+- **Querformat:** Diesen Rand soll später das Querformat nutzen (Backlog FA-5).
+
 ## 2. Anzeige
 
 - **Rechnen:** links die Eingabezeilen, rechts der Stack, je die halbe Breite (Werte rechtsbündig). Mit
@@ -37,9 +51,46 @@ einbindet. Ein klickbares Modell der Oberfläche: https://claude.ai/artifact/XaT
   darunter ₄, ₅ … (das ≡ fehlt, die Spalte gehört ohnehin zum Stack). x bis ₆ stehen auch dann da, wenn die
   Position noch leer ist; so ist der Übergang von t zu ₄ zu sehen.
 - **Seiten:** Die Anzeige lässt sich seitlich wischen: Rechnen, Variablen und Tags, Funktionen.
+- **Seite Funktionen:** zuerst der Abschnitt „Eigene Funktionen“, darunter je geladener Bibliothek ein Abschnitt
+  „Bibliothek name“, jeweils mit dem Code der Funktionen; so lässt sich nachlesen, wie eine Bibliothek gebaut ist.
+  Blättern die Funktionstasten auf eine Seite einer Bibliothek, scrollt die Liste so, dass deren Funktionen zu
+  sehen sind (erste Seite: der Abschnitt, weitere Seiten: ihre erste Funktion oben), sonst nach oben; umgekehrt ändert Scrollen in der Liste die Tasten nicht.
 - **Statuszeile:** Winkelmodus, aktive Umschaltungen (Shift, `~`, `|`, `'`, Alpha) und die Seite der
   Funktionstasten. Den gewählten Bereich zeigt der Name unten am orangen Rahmen, immer auf der Außenseite
   (Eingabe links, Stack rechts), damit das Cursorkreuz ihn nicht verdeckt.
+
+### 2.1 Kontextmenü und Zwischenablage
+
+Rechtsklick (PC, Browser) bzw. langes Drücken (Handy) in der Eingabe- oder Stackspalte öffnet ein
+Kontextmenü; es bezieht sich auf die Zeile, auf die man geklickt hat. Diese Zeile ist hervorgehoben, solange das
+Menü offen ist. Das Menü ist etwas heller als die Anzeige, mit dünnem Rand und Schatten. Gibt es an der Stelle
+nichts zu kopieren (z.B. eine leere Stackzeile), sind die Einträge dafür ausgegraut. Die Tasten behalten das
+lange Drücken für ihren Tooltip. Im Browser ist das eigene Kontextmenü des Browsers abgeschaltet.
+
+| Stack | Eingabe |
+|---|---|
+| **Wert kopieren:** der angeklickte Wert | **Zeile kopieren:** die angeklickte Zeile |
+| **Stack ab hier kopieren:** von diesem Wert bis x | **Zeilen ab hier kopieren:** von dieser bis zur aktuellen Zeile |
+| **Ganzen Stack kopieren** | **Ganzen Verlauf kopieren:** alle Zeilen bis zur aktuellen |
+| **Werte einfügen** | **Text einfügen** |
+| **Hilfe** | **Hilfe** |
+
+- **Werte** werden für ein deutsches Excel kopiert wie `\c` und `\s` in der Konsole ([api.md](api.md)
+  Kapitel 7): der tiefste Wert zuerst, mit Dezimalkomma, getrennt mit `;`. Ein offenes Token wird vorher mit `_`
+  abgeschlossen. **Zeilen** werden als Text kopiert, die älteste zuerst, getrennt mit Zeilenumbrüchen.
+- **Werte einfügen** löst wie `\v` alle Zahlen aus dem Text (Dezimalkomma oder -punkt, Exponent mit e) und
+  legt sie auf den Stack, die erste unten, die letzte wird x; alles andere wird übergangen, es wird nichts
+  ausgeführt.
+- **Text einfügen** gibt den Text Zeichen für Zeichen an den Rechner, als wäre er getippt; Zeilenumbrüche
+  brechen die Zeile um.
+- **Hilfe** zeigt die Seite des Elements wie ein Tipp im Inspekt-Modus (5.3); am Handy ersetzt das den Tooltip
+  der Anzeige.
+- Danach steht kurz eine Meldung unten in der App (z.B. „Kopiert: 2,25“, „3 Zahlen eingefügt“).
+- **Im Browser** fragt Firefox beim Einfügen mit einem kleinen „Einfügen“ nach. Aus dem Kontextmenü liest die App
+  deshalb erst, wenn das Menü zu ist; lehnt der Browser ab, meldet sie „Die Zwischenablage lässt sich nicht lesen“.
+- **Tastatur** (Kapitel 6): Strg+C kopiert x, Strg+Shift+C den ganzen Stack, Strg+V fügt im Stack Werte und
+  in der Eingabe Text ein, je nach gewähltem Bereich. `\c`, `\s` und `\v` wirken wie in der Konsole, getippt
+  oder im Alpha-Modus (`\` liegt dort auf `'`).
 
 ## 3. Tastenfeld
 
@@ -49,7 +100,7 @@ Oberer Block (Hauptfunktion / Shift; `~` und `|` zeigen erlaubte Präfixe):
 
 | | 1 | 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|---|
-| R1 | SHIFT | ALPHA | Cursorkreuz, in der Ecke frei | Cursorkreuz, in der Ecke `[ ]` / `[\|]` | TAB / ⇤ | MENÜ / HILFE |
+| R1 | SHIFT | ALPHA | Cursorkreuz, in der Ecke frei | Cursorkreuz, in der Ecke □ / ◫ | TAB / ⇤ | MENÜ / HILFE |
 | R2 | `'` | `( )` reserviert | `[ ]` reserviert | `{` / `}` | frei | ⌫ / `C` |
 | R3 | `D` / `Y` | F1 | F2 | F3 | F4 | F5 |
 | R4 | `S` / `R`, `~`: `~R` | F6 | F7 | F8 | F9 | F10 |
@@ -66,12 +117,21 @@ Unterer Block:
 
 - `( )` und `[ ]` sind für Vektoren und Einheiten reserviert.
 - ENTER liegt wie beim HP links neben der 7.
+- **Rechenfunktion auf `~` und `|`:** Mittig unter dem großen Zeichen steht klein, was die Taste allein tut:
+  ± auf `~` (Vorzeichenwechsel), □|.□ auf `|` (Ganzzahl- und Nachkommateil, die Kästen als Platzhalter). Die
+  Zeichen sind gezeichnet, nicht aus einer Schrift, in der hellen Tastenschrift etwas zurückgenommen und etwa so
+  groß wie die Shift-Hinweise; im Alpha-Modus sind sie ausgeblendet. Unten links bleibt frei für die Symbole
+  von Shift+ALPHA (Backlog FA-9).
 
 ### 3.2 Umschaltungen
 
 - **Shift** gilt für einen Tastendruck. Die Shift-Funktion steht klein links oben auf der Taste.
 - **`~` und `|`** sind Präfixe wie in der Sprache: Die Taste schreibt das Zeichen und schaltet die Beschriftung
   der Tasten um, auf denen der Präfix erlaubt ist (kleine Markierung rechts oben). Beide lassen sich kombinieren.
+  Diese Tasten tragen dann einen dünnen Rand in der Farbe des Präfixes (dünner als der Rand aktiver
+  Umschalttasten). Alle anderen Tasten bleiben normal bedienbar: Vor ihnen wirkt der Präfix allein (`~` als
+  Vorzeichenwechsel, `|` als Ganzzahl- und Nachkommateil), die App setzt dafür einen Trenner (`3~ D`, denn
+  `3~D` wäre die Umkehrung von D). Ziffern, `.` und `ê` nach `~` ergeben weiter eine negative Zahl.
 - **`'`** schreibt den Apostroph; die Funktionstasten zeigen danach die Variablen und Tags.
 - **Alpha** schaltet auf Kleinbuchstaben; sie bleiben, bis ALPHA erneut oder ein Nicht-Buchstabe
   gedrückt wird. Im Alpha-Modus heißt SHIFT „ABC“: Ein Druck macht den nächsten Buchstaben groß, danach
@@ -94,15 +154,25 @@ Unterer Block:
 - **Eingabe:** ▲ und ▼ blättern im Verlauf. ◄ und ► schieben lange Zeilen seitlich, jede für sich um ein
   Zeichen bis zu ihrem Anfang bzw. Ende (einen Cursor in der Zeile gibt es erst mit dem Undo, Kapitel 4).
   Die aktuelle Zeile zeigt zuerst ihr Ende.
-- **Stack:** ▲ und ▼ blättern zu tieferen Werten, ◄ und ► schieben lange Werte seitlich.
+- **Stack:** ▲ und ▼ blättern zu tieferen Werten, ◄ und ► schieben lange Werte seitlich. ▼ geht so weit, bis der
+  unterste Wert in der 7. Zeile steht; so viele Zeilen zeigt auch die kleinste Anzeige ganz.
 - Der gewählte Bereich hat einen orangen Rahmen; kleine orange Pfeile links bzw. rechts am Rahmen zeigen, dass
   sich mit ◄ bzw. ► etwas schieben lässt. Jede Eingabe stellt Blättern und Schieben zurück.
-- **Funktionen:** ◄ und ► blättern zwischen den Seiten der Funktionstasten: die Domäne und die eigenen
-  Funktionen. Reichen 10 Tasten nicht, gibt es weitere Seiten.
+- **Funktionen:** ◄ und ► blättern zwischen den Seiten der Funktionstasten: zuerst die Grundfunktionen (sie
+  sind immer dabei), dann die gewählte Domäne, zuletzt die eigenen Funktionen. Reichen 10 Tasten nicht, gibt es
+  weitere Seiten. Wählt man im Menü eine Domäne, zeigen die Tasten ihre erste Seite. Ohne eigene Funktionen gibt
+  es keine (leere) Seite „Eigene“. Unten am orangen Rahmen steht der Name der Seite (z.B. Grundfunktionen, schwingungen 2/3,
+  Eigene), bei den Variablen „Variablen“; der Rahmen hat dort eine Lücke, der Name keinen eigenen Hintergrund.
+- **Wischen und Mausrad:** Seitlich über die Funktionstasten wischen blättert ebenso (nach links wischen: nächste
+  Seite), im Kreis wie ◄ ►. Am PC blättert das Mausrad über ihnen: erst jede dritte Raste in dieselbe Richtung
+  wechselt die Seite (nach unten: nächste), und es hält an der ersten bzw. letzten Seite an; solange es dreht,
+  zeigen die Tasten keine Tooltips. Beides wählt den Bereich nicht, die Anzeige bleibt, wo sie ist; der orange
+  Rahmen erscheint nur kurz (etwa 1,5 s) als Hinweis. Gibt es mehr als eine Seite, zeigt er links und rechts kleine
+  Pfeile. Zeigen die Funktionstasten die Variablen, blättern Wischen und Mausrad nicht.
 - **Variablen:** Die Funktionstasten zeigen die Variablen und Tags.
 
 - **Beschriftung:** Jede Taste zeigt, was ein Druck bewirkt, nicht den aktuellen Zustand. TAB zeigt mit Shift
-  „⇤ TAB“, die Maximieren-Taste `[ ]` bzw. `[|]` (3.5).
+  „⇤ TAB“, die Maximieren-Taste □ bzw. ◫ (3.5).
 
 ### 3.4 Funktionstasten und Domänen
 
@@ -129,10 +199,10 @@ Unterer Block:
 Das Cursorkreuz lässt in R1 die beiden unteren Außenecken der Spalten 3 und 4 frei. Dort sitzen zwei kleine Tasten:
 
 - **Rechts neben ▼ (links neben TAB): Maximieren.** Sie zeigt, was ein Druck bewirkt, wie die Zeichen von
-  VS Code: `[ ]` bei geteilter Anzeige (maximieren), `[|]` bei maximierter (wieder teilen). Die Zeichen werden
-  gezeichnet, nicht aus einer Schrift genommen.
+  VS Code: ein ganzes Rechteck bei geteilter Anzeige (maximieren), ein geteiltes bei maximierter (wieder teilen).
+  Die Zeichen werden gezeichnet, nicht aus einer Schrift genommen; in Texten (Hilfe, Tooltip) stehen dafür □ und ◫.
 - **Links neben ▼ (rechts neben ALPHA):** Platzhalter, noch ohne Funktion; vorgesehen für den Wechsel
-  zwischen Hoch- und Querformat (7, Punkt 4).
+  zwischen Hoch- und Querformat (Backlog FA-5).
 
 Verhalten:
 
@@ -177,8 +247,9 @@ für ihre Bedienung (`app:…`) und setzt die Hilfe zu einzelnen Elementen zusam
 - **App und Rechner zusammen:** Hat eine Kennung einen Eintrag der App und einen des Rechners, zeigt der
   Hilfeschirm beide, zuerst den der App, dann den des Rechners (z.B. bei `~`: die Präfix-Taste, dann `~` in der
   Sprache).
-- **Startseite:** Shift+MENÜ und dann MENÜ ohne Auswahl zeigt die Startseite `#`, davor die der App mit den
-  Verweisen auf die vier Anzeigen.
+- **Startseite:** Shift+MENÜ und dann MENÜ ohne Auswahl zeigt die Startseite in drei Abschnitten: „Hilfe zur
+  Hilfe“ (Bedienung des Hilfe-Modus), „Hilfe zur App“ (`app:start`: Anzeigen, Bedienung, Bibliotheken) und
+  „Hilfe zum RPN-Rechner“ (`#`). Die Themen stehen nur als Verweise, nicht noch einmal im Text (api.md 8.3).
 - **Bibliotheken:** Die Seite `app:bibliotheken` erzeugt die App aus `bibliotheken()`: je Bibliothek der Satz aus
   `beschreibung` und ein Verweis auf ihre Übersicht (`#statistik`). Die Startseite der App verweist darauf. Lesen
   lässt sich die Hilfe einer Bibliothek auch, bevor sie geladen ist; geladen wird sie über MENÜ (später über den
@@ -194,6 +265,12 @@ für ihre Bedienung (`app:…`) und setzt die Hilfe zu einzelnen Elementen zusam
   den Tooltips ihrer Tasten.
 - **Kurze Pause beim Verlassen:** Verlässt die Maus eine Taste oder Zeile, ruhen alle Tooltips 1 s. So springen sie
   beim Überfahren nicht von Taste zu Taste mit, und man kommt aus einem großen Tooltip leicht heraus.
+  Hat das nächste Element denselben Tooltip (z.B. die Zeilen einer Spalte und ihr Name am Rahmen), bleibt er
+  ohne Pause stehen.
+- **Beim Tippen auf der PC-Tastatur** ruhen die Tooltips, bis die Maus bewegt wird und ein anderes Element
+  betritt. Wer tippt, schaut nicht auf die Taste unter der Maus.
+- **Solange ein Kontextmenü offen ist** (2.1), erscheinen keine Tooltips, und nach der Auswahl erst wieder, wenn
+  die Maus bewegt wird und ein anderes Element betritt. Ohne Maus (Handy) gibt es diese Sperre nicht.
 
 **Aufbau:** Der Tooltip ist eine kleine Tabelle mit drei Spalten: Schreibweise, Stack, Beschreibung. Jede
 Funktion hat eine eigene Zeile. Die Zeilen sind in Bereiche gegliedert, in dieser Reihenfolge:
@@ -204,7 +281,7 @@ Funktion hat eine eigene Zeile. Die Zeilen sind in Bereiche gegliedert, in diese
    erklärten Argumente stehen als ausgegraute Kästen davor, das erklärte Argument als Beispielzahl, abschließend
    die Beschreibung seiner Wirkung auf die Funktion. Die letzte Zeile zeigt das ganze Beispiel als Satz.
 4. **Shift** und dessen Varianten. Die Zeilen tragen vorn ein oranges ⇧.
-5. **Alpha:** `Alpha  e / E`, später auch das Symbol von Shift+ALPHA (Punkt 6).
+5. **Alpha:** `Alpha  e / E`, später auch das Symbol von Shift+ALPHA (Backlog FA-9).
 6. **Hinweise** zuletzt: bei `~` und `|`, dass ein kleines Zeichen oben rechts die Tasten zeigt, auf die der
    Präfix wirkt.
 7. **PC-Tastatur:** wie man die Zeichen der Taste an der Tastatur tippt, wenn sie dort nicht direkt liegen
@@ -335,13 +412,16 @@ Eine echte Tastatur (PC, Browser, Bluetooth am Handy) bedient die App wie die Kn
 | Taste | Wirkung |
 |---|---|
 | Leertaste | ENTER (Leerzeichen als Enter, Kapitel 4) |
-| Return | Zeilenumbruch, wie ALPHA ⏎ |
-| Enter auf dem Ziffernblock | tut, was der Name sagt: ENTER (Leerzeichen), dann Zeilenumbruch. Das Enter bleibt am Zeilenende vorgemerkt, wie beim HP: `5` Enter `+` ergibt 10, `5` Enter `3` `+` ergibt 8. Die Zeile wandert in den Verlauf, im Code ist es ein Zeilenumbruch |
+| Return | Zeilenumbruch, wie ALPHA ⏎; jedes weitere Return gibt eine leere Zeile im Verlauf |
+| Enter auf dem Ziffernblock | tut, was der Name sagt: ENTER (Leerzeichen), dann Zeilenumbruch. Das Enter bleibt am Zeilenende vorgemerkt, wie beim HP: `5` Enter `+` ergibt 10, `5` Enter `3` `+` ergibt 8. Die Zeile wandert in den Verlauf, im Code ist es ein Zeilenumbruch. Jedes weitere Enter ohne Eingabe verdoppelt x, wie beim HP. Erkannt wird die Taste auch, wenn der Browser sie als Return meldet |
 | `_` | Trenner, direkt getippt (Umschalt+Minus) |
 | Backspace | ⌫ |
 | Tab / Shift+Tab | Bereich wechseln |
 | Pfeiltasten | Cursorkreuz |
 | F1 | Hilfe-Modus an und aus |
+| Strg+C / Strg+Shift+C | x bzw. den ganzen Stack kopieren (2.1) |
+| Strg+V | einfügen: im Stack Werte, sonst Text (2.1) |
+| `\c` `\s` `\v` | wie in der Konsole: x kopieren, Stack kopieren, Werte einfügen; das `\` wartet, bis das nächste Zeichen kommt |
 | Esc | im Hilfe-Modus: Hilfeschirm schließen, beim zweiten Mal den Hilfe-Modus beenden; sonst ohne Wirkung |
 
 - **Rückmeldung:** Der Knopf, der dem getippten Zeichen entspricht, leuchtet kurz auf: Ziffern, `.`, `ê` und
@@ -353,84 +433,20 @@ Eine echte Tastatur (PC, Browser, Bluetooth am Handy) bedient die App wie die Kn
 - **Im Hilfe-Modus** zeigt eine getippte Taste die Hilfe zu ihrem Zeichen.
 - **AltGr:** Windows meldet AltGr als Strg+Alt. Diese Kombination geht wie ein normales Zeichen an den
   Rechner, sonst fehlten auf der deutschen Tastatur `|`, `~`, `{`, `}` und `²`. Nur Strg allein bleibt dem
-  System.
-- **Später:** Strg+C und Strg+V wie `\c` und `\v` in der Konsole.
+  System, außer Strg+C und Strg+V (2.1).
 
 ## 7. Offen
 
-Die Nummern bleiben fest; erledigte Punkte wandern mit ihrer Nummer nach Kapitel 8.
-
-1\. sinh, cosh und tanh gibt es im Rechner noch nicht (erst reference.md, dann umsetzen).
-
-2\. Bibliotheken (Statistik, Schwingungen) als Domänen: die `.rpnlib`-Dateien müssen als Assets in die App.
-
-3\. Speichern der Session beim Beenden.
-
-4\. **Querformat:** Wird das Handy gedreht, braucht es eine eigene Aufteilung (z.B. Anzeige links, Tastenfeld
-   rechts). Heute ist die App nur für Hochkant gebaut. Gehört mit Punkt 5 zum Fensterlayout: ein breites,
-   niedriges Fenster unter Windows und im Browser ist dieselbe Lage wie ein gedrehtes Handy.
-   **Richtung:** Die Anzeige liegt über die volle Breite oben, Eingabe und Stack nebeneinander. Darunter drei
-   Tastenfelder: links R2–R5 (6×4), in der Mitte das Cursorkreuz und darunter die sechs Tasten von R1 als 2×3
-   (SHIFT und ALPHA oben, MENÜ kommt mit in die Mitte), rechts R6–R9 (5×4). Im Querformat richtet sich der Zoom
-   (Punkt 5) nach der Höhe; die Breite ist nicht begrenzt, die Tasten werden breiter. So bekommt die Anzeige bei
-   gleicher Schrift mehr Zeichen je Zeile.
-   Beide Formate haben ihre Aufgaben: das Querformat z.B. für die Arbeit mit Tabellen, das Hochformat für viele
-   Rechenschritte. Die App wählt das Querformat, wenn das Fenster deutlich breiter als hoch ist bzw. das Handy
-   gedreht wird. Die freie Taste in R1 links unter dem Cursorkreuz schaltet zwischen beiden Formaten um.
-
-5\. **Fenstergröße ändern:** Unter Windows und im Browser lässt sich das Fenster größer und kleiner ziehen.
-   Heute haben die Tasten eine feste Höhe, nur die Anzeige wächst mit. Das Tastenfeld sollte mitwachsen und
-   die Schrift passend skalieren; bei sehr kleinen Fenstern braucht es eine Mindestgröße.
-   **Zwischenlösung (Zoom):** Die App rechnet mit einer festen Breite von 400 Punkten und wird als Ganzes um
-   den Faktor Fensterbreite / 400 vergrößert oder verkleinert, Tooltips, Menü und Dialoge eingeschlossen.
-   Breiter ziehen vergrößert alles samt Schrift; höher ziehen gibt der Anzeige mehr Zeilen bei gleicher Schrift.
-   Schmaler als 400 wird der Rechner kleiner und die Anzeige entsprechend höher. Reicht die Höhe nicht für
-   Tastenfeld und eine Anzeige von 240 Punkten, begrenzt sie den Faktor. Dann werden die Tasten breiter, bis
-   die Seite 50 % breiter ist als ohne Dehnung (die Anzeige bekommt mehr Zeichen je Zeile, das Cursorkreuz
-   bleibt so groß, die beiden kleinen Tasten darunter werden breiter und füllen den Platz neben ihm); erst
-   danach steht die Seite mittig mit Rand.
-   Diesen Rand soll später das Querformat (Punkt 4) nutzen.
-
-6\. **Shift+ALPHA neu belegen:** Großbuchstaben sind nicht die einzige Möglichkeit, da steckt noch Potential
-   drin, z.B. „Lib“ für die Bibliotheken. **Richtung:** ALPHA, dann Shift ergibt Großbuchstaben; Shift+ALPHA wird
-   ein Modus für Symbole, die nicht auf den Tasten stehen. Die Symbole stehen klein unten links auf den Tasten
-   (unten rechts bleibt der Buchstabe für ALPHA).
-
-13\. **Texte der Tooltips überarbeiten:** Taste für Taste gemeinsam durchgehen.
-
-15\. **Wischen und Mausrad über die Funktionstasten:** Seitlich wischen wechselt zwischen den Sätzen der Funktionstasten
-   (Domäne, eigene Funktionen, Variablen …). Der orange Rahmen, der dabei erscheint, zeigt kleine Pfeile links
-   bzw. rechts, wenn es in diese Richtung weitere Sätze gibt. Am PC blättert das Mausrad über den Funktionstasten die Seiten durch.
-
-16\. **Verhalten der Enter-Taste einstellbar:** Der Anwender legt fest, ob Enter (ENTER-Knopf der App bzw.
-   Enter der Tastatur) nur ein Leerzeichen erzeugt oder Leerzeichen und Zeilenumbruch; die Umschalt-Variante
-   tut dann jeweils das andere. Zu klären: wo der Trenner `_` in der App landet, wenn Shift+ENTER dafür frei
-   werden muss, und wo die Einstellung liegt (Menü).
-
-17\. **Shift-Hinweis auf ALPHA nach rechts:** Das kleine „ABC“ steht heute links oben auf ALPHA. Es soll nach
-   rechts oben, damit links oben Platz bleibt, falls Shift+ALPHA eine eigene Funktion bekommt (Punkt 6).
-
-18\. **Bibliotheken zur Laufzeit hinzufügen:** herunterladen (Paket `http`), aus einer Datei wählen
-   (`file_picker`) oder über „Öffnen mit …“ für die Endung `.rpnlib`; die App speichert sie in ihrem eigenen
-   Verzeichnis (`path_provider`) und meldet sie bei jedem Start mit `bibliothekHinzufuegen` beim Rechner an. Im
-   Browser statt Dateien der Browser-Speicher.
-
-19\. **Mehrsprachigkeit der Oberfläche:** Beschriftungen, Menüs und Hinweise der App über den Standardweg von
-   Flutter (`flutter_localizations`, je Sprache eine `.arb`-Datei); die Sprache des Handys wird erkannt. Die
-   Texte des Rechners (Hilfe, Meldungen) kommen aus ihm selbst, siehe [api.md](api.md) Punkt 14.
-
-20\. **Rechenfunktion auf ~ und |:** Unter dem großen Zeichen steht klein die Rechenfunktion der Taste: auf `~`
-   ein ±, auf `|` ein 3|.1 (Ganzzahl- und Nachkommateil; die 1 braucht weniger Platz als eine 7).
-
-
-22\. **SHIFT-Taste mit ⇧:** Die Taste zeigt das Zeichen ⇧ wie die Tooltips, vielleicht nur das Zeichen ohne
-   „SHIFT“ (so wie TAB das ⇥ trägt).
-
-25\. **Zwischenablage in der App:** Wie `\c` und `\v` in der Konsole: x kopieren und Werte einfügen, am PC mit
-   Strg+C und Strg+V, am Handy über langes Drücken auf den Stack. Erscheint dann im Tooltip des Stacks unter
-   „PC-Tastatur“.
+Die offenen Punkte stehen jetzt im Backlog ([process/backlog.md](../process/backlog.md)), jeweils mit ihrer
+alten Nummer („alt: app.md 4“). Die erledigten Punkte unten behalten ihre Nummern, weil Code und Texte auf sie
+verweisen.
 
 ## 8. Erledigt
+
+2\. **Bibliotheken als Domänen:** umgesetzt; die Bibliotheken sind in den Rechner einkompiliert (api.md 9.1),
+   die App zeigt sie als Domänen der Funktionstasten.
+
+5\. **Fenstergröße ändern:** umgesetzt als Zoom mit Dehnung (1.1); das Querformat ist Backlog FA-5.
 
 7\. **Farben der Umschalttasten:** SHIFT als orange Taste, passend zu den orangen Shift-Hinweisen; ALPHA in der
    Farbe der Alpha-Hinweise, also hellgrün.

@@ -507,6 +507,9 @@ in seiner Schreibweise, getrennt mit `_`. Die erste Zahl kommt zuerst auf den St
 
 - **Erkannt** werden Zahlen in deutscher und englischer Schreibweise: `3,4`, `3.4`, `-2`, `3,4E-06`, `1e5`.
   Sie werden umgeschrieben: `3,4E-06` wird zu `3.4ê~6`, `-2` zu `~2`.
+- **Komma:** Ein einzelnes Komma zwischen Ziffern ist ein Dezimalkomma (`4,5;6` aus Excel ergibt 4.5 und 6).
+  Trennzeichen sind Kommas dagegen in einer Folge wie `4,5,6,7` (ergibt 4 5 6 7) und überall, sobald der Text
+  einen Dezimalpunkt enthält (`1.5,2`).
 - **Übersprungen** wird alles andere: Tab, `;`, Zeilenumbrüche, Leerzeichen, Text wie Spaltenüberschriften
   oder `#DIV/0!`.
 - **Ein Minus** gilt nur als Vorzeichen, wenn davor keine Ziffer und kein Buchstabe steht. So wird `2026-10-29`
@@ -532,7 +535,7 @@ kürzer und werden von Hand mit ihr abgeglichen.
 Bibliotheken (`{{"hilfe":[…]}}rpnjson`, 9.1), ein Eintrag je Zeile. Sie werden wie die mitgelieferten
 Bibliotheken einkompiliert (`tool/bibliotheken.dart`, Konstante `systemBibliotheken`) und beim ersten Nachschlagen
 geladen. Systemdateien erscheinen nicht unter `bibliotheken()`. Das `.de` im Namen hält den Weg zu weiteren
-Sprachen offen (Punkt 14).
+Sprachen offen (Backlog FR-2).
 
 ### 8.1 Einträge
 
@@ -546,6 +549,7 @@ viele Zeichen bedeuten je nach Umgebung etwas anderes: `!` ist die Fakultät, na
 | `titel` | kurze Überschrift | `Fakultät, Variablen und Konstanten anlegen` |
 | `verwendungen` | Liste von `Verwendung`, siehe unten | `x!`, `'!x`, `'!!x` |
 | `text` | Einzelheiten mit Beispielen, darf Verweise enthalten (8.3); leer, wenn es keine gibt | `"5'!a" legt a = 5 an …` |
+| `verweise` | weitere Verweise, die nicht im Text stehen (8.3); fehlt, wenn es keine gibt | `["#variablen"]` |
 
 Eine `Verwendung` hat diese Felder:
 
@@ -625,7 +629,10 @@ den Titel des Ziels.
   späterer Einheiten-Scanner, der wie der Code-Scanner arbeitet, erkennt sie und kann sie überspringen.
 - **Richtung:** Einträge des Rechners verweisen nur auf Einträge des Rechners. Einträge einer Oberfläche
   dürfen auf eigene und auf Einträge des Rechners verweisen, nie umgekehrt.
-- `Hilfe.verweise` liefert die Kennungen aller Verweise im Text, in ihrer Reihenfolge.
+- `Hilfe.verweise` liefert die Kennungen aller Verweise: erst die im Text, in ihrer Reihenfolge, dann die aus
+  dem Feld `verweise`, ohne Wiederholungen.
+- **Listen nur einmal:** Eine reine Liste von Verweisen (Themen, „weiter mit …“) steht im Feld `verweise`, nicht
+  als Fließtext; die Oberfläche zeigt sie ohnehin als Verweise. Der Text erklärt.
 
 ### 8.4 Aufteilung zwischen Rechner und Oberfläche
 
@@ -655,8 +662,9 @@ eine fehlende Hilfe sofort auf. Die Oberflächen prüfen dasselbe für ihre Eint
 
 - **Bibliotheken:** siehe 9.1.
 - **`print` und `input`:** Programme sollen Text ausgeben und Werte abfragen können. Das braucht Rückrufe in
-  die Oberfläche, deren Form noch offen ist.
-- **Projekt-Persistenz:** automatisch speichern und beim Start das letzte Projekt laden, aufbauend auf dem Skriptformat.
+  die Oberfläche, deren Form noch offen ist (Backlog FR-5).
+- **Projekt-Persistenz:** automatisch speichern und beim Start das letzte Projekt laden, aufbauend auf dem Skriptformat (Backlog FA-8).
+- **Undo:** siehe 9.2.
 
 ### 9.1 Bibliotheken
 
@@ -704,13 +712,15 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
 | `String? bibliothekHinzufuegen(String name, String text)` | meldet eine Bibliothek an; eine hinzugefügte mit gleichem Namen wird ersetzt. Liefert `null` oder einen Fehler, z.B. wenn eine mitgelieferte so heißt oder der Text kein gültiges Skript aus Funktionen ist |
 | `String? ladeBibliothek(String name)` | lädt die Bibliothek in den Rechner wie `importieren(text, ersetzen: false)`; liefert `null` oder den Fehler. Gibt es einen ihrer Namen schon als eigene Funktion oder in einer anderen Bibliothek, wird sie gar nicht geladen („Name ist schon vergeben“) |
 | `List<String> bibliotheksFunktionen(String name)` | die Namen ihrer Funktionen in der Reihenfolge der Datei, z.B. für die Funktionstasten |
+| `String? herkunft(String name)` | die Bibliothek, aus der eine geladene Funktion stammt, oder `null` bei eigenen Funktionen |
 | `Map<String, Object?>? bibliotheksVersion(String name)` | die Versionsangabe einer geladenen Bibliothek |
 | `({String beschreibung, String version, int funktionen})? bibliotheksInfo(String name)` | Kurzinfo, auch ohne die Bibliothek zu laden: der Satz aus `beschreibung`, die Version, die Zahl der Funktionen; für Menüs und Tooltips |
 | `List<String> hinweise()` | Hinweise seit dem letzten Abruf, z.B. unbekannte Schlüssel in `rpnjson`; danach leer |
 | `Export exportiereBibliothek(String name, {String version, Set<String> ohne})` | die eigenen Funktionen als Bibliothek im obigen Aufbau, mit Versionsangabe und eigener Hilfe |
 
 - **Herkunft:** Der Rechner merkt sich zu jeder Funktion die Bibliothek, aus der sie stammt
-  (`geladeneBibliotheksFunktionen`). Solche Funktionen sind geschützt (reference.md 10.6), und „Funktionen
+  (`geladeneBibliotheksFunktionen`, je Funktion `herkunft(name)`, z.B. für eine nach Bibliotheken geordnete
+  Liste). Solche Funktionen sind geschützt (reference.md 10.6), und „Funktionen
   speichern“ lässt sie aus (Kapitel 7).
 - **Protokoll** (6.1): `{"bibliotheken":true}` → `{"bibliotheken":[…]}`; `{"ladeBibliothek":"statistik"}` →
   `{"zustand":{…}}` (ein Fehler steht im Zustand wie bei `importieren`).
@@ -722,72 +732,28 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
 - **Sessions** schreiben eigene Hilfen ebenfalls als `{…}rpnjson`-Zeile mit, damit sie beim Speichern nicht
   verloren gehen.
 
+### 9.2 Undo
+
+Vorgemerkt, noch nicht umsetzen (Backlog FR-4): Löschen ausgeführter Token (5.4) und ein allgemeines Undo.
+
+- **Entschieden: Änderungsprotokoll (Journal)**, kein Schnappschuss des ganzen Zustands. Jede Änderung merkt
+  sich den alten Wert, Undo spielt sie rückwärts ab. Grund: Werden später Vektoren, Matrizen oder Tabellen
+  als Stack-Werte erlaubt (Statistik, Simulation), wären Schnappschüsse pro Token zu groß.
+- **Stellen:** Der Stack ist gut gekapselt, alle Schreibzugriffe laufen über `[]=`, `setzeAn`, `push`,
+  `pull`, `drop` und `clear`. Dazu kommen Variablen, Tags, Schreibschutz, eigene Funktionen, Code-Stack,
+  Argumente, Einstellungen und die Enter-Logik. `geschuetzt` und `schreibgeschuetzt` sollten dafür nur noch
+  über Methoden des Stacks geändert werden.
+- **Zufallsgenerator:** Sein Zustand muss sich zurücksetzen lassen (eigener Generator oder Seed plus Anzahl
+  der Ziehungen), sonst liefert dieselbe Eingabe nach einem Undo andere Zahlen.
+- **Offen:** Wie Undo bei laufenden Programmen wirkt (eigene Funktionen, `loop`, `times`): ein Schritt pro
+  Token der Eingabe oder pro ausgeführtem Token im Code?
+
 ---
 
 ## 10. Offene Punkte
 
-Die Nummern bleiben fest; erledigte Punkte wandern mit ihrer Nummer nach Kapitel 11.
-
-1\. **Einheitliche Fehlercodes:** Grammatikfehler haben einstellige Codes (`1`, `Z`), Rechnerfehler Namen
-   (`div0`). Sollen alle Codes einem Schema folgen, z.B. `X1` für die Grammatik?
-
-2\. **Import-Fehler als Daten:** `importieren` liefert einen Text. Für Flutter wäre ein `Fehler` mit Zeilennummer
-   besser, damit die Stelle in der Datei markiert werden kann.
-
-3\. **Grenzen einstellbar und interne Felder verbergen:** Die Grenze für `loop` und `times` soll einstellbar
-   werden; sie gehört dann in den `Zustand` und ins Skriptformat. Heute senken Tests sie über
-   `api.calculator.maxSchleife`. Das ist der einzige Grund, warum `parser` und `calculator` öffentlich sind.
-   Gibt es einen offiziellen Weg, können beide privat werden, und keine Oberfläche kann mehr an der API vorbei
-   arbeiten.
-
-5\. **Anzeigeformat** (z.B. FIX). **Entschieden:** eine Einstellung des Rechners (Core), im Skript gespeichert
-   und im `Zustand` gemeldet; die Oberflächen formatieren die Zahlen danach. Noch zu spezifizieren.
-
-6\. **Version des Skriptformats:** Ändert sich die Sprache (wie bei `~|:`), kann ein gespeicherter Funktionscode
-   anders wirken als beim Speichern. Braucht das Skript eine Versionsangabe, und was passiert bei einer alten
-   Version?
-
-7\. **Undo (vorgemerkt, noch nicht umsetzen):** Löschen ausgeführter Token (5.4) und ein allgemeines Undo.
-   - **Entschieden: Änderungsprotokoll (Journal)**, kein Schnappschuss des ganzen Zustands. Jede Änderung merkt
-     sich den alten Wert, Undo spielt sie rückwärts ab. Grund: Werden später Vektoren, Matrizen oder Tabellen
-     als Stack-Werte erlaubt (Statistik, Simulation), wären Schnappschüsse pro Token zu groß.
-   - **Stellen:** Der Stack ist gut gekapselt, alle Schreibzugriffe laufen über `[]=`, `setzeAn`, `push`,
-     `pull`, `drop` und `clear`. Dazu kommen Variablen, Tags, Schreibschutz, eigene Funktionen, Code-Stack,
-     Argumente, Einstellungen und die Enter-Logik. `geschuetzt` und `schreibgeschuetzt` sollten dafür nur noch
-     über Methoden des Stacks geändert werden.
-   - **Zufallsgenerator:** Sein Zustand muss sich zurücksetzen lassen (eigener Generator oder Seed plus Anzahl
-     der Ziehungen), sonst liefert dieselbe Eingabe nach einem Undo andere Zahlen.
-   - **Offen:** Wie Undo bei laufenden Programmen wirkt (eigene Funktionen, `loop`, `times`): ein Schritt pro
-     Token der Eingabe oder pro ausgeführtem Token im Code?
-
-8\. **Verwerfen nach einem Fehler** (5.6): Return verwirft schon. Braucht es zusätzlich eine eigene Taste (z.B. `Esc`)?
-
-9\. **Sondertasten** (5.1): eigene Methoden wie `zeilenende()` und `loeschen()` oder Steuerzeichen in `taste()`
-   (`"\n"`, `"\b"`)? Eigene Methoden sind lesbarer, Steuerzeichen passen besser zu einem Socket, der Zeichen
-   einfach durchreicht.
-
-10\. **Verweise in der Hilfe der Konsole:** Hat eine Hilfeseite Verweise, bekommen sie eine laufende Nummer
-    vorweg (`1 Namen  2 Variablen …`). Die Nummer wählt den Verweis und zeigt dessen Seite, Backspace geht zurück
-    zur vorigen Seite, Esc verlässt die Hilfe sofort. Bis dahin zeigt die Konsole die Verweise mit dem Aufruf
-    (`\?'`), siehe Kapitel 7.
-
-11\. **Texte auslagern:** Die Hilfe des Rechners steht in `library/system/hilfe.de.rpnlib` (Kapitel 8).
-    Offen sind noch die Hilfetexte der Oberflächen (`lib/console/help.dart`, `app/lib/hilfe.dart`) und die
-    Fehlermeldungen; für sie ist dasselbe Format vorgesehen, siehe auch Punkt 14.
-
-12\. **Felder: Reihenfolge der Elemente und Darstellung:** Heute ist Element 0 der Wert, der beim Anlegen der
-    Tos war: `1 2 3 3:'!v` ergibt die Elemente 3 2 1. Was für die Nutzer intuitiver ist, ist noch offen; die
-    Elemente lassen sich ohnehin in jeder Reihenfolge vom Stack holen. Angezeigt werden Felder ohne eckige
-    Klammern, durch Leerzeichen getrennt, weil `[ ]` für Einheiten reserviert ist.
-
-
-
-14\. **Mehrsprachigkeit der Texte des Rechners:** Die eingebaute Hilfe steht in `library/system/hilfe.de.rpnlib`;
-    weitere Sprachen kommen als `hilfe.en.rpnlib` usw. mit denselben Kennungen dazu, damit Verweise in jeder
-    Sprache stimmen. Der Rechner bekommt eine Einstellung `sprache` und fällt für fehlende Einträge auf Deutsch
-    zurück. Die Fehlermeldungen (heute fest in `core.dart` und `dea.dart`) kommen über einen neuen Schlüssel
-    `meldungen` in `rpnjson` dazu; ältere Versionen übergehen ihn. Bibliotheken können ihre Hilfe ebenfalls in
-    mehreren Sprachen mitbringen. Funktionsnamen und Befehle werden nicht übersetzt, sie sind Teil der Sprache.
+Die offenen Punkte stehen jetzt im Backlog ([process/backlog.md](../process/backlog.md)), jeweils mit ihrer
+alten Nummer („alt: api.md 7“). Die erledigten Punkte unten behalten ihre Nummern.
 
 ---
 

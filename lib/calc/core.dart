@@ -60,7 +60,6 @@ class Kern {
     "bef?" : "Unbekannter Befehl",
     "var?" : "Variable ist nicht definiert",
     "varOp": "Operator ist für Variablen nicht erlaubt",
-    "arg?" : "Argumente werden im Code mit ~: gelesen",
     "argAus": "Argumente gibt es nur in eigenen Funktionen",
     "arg0" : "Es gibt keine weiteren Argumente",
     "inCode": "Fehler in %",          // % wird durch das Detail ersetzt

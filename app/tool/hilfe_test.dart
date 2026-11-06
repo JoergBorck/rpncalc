@@ -194,9 +194,14 @@ void main() {
     }
 
     // 2. Hilfe des Rechners: in der App (zusammen mit einem Eintrag der App) und in der Konsole
+    // Hat die App einen Eintrag mit derselben Kennung (#, ~, |, '), zeigt sie beide zusammen auf einer Seite; er
+    // wird hier mitgeprüft und unten nicht noch einmal gezeigt
     for (final k in api.hilfeKennungen()) {
       final h = api.hilfe(k)!;
-      final e = _Eintrag("rechner:$k", "Hilfe des Rechners", "$k  ${h.titel}", jsonEncode(h.toJson()));
+      final app = AppHilfe.eintraege[k];
+      final e = _Eintrag(app == null ? "rechner:$k" : "rechner:$k · app:$k", "Hilfe des Rechners", "$k  ${h.titel}",
+          jsonEncode(app == null ? h.toJson() : [app.toJson(), h.toJson()]));
+      verweise(e, app);
       verweise(e, h);
       await zeichne(e, Hilfeschirm(m, AppHilfe.nachschlagen(api, k), scrollen: false), breite: 400);
       e.konsole = _ansi(KonsolenHilfe.zeilen([?KonsolenHilfe.eintraege[k], h], k, breite: 79));
@@ -205,7 +210,10 @@ void main() {
 
     // 3. Einträge der App
     for (final h in AppHilfe.eintraege.values) {
-      final e = _Eintrag("app:${h.kennung}", "Hilfe der App", "${h.kennung}  ${h.titel}", jsonEncode(h.toJson()));
+      if (api.hilfe(h.kennung) != null) continue; // schon beim Rechner
+      // die Kennungen der App beginnen meist schon mit „app:“
+      final id = h.kennung.startsWith("app:") ? h.kennung : "app:${h.kennung}";
+      final e = _Eintrag(id, "Hilfe der App", "${h.kennung}  ${h.titel}", jsonEncode(h.toJson()));
       verweise(e, h);
       await zeichne(e, Hilfeschirm(m, AppHilfe.nachschlagen(api, h.kennung), scrollen: false), breite: 400);
       eintraege.add(e);
@@ -253,19 +261,32 @@ img{display:block;max-width:100%}
 pre{background:#0c0c0c;color:#cccccc;font-family:Consolas,monospace;font-size:12px;padding:8px;margin:6px 0 0;overflow-x:auto}
 .fett{font-weight:bold;color:#ffffff}.blass{color:#808080}
 .nur-offen .karte.ok{display:none}
+.sprung{font-family:Consolas,monospace;font-size:13px;line-height:1.8;margin:8px 0}
+.sprung a{color:#d9efe4;text-decoration:none;white-space:nowrap} .sprung a:hover{text-decoration:underline}
+.karte:target{outline:2px solid #ff9d4d}
+.leiste a{color:#8ec9ff;margin-left:8px}
 </style></head><body>
 <h1>Hilfetexte prüfen</h1>
 <div class="leiste">✓ ${zahl["ok"]} geprüft · ✎ ${zahl["geaendert"]} seit der Prüfung geändert · ○ ${zahl["offen"]} offen · ${eintraege.length} insgesamt
-<button onclick="document.body.classList.toggle('nur-offen')">nur offene / alle</button></div>
+<button onclick="document.body.classList.toggle('nur-offen')">nur offene / alle</button><a href="#">nach oben</a></div>
 ''');
+    // Sprungliste: alle Karten, die noch zu prüfen sind
+    final offen = [for (final (i, e) in eintraege.indexed) if (status(e) != "ok") (i, e)];
+    if (offen.isNotEmpty) {
+      html.write('<div class="sprung">Zu prüfen: ');
+      html.write([
+        for (final (i, e) in offen) '<a href="#k$i" class="${status(e)}"><span class="zeichen">${zeichen[status(e)]}</span> ${_html(e.id)}</a>'
+      ].join(" · "));
+      html.write("</div>\n");
+    }
     String? gruppe;
-    for (final e in eintraege) {
+    for (final (i, e) in eintraege.indexed) {
       if (e.gruppe != gruppe) {
         gruppe = e.gruppe;
         html.write("<h2>${_html(gruppe)}</h2>\n");
       }
       final s = status(e);
-      html.write('<div class="karte $s"><div class="kopf"><span class="zeichen">${zeichen[s]}</span> ${_html(e.id)}</div>');
+      html.write('<div class="karte $s" id="k$i"><div class="kopf"><span class="zeichen">${zeichen[s]}</span> ${_html(e.id)}</div>');
       for (final f in e.fehler) {
         html.write('<div class="fehler">${_html(f)}</div>');
       }

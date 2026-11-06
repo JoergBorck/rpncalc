@@ -9,7 +9,8 @@ abstract final class KonsolenHilfe {
     "#": Hilfe("#", "Hilfe in der Konsole", [
       Verwendung(r"\?x", "zeigt die Hilfe zu einem Zeichen, Namen oder Thema, z.B. \\?! oder \\?#tags"),
       Verwendung(r"\?", "zeigt diese Startseite"),
-    ], r"Bedienung der Konsole: [[konsole:q]], [[konsole:c]], [[konsole:v]], [[konsole:tab]], [[konsole:hilfe]]"),
+    ], "Die Bedienung der Konsole steht in den Verweisen unten.",
+        ["konsole:q", "konsole:c", "konsole:v", "konsole:tab", "konsole:hilfe"]),
     r"\": Hilfe(r"\", "Befehle der Konsole", [
       Verwendung(r"\q", "zurück zum Menü"),
       Verwendung(r"\c", "kopiert x in die Zwischenablage"),

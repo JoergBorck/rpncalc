@@ -67,7 +67,7 @@ final List<(int, String, String)> data = [
    "*_______" "+v______" "+v______" "+v______" "+v______" "+v______" "!V?_____" "*_!T____"), // 14. Lange Variable
    
   (15, "'12 ", 
-   "*_______" "+v!V____" "*_+z____" "!Z?_____" "*_!T____"), // 15. Argument-Zugriff '1, danach die Zahl 2
+   "*_______" "X9______" "*_+z____" "!Z?_____" "*_!T____"), // 15. '1 gibt es nicht mehr (Argumente mit ~:): Fehler X9
    
   (16, "'~abc ", 
    "*_______" "+v______" "+v______" "+v______" "+v______" "!V?_____" "*_!T____"), // 16. Variable mit Invers-Präfix
@@ -111,7 +111,7 @@ final List<(int, String, String)> data = [
   // --- VARIABLEN VARIATIONEN ---
   // ==========================================
   (30, "'2", 
-   "*_______" "+v!V____"), // 30. Argument-Zugriff ist nach einer Ziffer fertig
+   "*_______" "X9______"), // 30. eine Ziffer nach ' ist ein ungültiges Zeichen (früher Argument-Zugriff)
    
   (31, "'a ", 
    "*_______" "+v______" "!V?_____" "*_!T____"), // 31. Einbuchstabige Variable (klein) mit Trenner

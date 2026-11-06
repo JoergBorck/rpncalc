@@ -6,6 +6,9 @@ abstract final class Farben {
   static const anzeige = Color(0xFF0D1512);
   static const anzeigeText = Color(0xFFD9EFE4);
   static const anzeigeBlass = Color(0xFF6F8F80);
+  static const kontext = Color(0xFF1B2722); // Kontextmenü der Anzeige: etwas heller als sie (doc/app.md 2.1)
+  static const kontextRand = Color(0xFF3E5A4D);
+  static const kontextZeile = Color(0xFF22352C); // die Zeile, zu der das Kontextmenü offen ist
   static const taste = Color(0xFF262A33);
   static const funktion = Color(0xFF3B4250); // oberste Reihe, Funktionstasten und Cursorkreuz
   static const ziffer = Color(0xFF3A3F4C);       // unterer Block außer den Ziffern

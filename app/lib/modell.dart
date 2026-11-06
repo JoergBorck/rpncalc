@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:rpncalc/console/display.dart' as konsole show Anzeige;
 import 'package:rpncalc/helper.dart' show zahl;
 import 'package:rpncalc/rpnapi.dart';
 
@@ -13,6 +16,9 @@ enum Bereich { eingabe, stack, funktionen, variablen }
 /// Wie eine Taste gerade beschriftet ist.
 enum Modus { normal, shift, tilde, strich, alpha }
 
+/// Was das Kontextmenü der Anzeige kopiert (doc/app.md 2.1).
+enum Kopie { wert, stackAb, stack, zeile, zeilenAb, verlauf }
+
 typedef Beschriftung = ({String text, Modus modus, bool gedimmt});
 
 /// Eine abgeschlossene Zeile im Verlauf.
@@ -22,7 +28,7 @@ typedef Verlaufszeile = ({String text, Fehler? fehler});
 class RechnerModell extends ChangeNotifier {
   /// Version der App (MAJOR.MINOR.PATCH wie in pubspec.yaml); der Rechner prüft damit die Angabe `app` von
   /// Bibliotheken (doc/api.md 9.1).
-  static const String appVersion = "0.1.0";
+  static const String appVersion = "0.2.0";
 
   final RpnApi api = RpnApi()..appVersion = appVersion;
   late Zustand zustand = api.zustand(zeilen: _stackZeilen);
@@ -37,7 +43,7 @@ class RechnerModell extends ChangeNotifier {
   bool get shiftWirkt => shift && !alpha;
   Bereich bereich = Bereich.eingabe;
   String domaene = "Grundfunktionen";
-  int funktionsSeite = 0;   // 0 = Domäne, 1… = eigene Funktionen
+  int funktionsSeite = 0;   // Seite der Funktionstasten: Grundfunktionen, gewählte Domäne, eigene Funktionen
   bool maximiert = false;   // Eingabe bzw. Stack haben die ganze Breite (doc/app.md 3.5)
   int stackVersatz = 0;     // erste angezeigte Stack-Position
   int verlaufVersatz = 0;   // so viele Zeilen ist der Verlauf zurückgeblättert
@@ -55,8 +61,13 @@ class RechnerModell extends ChangeNotifier {
   /// anderen ihren Anfang. Jede Eingabe setzt das zurück.
   final Map<int, int> _eingabeGeschoben = {}, _stackGeschoben = {};
 
-  static const int _stackZeilen = 40;
+  /// So viele Stackwerte holt die App vom Rechner: mindestens 40, beim Blättern bis zur untersten sichtbaren Zeile.
+  int get _stackZeilen => (stackVersatz + platzStack.length + 1).clamp(40, 1 << 30);
   static const int verlaufMax = 100;
+
+  /// So viele Stackzeilen zeigt auch die kleinste Anzeige vollständig (RpnApp.minAnzeige); bis dahin lässt sich der
+  /// unterste Wert hochblättern.
+  static const int stackMinZeilen = 7;
 
   /// Anteil der Eingabe an der Breite der Seite „Rechnen“: halb, maximiert ganz oder gar nicht (doc/app.md 3.5).
   double get anteilEingabe => !maximiert
@@ -71,21 +82,47 @@ class RechnerModell extends ChangeNotifier {
   /// Die Belegung der zehn Funktionstasten für den gewählten Bereich bzw. nach `'`.
   List<Taste?> get funktionstasten {
     if (apostroph || bereich == Bereich.variablen) return _seiten(_variablen);
-    final d = _domaenenSeiten;
-    if (funktionsSeite < d.length) return d[funktionsSeite];
-    return _seiten(_eigene, funktionsSeite - d.length);
+    final d = [..._grundSeiten, ..._domaenenSeiten];
+    if (_seite < d.length) return d[_seite];
+    return _seiten(_eigene, _seite - d.length);
   }
 
   /// Name der Seite, die die Funktionstasten zeigen.
   String get seitenName {
     if (apostroph || bereich == Bereich.variablen) return "Variablen";
-    final d = _domaenenSeiten.length;
-    if (funktionsSeite < d) return d > 1 ? "$domaene ${funktionsSeite + 1}/$d" : domaene;
-    final e = funktionsSeite - d + 1;
+    final g = _grundSeiten.length, d = _domaenenSeiten.length;
+    if (_seite < g) return _grund;
+    if (_seite < g + d) return d > 1 ? "$domaene ${_seite - g + 1}/$d" : domaene;
+    final e = _seite - g - d + 1;
     return "Eigene${e > 1 ? " $e" : ""}";
   }
 
-  int get _eigeneSeiten => (_eigene.length / 10).ceil().clamp(1, 99);
+  /// Die Bibliothek, deren Seite die Funktionstasten gerade zeigen, sonst null (Grundfunktionen, eingebaute
+  /// Domäne, Eigene). Die Seite Funktionen der Anzeige scrollt zu ihrem Abschnitt (doc/app.md 2).
+  String? get seitenBibliothek {
+    final g = _grundSeiten.length;
+    final aufDomaene = _seite >= g && _seite < g + _domaenenSeiten.length;
+    return aufDomaene && !domaenen.containsKey(domaene) ? domaene : null;
+  }
+
+  /// Wohin die Seite Funktionen scrollt: auf der ersten Seite einer Bibliothek ihr Abschnitt, auf weiteren
+  /// Seiten deren erste Funktion, damit die Funktionen der Tasten zu sehen sind; sonst null (nach oben).
+  ({String bibliothek, String? funktion})? get seitenZiel {
+    final b = seitenBibliothek;
+    if (b == null) return null;
+    final erste = _seite - _grundSeiten.length == 0 ? null : funktionstasten.first?.text;
+    return (bibliothek: b, funktion: erste);
+  }
+
+  /// Die Grundfunktionen stehen immer vorn, auch wenn eine andere Domäne gewählt ist (doc/app.md 3.3).
+  static const _grund = "Grundfunktionen";
+  List<List<Taste?>> get _grundSeiten => domaene == _grund ? const [] : [domaenen[_grund]!];
+
+  /// Ohne eigene Funktionen gibt es keine Seite „Eigene“, sonst wäre sie leer.
+  int get _eigeneSeiten => (_eigene.length / 10).ceil();
+
+  /// Die gezeigte Seite; eine Seite „Eigene“, deren Funktionen inzwischen entfernt sind, gibt es nicht mehr.
+  int get _seite => funktionsSeite.clamp(0, funktionsSeiten - 1);
 
   /// Die Seiten der Funktionstasten je Bibliothek, einmal erzeugt: bibliotheksFunktionen lädt die Bibliothek
   /// dafür in einen Probe-Rechner, und das Aufleuchten erkennt eine Taste an ihrer Identität.
@@ -137,15 +174,10 @@ class RechnerModell extends ChangeNotifier {
     // ~ wirkt auch auf die Shift-Funktion: ~ ⇧ ÷ ist ≤ (geschrieben ~>)
     if (shiftWirkt && tilde && t.shiftTilde != null) return (text: t.shiftTilde!, modus: Modus.tilde, gedimmt: false);
     if (shiftWirkt && t.shift != null) return (text: t.shift!, modus: Modus.shift, gedimmt: false);
-    if (tilde && strich) return t.beide != null ? (text: t.beide!, modus: Modus.tilde, gedimmt: false) : _gedimmt(t);
-    if (tilde) {
-      if (t.tilde != null) return (text: t.tilde!, modus: Modus.tilde, gedimmt: false);
-      return RegExp(r"^[0-9.ê]$").hasMatch(t.text) ? _normal(t) : _gedimmt(t); // ~3 ist eine negative Zahl
-    }
-    if (strich) {
-      if (t.strich != null) return (text: t.strich!, modus: Modus.strich, gedimmt: false);
-      return _gedimmt(t);
-    }
+    // Tasten ohne Wirkung des Präfixes bleiben normal: vor ihnen wirkt der Präfix allein (doc/app.md 3.2)
+    if (tilde && strich) return t.beide != null ? (text: t.beide!, modus: Modus.tilde, gedimmt: false) : _normal(t);
+    if (tilde) return t.tilde != null ? (text: t.tilde!, modus: Modus.tilde, gedimmt: false) : _normal(t);
+    if (strich) return t.strich != null ? (text: t.strich!, modus: Modus.strich, gedimmt: false) : _normal(t);
     return shiftWirkt ? _gedimmt(t) : _normal(t);
   }
 
@@ -195,6 +227,16 @@ class RechnerModell extends ChangeNotifier {
   void zeigeHilfe(List<Hilfe> seite) {
     _neueSeite(seite);
     notifyListeners();
+  }
+
+  /// „Hilfe“ im Kontextmenü der Anzeige: öffnet die Hilfe im Lese-Modus mit dieser Seite (doc/app.md 2.1).
+  void oeffneHilfe(List<Hilfe> seite) {
+    if (!hilfeModus) {
+      hilfeModus = hilfeLesen = true;
+      shift = false;
+      _hilfeSeiten.clear();
+    }
+    zeigeHilfe(seite);
   }
 
   /// Zeigt die Seite zu einem Verweis.
@@ -285,7 +327,7 @@ class RechnerModell extends ChangeNotifier {
         shift = !shift; // im Alpha-Modus: der nächste Buchstabe groß
       case Aktion.alpha:
         // ALPHA schaltet um; Shift+ALPHA: Alpha an, Shift bleibt für einen großen Buchstaben
-        // (eine eigene Belegung ist noch offen, doc/app.md 7, Punkt 6)
+        // (eine eigene Belegung ist noch offen, Backlog FA-9)
         alpha = !alpha;
         if (!alpha) shift = false;
       case Aktion.tab:
@@ -310,6 +352,8 @@ class RechnerModell extends ChangeNotifier {
         strich = !doppelt;
         if (doppelt) tilde = false;
       // ⌫ löscht auch im Alpha-Modus zeichenweise und lässt ihn an (z.B. beim Programmieren)
+      case Aktion.loeschen when !shiftWirkt && rueckstrich:
+        rueckstrich = false; // ⌫ nimmt das wartende \ zurück
       case Aktion.loeschen when !shiftWirkt:
         zustand = api.loeschen(zeilen: _stackZeilen);
         tilde = strich = apostroph = shift = false;
@@ -324,6 +368,11 @@ class RechnerModell extends ChangeNotifier {
   }
 
   void _schreibeTaste(Taste t) {
+    // ein wartendes \ ohne Befehl danach geht an den Rechner
+    if (rueckstrich && !(alpha && t.buchstabe != null)) {
+      rueckstrich = false;
+      _schreibe(r"\");
+    }
     if (alpha && t.buchstabe != null) {
       if (shift) {
         // ein Großbuchstabe ist ein Befehl aus genau einem Zeichen: danach endet Alpha (wie in der Grammatik)
@@ -331,7 +380,7 @@ class RechnerModell extends ChangeNotifier {
         shift = alpha = false;
         return;
       }
-      _schreibe(t.buchstabe!);
+      if (!_rueckstrichBefehl(t.buchstabe!)) _schreibe(t.buchstabe!); // \c \s \v auch im Alpha-Modus
       return; // Kleinbuchstaben: Alpha bleibt an
     }
     if (alpha && t.aktion == Aktion.enter) {
@@ -340,6 +389,9 @@ class RechnerModell extends ChangeNotifier {
       return;
     }
     final shiftWirkt = this.shiftWirkt; // vor _ende, das Alpha beendet
+    // wirkt der offene Präfix nicht auf die Taste, wirkt er allein: ein Trenner davor, sonst wäre 3~D die
+    // Umkehrung von D (doc/app.md 3.2)
+    if ((tilde || strich) && t.aktion != Aktion.enter && !_praefixWirkt(t, shiftWirkt)) _schreibe(" ");
     final String text;
     if (shiftWirkt && tilde && t.shiftTildeEingabe != null) {
       zustand = api.loeschen(zeilen: _stackZeilen); // das offene ~ weicht dem Zeichen (≤ statt ~>)
@@ -358,6 +410,14 @@ class RechnerModell extends ChangeNotifier {
     } else {
       _schreibe(text);
     }
+  }
+
+  /// Ob der offene Präfix (`~`, `|` oder beide) auf die Taste wirkt; nach `~` gehören Ziffern, `.` und `ê` zur
+  /// negativen Zahl.
+  bool _praefixWirkt(Taste t, bool shiftWirkt) {
+    if (tilde && strich) return t.beide != null;
+    if (tilde) return shiftWirkt ? t.shiftTilde != null : t.tilde != null || RegExp(r"^[0-9.ê]$").hasMatch(t.text);
+    return !shiftWirkt && t.strich != null;
   }
 
   /// Schreibt einen Namen: bei Bedarf ein "_" davor, damit er nicht mit dem vorigen verschmilzt,
@@ -383,7 +443,7 @@ class RechnerModell extends ChangeNotifier {
     for (final c in text.split("")) {
       // Alpha+ENTER bricht von Hand um, im Code wird ab 80 % das Leerzeichen zum Zeilenumbruch
       if (c == "\n" || (c == " " && zustand.codeOffen && _voll)) {
-        _umbrechen();
+        _umbrechen(vonHand: c == "\n");
         continue;
       }
       zustand = api.taste(c, zeilen: _stackZeilen);
@@ -411,12 +471,145 @@ class RechnerModell extends ChangeNotifier {
     _stackGeschoben.clear();
   }
 
-  void _umbrechen() {
+  /// Schließt die Zeile ab; [vonHand] (Return, Alpha ⏎) legt auch eine leere Zeile in den Verlauf (FA-21).
+  void _umbrechen({bool vonHand = false}) {
     final text = zeile;
     zustand = api.zeilenende(zeilen: _stackZeilen);
-    if (text.isEmpty) return;
+    if (text.isEmpty && !vonHand) return;
     verlauf.insert(0, (text: text, fehler: null));
     if (verlauf.length > verlaufMax) verlauf.removeLast();
+  }
+
+  // ---------- Zwischenablage (doc/app.md 2.1) ----------
+
+  /// Kurze Meldung für die Oberfläche, z.B. nach dem Kopieren; die Seite zeigt sie unten an.
+  final ValueNotifier<String?> meldung = ValueNotifier(null);
+
+  void _melde(String text) {
+    meldung.value = null; // dieselbe Meldung zweimal hintereinander soll auch zweimal erscheinen
+    meldung.value = text;
+  }
+
+  /// Ein getipptes `\` wartet auf das nächste Zeichen: `\c`, `\s` und `\v` sind Befehle wie in der Konsole.
+  bool rueckstrich = false;
+
+  /// Schließt ein offenes Token mit `_` ab, wie die Konsole vor dem Kopieren: nach `2.25` kopiert man 2,25.
+  /// Geht das nicht, wird das `_` wieder gelöscht. Liefert, ob ein Wert dazugekommen ist.
+  bool _tokenAbschliessen() {
+    if (zustand.offen.isEmpty || zustand.fehler != null || zustand.zeileFertig) return false;
+    zustand = api.taste("_", zeilen: _stackZeilen);
+    if (zustand.fehler == null) return true;
+    zustand = api.loeschen(zeilen: _stackZeilen);
+    return false;
+  }
+
+  /// Der Text für die Zwischenablage oder null, wenn es nichts zu kopieren gibt. [r] ist die angeklickte Zeile
+  /// der Stack- bzw. Eingabespalte. Werte für ein deutsches Excel wie in der Konsole, der tiefste zuerst; Zeilen
+  /// als Text, die älteste zuerst.
+  String? kopierText(Kopie art, [int r = 0]) {
+    switch (art) {
+      case Kopie.wert || Kopie.stackAb || Kopie.stack:
+        var p = stackPosition(r);
+        final neu = _tokenAbschliessen(); // das offene Token ist jetzt x, alle anderen rücken eine tiefer
+        if (art == Kopie.stack) {
+          p = 0;
+        } else if (neu || p < 0) {
+          p++;
+        }
+        final z = api.zustand(zeilen: zustand.tiefe);
+        if (z.stack.isEmpty || p >= z.stack.length) return null;
+        // ab hier: vom angeklickten Wert bis x wie in der Eingabe bis zur aktuellen Zeile; der tiefste zuerst
+        final auswahl = switch (art) { Kopie.wert => [z.stack[p]], Kopie.stackAb => z.stack.take(p + 1), _ => z.stack };
+        final werte = [for (final s in auswahl) s.wert].reversed;
+        return konsole.Anzeige.fuerExcel(werte);
+      case Kopie.zeile || Kopie.zeilenAb || Kopie.verlauf:
+        // Index im Verlauf, -1 ist die aktuelle Zeile (oben in der Spalte, auch beim Blättern)
+        final i = art == Kopie.verlauf ? verlauf.length - 1 : r == 0 ? -1 : verlaufVersatz + r - 1;
+        final zeilen = [
+          if (art == Kopie.zeile) (i < 0 ? zeile : i < verlauf.length ? verlauf[i].text : "")
+          else ...[for (var k = i.clamp(-1, verlauf.length - 1); k >= 0; k--) verlauf[k].text, zeile],
+        ].where((t) => t.isNotEmpty);
+        return zeilen.isEmpty ? null : zeilen.join("\n");
+    }
+  }
+
+  /// Die Zeile, zu der gerade ein Kontextmenü offen ist; die Anzeige hebt sie hervor (doc/app.md 2.1).
+  ({bool stack, int zeile})? kontext;
+
+  void markiereKontext(({bool stack, int zeile})? k) {
+    kontext = k;
+    notifyListeners();
+  }
+
+  /// Ob es an dieser Stelle etwas zu kopieren gibt, ohne etwas zu verändern; sonst ist der Eintrag im
+  /// Kontextmenü ausgegraut.
+  bool kannKopieren(Kopie art, [int r = 0]) => switch (art) {
+        Kopie.stack => zustand.tiefe > 0 || zustand.offen.isNotEmpty,
+        Kopie.wert || Kopie.stackAb => stackPosition(r) < zustand.tiefe && (stackPosition(r) >= 0 || offenesToken != null),
+        Kopie.verlauf => verlauf.isNotEmpty || zeile.isNotEmpty,
+        Kopie.zeile || Kopie.zeilenAb => eingabeText(r).isNotEmpty,
+      };
+
+  /// Kopiert in die Zwischenablage und meldet, was kopiert wurde.
+  Future<void> kopiere(Kopie art, [int r = 0]) async {
+    final text = kopierText(art, r);
+    notifyListeners(); // ein offenes Token ist jetzt abgeschlossen
+    if (text == null) return _melde("An dieser Stelle gibt es nichts zu kopieren");
+    await Clipboard.setData(ClipboardData(text: text));
+    // ein Wert bzw. eine Zeile zeigt sich selbst, mehrere ihre Anzahl
+    final werte = art == Kopie.wert || art == Kopie.stackAb || art == Kopie.stack;
+    final teile = text.split(werte ? ";" : "\n");
+    if (teile.length > 1) return _melde("${teile.length} ${werte ? "Werte" : "Zeilen"} kopiert");
+    _melde("Kopiert: ${text.length > 40 ? "${text.substring(0, 39)}…" : text}");
+  }
+
+  /// Fügt aus der Zwischenablage ein: als [werte] alle Zahlen darin (wie `\v`, die letzte wird x), sonst den
+  /// Text Zeichen für Zeichen, als wäre er getippt. Mit [nachMenue] wartet es im Browser, bis das Kontextmenü
+  /// zu ist: Firefox fragt beim Lesen nach, und das Schließen des Menüs würde die Rückfrage verdrängen (BA-4).
+  Future<void> fuegeEin({required bool werte, bool nachMenue = false}) async {
+    if (zustand.fehler != null) return _melde("Erst den Fehler beheben (⌫)");
+    if (nachMenue && kIsWeb) await Future<void>.delayed(const Duration(milliseconds: 400));
+    String? text;
+    try {
+      text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+    } on PlatformException {
+      text = null; // der Browser hat das Lesen abgelehnt, z.B. die Rückfrage nicht bestätigt
+    }
+    if (text == null) return _melde("Die Zwischenablage lässt sich nicht lesen");
+    if (werte) {
+      final zahlen = konsole.Anzeige.ausExcel(text);
+      if (zahlen.isEmpty) return _melde("Keine Zahlen in der Zwischenablage");
+      _tokenAbschliessen();
+      _schreibe("${zahlen.join("_")}_"); // das letzte _ schließt auch die letzte Zahl ab
+      _melde(zahlen.length == 1 ? "1 Zahl eingefügt" : "${zahlen.length} Zahlen eingefügt");
+    } else {
+      _schreibe(text.replaceAll("\r", ""));
+    }
+    notifyListeners();
+  }
+
+  /// `\` und das Zeichen danach: `\c` kopiert x, `\s` den Stack, `\v` fügt Werte ein; sonst gehen beide an den
+  /// Rechner. Liefert, ob das Zeichen damit erledigt ist.
+  bool _rueckstrichBefehl(String c) {
+    if (rueckstrich) {
+      rueckstrich = false;
+      switch (c) {
+        case "c":
+          kopiere(Kopie.wert);
+          return true;
+        case "s":
+          kopiere(Kopie.stack);
+          return true;
+        case "v":
+          fuegeEin(werte: true);
+          return true;
+      }
+      _schreibe("\\");
+      return false;
+    }
+    if (c != "\\") return false;
+    rueckstrich = true;
+    return true;
   }
 
   // ---------- Cursorkreuz und Menü ----------
@@ -425,7 +618,7 @@ class RechnerModell extends ChangeNotifier {
 
   /// Text der sichtbaren Eingabezeile [r]: 0 ist die aktuelle Zeile, danach der Verlauf.
   String eingabeText(int r) {
-    if (r == 0) return zeile.replaceAll("\n", "↵");
+    if (r == 0) return "$zeile${rueckstrich ? r"\" : ""}".replaceAll("\n", "↵"); // ein wartendes \ dahinter
     final i = verlaufVersatz + r - 1;
     return i < verlauf.length ? verlauf[i].text.replaceAll("\n", "↵") : "";
   }
@@ -527,14 +720,66 @@ class RechnerModell extends ChangeNotifier {
         if (seitlich == 0) _eingabeGeschoben.removeWhere((r, _) => r > 0); // nach dem Blättern andere Zeilen
         if (seitlich != 0) _schieben(seitlich);
       case Bereich.stack:
-        if (richtung == AxisDirection.down && stackVersatz + platzStack.length < zustand.tiefe) stackVersatz++;
+        // der unterste Wert darf bis in die Zeile hochkommen, die auch die kleinste Anzeige noch ganz zeigt
+        final rest = platzStack.length.clamp(1, stackMinZeilen);
+        if (richtung == AxisDirection.down && stackVersatz + rest < zustand.tiefe) stackVersatz++;
         if (richtung == AxisDirection.up && stackVersatz > 0) stackVersatz--;
+        if (_stackZeilen > zustand.stack.length && zustand.stack.length < zustand.tiefe) zustand = api.zustand(zeilen: _stackZeilen); // tiefere Werte holen
         if (seitlich == 0) _stackGeschoben.clear(); // nach dem Blättern stehen andere Werte in den Zeilen
         if (seitlich != 0) _schieben(seitlich);
       case Bereich.funktionen:
-        final n = _domaenenSeiten.length + _eigeneSeiten;
-        if (richtung == AxisDirection.right) funktionsSeite = (funktionsSeite + 1) % n;
-        if (richtung == AxisDirection.left) funktionsSeite = (funktionsSeite + n - 1) % n;
+        if (seitlich != 0) _blaettere(seitlich);
+    }
+    notifyListeners();
+  }
+
+  /// Zahl der Seiten der Funktionstasten: die Domäne und die eigenen Funktionen.
+  int get funktionsSeiten => _grundSeiten.length + _domaenenSeiten.length + _eigeneSeiten;
+
+  /// Blättert um [schritt] Seiten, im Kreis oder [begrenzt] auf die erste und letzte Seite.
+  void _blaettere(int schritt, {bool begrenzt = false}) {
+    final n = funktionsSeiten;
+    funktionsSeite = begrenzt ? (_seite + schritt).clamp(0, n - 1) : (_seite + schritt + n) % n;
+  }
+
+  /// Nach Wischen oder Mausrad zeigt das Tastenfeld kurz den Rahmen um die Funktionstasten, ohne den Bereich zu
+  /// wählen: die Anzeige bleibt, wo sie ist (doc/app.md 3.3).
+  bool funktionenHinweis = false;
+  Timer? _hinweisUhr;
+
+  void _zeigeHinweis() {
+    funktionenHinweis = true;
+    _hinweisUhr?.cancel();
+    _hinweisUhr = Timer(const Duration(milliseconds: 1500), () {
+      funktionenHinweis = false;
+      notifyListeners();
+    });
+  }
+
+  /// Wischen über den Funktionstasten: blättert im Kreis (doc/app.md 3.3).
+  void blaettereFunktionen(int schritt) {
+    if (hilfeModus || apostroph || bereich == Bereich.variablen) return; // die Tasten zeigen Variablen
+    _blaettere(schritt);
+    _zeigeHinweis();
+    notifyListeners();
+  }
+
+  /// Rasten des Mausrads in eine Richtung, die noch nicht zu einem Seitenwechsel geführt haben.
+  int _rad = 0;
+  DateTime _radZeit = DateTime(0);
+
+  /// Mausrad über den Funktionstasten: erst jede dritte Raste in dieselbe Richtung blättert, begrenzt auf die erste
+  /// und letzte Seite (doc/app.md 3.3).
+  void mausrad(int richtung) {
+    if (hilfeModus || apostroph || bereich == Bereich.variablen) return; // die Tasten zeigen Variablen
+    final jetzt = DateTime.now();
+    if (jetzt.difference(_radZeit) > const Duration(milliseconds: 800) || _rad.sign == -richtung) _rad = 0;
+    _radZeit = jetzt;
+    _rad += richtung;
+    _zeigeHinweis();
+    if (_rad.abs() >= 3) {
+      _rad = 0;
+      _blaettere(richtung, begrenzt: true);
     }
     notifyListeners();
   }
@@ -572,6 +817,10 @@ class RechnerModell extends ChangeNotifier {
       return;
     }
     shift = false; // die Umschalttaste der Tastatur steckt schon im Zeichen
+    if (_rueckstrichBefehl(c)) {
+      notifyListeners();
+      return;
+    }
     switch (c) {
       case "~":
         _schreibe("~");
@@ -701,6 +950,8 @@ class RechnerModell extends ChangeNotifier {
       t.cancel();
     }
     hilfeScroll.dispose();
+    meldung.dispose();
+    _hinweisUhr?.cancel();
     super.dispose();
   }
 
@@ -728,7 +979,7 @@ class RechnerModell extends ChangeNotifier {
   /// Wählt die Domäne der Funktionstasten; eine Bibliothek wird dabei einmal geladen.
   void waehleDomaene(String name) {
     domaene = name;
-    funktionsSeite = 0;
+    funktionsSeite = _grundSeiten.length; // die erste Seite der Domäne, davor stehen die Grundfunktionen
     if (!domaenen.containsKey(name) && api.bibliotheksVersion(name) == null) {
       api.ladeBibliothek(name);
       zustand = api.zustand(zeilen: _stackZeilen);

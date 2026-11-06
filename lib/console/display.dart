@@ -225,11 +225,19 @@ class Anzeige {
   /// Dezimalkomma oder -punkt, Exponent mit e oder E; alles andere wird übersprungen.
   /// Ein Minus ist nur ein Vorzeichen, wenn davor keine Ziffer und kein Buchstabe steht.
   /// Der Fehlerwert #DIV/0! von Excel liefert keine 0.
+  /// Ein einzelnes Komma zwischen Ziffern ist ein Dezimalkomma; in einer Folge (4,5,6,7) und in einem Text mit
+  /// Dezimalpunkt trennen Kommas (BA-3).
   static List<String> ausExcel(String text) => [
-        for (final m in _zahlImText.allMatches(text.replaceAll("#DIV/0!", "")))
+        for (final m in _zahlImText.allMatches(_kommas(text.replaceAll("#DIV/0!", ""))))
           "${m[1] == "-" ? "~" : ""}${m[2]!.replaceAll(",", ".")}"
               "${m[4] == null ? "" : "ê${m[3] == "-" ? "~" : ""}${int.parse(m[4]!)}"}",
       ];
+
+  /// Kommas, die trennen, werden zu ";".
+  static String _kommas(String text) {
+    if (RegExp(r"\d\.\d").hasMatch(text)) return text.replaceAll(",", ";");
+    return text.replaceAllMapped(RegExp(r"\d+(?:,\d+){2,}"), (m) => m[0]!.replaceAll(",", ";"));
+  }
 
   static final RegExp _zahlImText =
       RegExp(r"(?:(?<![\p{L}\d])([+-]))?(\d+(?:[.,]\d+)?)(?:[eE]([+-]?)(\d+))?", unicode: true);

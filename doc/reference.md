@@ -324,6 +324,8 @@ Ein `~` vor dem Namen bildet die Umkehrfunktion, z.B. `~sin` (arcsin) oder `~log
 | `deg`, `rad`, `grd` | Winkelmodus Grad, Bogenmaß, Gon (Standard: `deg`) |
 | `sin`, `cos`, `tan` | Winkelfunktionen im eingestellten Modus; bei Vielfachen von 90° (100 gon, π/2) exakt 0, 1 oder −1, `tan` an den Polstellen unendlich |
 | `~sin`, `~cos`, `~tan` | Umkehrfunktionen (auch `asin`, `acos`, `atan`) |
+| `sinh`, `cosh`, `tanh` | Hyperbelfunktionen; sie hängen nicht vom Winkelmodus ab |
+| `~sinh`, `~cosh`, `~tanh` | Umkehrfunktionen (auch `asinh`, `acosh`, `atanh`); `~cosh` liefert den Wert ≥ 0. Außerhalb des Definitionsbereichs (`~cosh` unter 1, `~tanh` ab ±1) NaN bzw. unendlich wie bei `~sin` |
 | `dms` | zerlegt einen Winkel in Grad, Minuten, Sekunden: `"12.3456789dms"` ergibt `[12 20 44.444]` |
 
 ### 6.3 Zufall
@@ -684,7 +686,6 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
 | `bef?`    | Unbekannter Befehl |
 | `var?`    | Variable ist nicht definiert |
 | `varOp`   | Operator ist für Variablen nicht erlaubt |
-| `arg?`    | Argumente werden im Code mit ~: gelesen (für `'0`…`'9`) |
 | `argAus`  | Argumente gibt es nur in eigenen Funktionen |
 | `arg0`    | Es gibt keine weiteren Argumente |
 | `inCode`  | Fehler in *name*: *Fehler im Code* |
@@ -733,7 +734,8 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
 2. **Division durch 0:** `/` liefert unendlich, `|/` einen Fehler. Soll `/` ebenfalls einen Fehler melden?
 3. **Füllstand:** `S`, `R` und `D` arbeiten jenseits des Füllstands still mit Nullen, `Y` meldet einen Fehler.
    Geplant: Alle melden einen Fehler.
-4. **`'0` … `'9`** werden noch erkannt, melden aber nur einen Fehler. Aus der Grammatik entfernen oder neu belegen?
+4. ~~**`'0` … `'9`**~~ **entschieden:** aus der Grammatik entfernt (2026-11-04). Argumente liest man mit `~:` bzw.
+   `~|:`; `'3` meldet jetzt „Ungültiges Zeichen nach '“ wie jedes andere falsche Zeichen.
 5. **Grenze für `loop`** soll einstellbar werden. Wie (Befehl, Argument, Einstellung)?
 
 ### 14.2 Geplant
@@ -748,7 +750,7 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
   Operatoren mit Sonderzeichen einführen. Zu klären: Ersetzt die Oberfläche die Umschreibung (dann kennt der
   Rechner nur das Zeichen), oder versteht der Rechner sie selbst (dann funktioniert sie auch in Skripten und
   über den Socket)? `\` ist in der Sprache noch frei. In der Konsole beendet `\q` schon die zeilenweise
-  Eingabe; Befehle der Oberfläche und Sonderzeichen müssen sich also unterscheiden lassen.
+  Eingabe; Befehle der Oberfläche und Sonderzeichen müssen sich also unterscheiden lassen (Backlog FS-5).
 
 ---
 
@@ -803,8 +805,7 @@ Var_Normal      = praefix_var , [ modifikator , [ modifikator ] ] , name ;
                   (* 'name lesen, '!name anlegen, '!!name Konstante, '=name schreiben, '==name füllen, '+name ändern,
                      '++name um 1 ändern, '~name entfernen, '~~name Geschütztes entfernen. Belegt sind die Paare
                      aus 8.2; alle anderen (z.B. '+-name, '**name) meldet der Rechner als Fehler *)
-Argument        = praefix_var , ziffer ;                              (* noch erkannt, meldet einen Fehler *)
-Variable        = Tag | Ablegen | Var_Normal | Argument ;
+Variable        = Tag | Ablegen | Var_Normal ;
 
 (* --- Code-Blöcke --- *)
 Code            = code_open , { incode_zeichen | Code } , code_close ;
@@ -835,7 +836,7 @@ die Kapitel 4–11 fest.
 | Vergleich, Logik | `< > = ~< ~> ~= ≥ ≤ ≠ & ~&` |
 | Koordinaten | `° ~°` |
 | Argumente | `:` · im Code `~: ~\|: \|:` |
-| Funktionen | `pi e ln exp log ~log sin cos tan ~sin ~cos ~tan dms rnd seed ~seed round` |
+| Funktionen | `pi e ln exp log ~log sin cos tan ~sin ~cos ~tan sinh cosh tanh ~sinh ~cosh ~tanh dms rnd seed ~seed round` |
 | Winkelmodus | `deg rad grd` |
 | Stack | `C D S R ~R Y` · mit Tags `'C 'D 'S 'R '~R` |
 | Variablen | `'!name 'name '=name '==name '+name '-name '*name '/name '++name '--name '~name` · Konstanten `'!!name '~~name` |

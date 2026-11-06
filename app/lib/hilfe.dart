@@ -14,14 +14,20 @@ typedef TippZeile = ({ZeilenArt art, String schreibweise, String stack, String t
 abstract final class AppHilfe {
   /// Einträge der App. Unter einer Kennung des Rechners (`#`, `~`, `|`, `'`) ergänzen sie dessen Eintrag.
   static const Map<String, Hilfe> eintraege = {
-    "#": Hilfe("#", "Hilfe zur App", [
+    // die Startseite: Hilfe zur Hilfe, Hilfe zur App, dann die des Rechners (nachschlagen)
+    "#": Hilfe("#", "Hilfe zur Hilfe", [
       Verwendung("Shift+MENÜ", "Hilfe an; dann eine Taste oder ein Element der Anzeige antippen"),
+      Verwendung("Tipp in die Anzeige", "zeigt deren Hilfe"),
       Verwendung("LESEN (ALPHA)", "Lese-Modus: ganzer Text, ▲ ▼ blättern, TAB und ENTER folgen den Verweisen"),
       Verwendung("◄", "zurück zum vorigen Eintrag"),
       Verwendung("BEENDEN (MENÜ)", "beendet die Hilfe"),
-    ], "Die Anzeigen: [[app:eingabe]], [[app:stack]], [[app:funktionen]], [[app:variablen]]. Bedienung: "
-        "[[app:shift]], [[app:alpha]], [[app:tab]], [[app:cursorkreuz]], [[app:maximieren]], [[app:enter]], "
-        "[[app:umbruch]], [[app:hilfe]]. Erweiterungen: [[app:bibliotheken]]."),
+    ]),
+    "app:start": Hilfe("app:start", "Hilfe zur App", [],
+        "Oben die Anzeige mit den Seiten Rechnen, Variablen und Tags, Funktionen; darunter das Tastenfeld. Unten die "
+        "Anzeigen, die Bedienung und die Bibliotheken.", [
+      "app:eingabe", "app:stack", "app:funktionen", "app:variablen", "app:shift", "app:alpha", "app:tab",
+      "app:cursorkreuz", "app:maximieren", "app:enter", "app:umbruch", "app:hilfe", "app:bibliotheken",
+    ]),
     "~": Hilfe("~", "Die Taste ~", [Verwendung("~", "schreibt ~ und zeigt auf den Tasten, was mit ~ davor geschieht")],
         "Erlaubt ist ~ dort, wo die Taste rechts oben ein kleines ~ trägt. Zusammen mit | ergibt es ~|."),
     "|": Hilfe("|", "Die Taste |", [Verwendung("|", "schreibt | und zeigt auf den Tasten die Varianten mit |")],
@@ -61,14 +67,14 @@ abstract final class AppHilfe {
       Verwendung("◄ ►", "schieben lange Zeilen und Werte seitlich, bei den Funktionen wechseln sie die Seite"),
     ], "Orange Pfeile am Rahmen zeigen, wohin sich etwas schieben lässt. Siehe [[app:tab]]."),
     "app:maximieren": Hilfe("app:maximieren", "Maximieren", [
-      Verwendung("[ ]", "gibt Eingabe bzw. Stack die ganze Breite"),
-      Verwendung("[|]", "teilt die Anzeige wieder"),
-    ], "Bei maximiertem Stack zeigt die graue Zeile >: was man tippt, bei maximierter Eingabe steht der Tos in "
-        "der Statuszeile. Siehe [[app:stack]], [[app:eingabe]]."),
+      Verwendung("□", "gibt Eingabe bzw. Stack die ganze Breite"),
+      Verwendung("◫", "teilt die Anzeige wieder"),
+    ], "Bei maximiertem Stack zeigt die graue Zeile >: was man tippt, bei maximierter Eingabe steht x in der "
+        "Statuszeile. Siehe [[app:stack]], [[app:eingabe]]."),
     "app:enter": Hilfe("app:enter", "ENTER", [
-      Verwendung("ENTER", "Leerzeichen: trennt und kopiert x", stack: "x → x x"),
+      Verwendung("ENTER", "Leerzeichen: trennt und kopiert x; jedes weitere ENTER verdoppelt x", stack: "x → x x"),
       Verwendung("Shift+ENTER", "Trenner _: trennt ohne Kopie, z.B. für bessere Lesbarkeit"),
-      Verwendung("ALPHA, ⏎", "im Alpha-Modus: Zeilenumbruch, z.B. in Code"), // ⏎ wie auf der Taste
+      Verwendung("ALPHA, ⏎", "im Alpha-Modus: Zeilenumbruch, z.B. in Code; weitere ⏎ geben leere Zeilen"), // ⏎ wie auf der Taste
     ], "Siehe [[ ]], [[_]], [[app:umbruch]]."),
     "app:loeschen": Hilfe("app:loeschen", "Löschen", [
       Verwendung("⌫", "nimmt das zuletzt eingegebene Zeichen zurück"),
@@ -81,16 +87,23 @@ abstract final class AppHilfe {
     "app:eingabe": Hilfe("app:eingabe", "Anzeige: Eingabe", [
       Verwendung("▲ ▼", "blättern im Verlauf"),
       Verwendung("◄ ►", "schieben lange Zeilen seitlich"),
+      Verwendung("Rechtsklick", "Zeile, ab hier oder Verlauf kopieren, Text einfügen, Hilfe; am Handy langes Drücken"),
+      Verwendung("Strg+V", "fügt Text ein, als wäre er getippt"),
     ], "Oben die aktuelle Zeile, darunter die älteren. Ein Fehler ist rot markiert. Ein vorgemerktes Enter steht "
         "als ENTER↑ auf dem Rahmen. Weiter: [[app:stack]]."),
     "app:stack": Hilfe("app:stack", "Anzeige: Stack", [
       Verwendung("▲ ▼", "blättern zu tieferen Werten"),
       Verwendung("◄ ►", "schieben lange Werte seitlich"),
-    ], "Die Werte; x ist der Tos (hinterlegt), darunter y, z, t, ≡₄ … Ein offenes Token steht grau mit >: darüber. "
+      Verwendung("Rechtsklick", "Wert, ab hier oder Stack kopieren, Werte einfügen, Hilfe; am Handy langes Drücken"),
+      Verwendung("Strg+C", "kopiert x, mit Shift den Stack; Strg+V fügt die Zahlen aus der Zwischenablage ein"),
+    ], "Die Werte; x ist hinterlegt, darunter y, z, t, ≡₄ … Ein offenes Token steht grau mit >: darüber. "
         "Siehe [[#stack]]. Weiter: [[app:funktionen]]."),
     "app:funktionen": Hilfe("app:funktionen", "Anzeige: Funktionen", [
       Verwendung("◄ ►", "wechseln die Seite der Funktionstasten: Domäne, eigene Funktionen"),
-    ], "Die Seite listet die eigenen Funktionen mit ihrem Code, die Domäne wählt MENÜ. Siehe [[#funktionen]]. "
+      Verwendung("Wischen", "über die Funktionstasten blättert ebenso, am PC auch das Mausrad"),
+    ], "Die Seite listet die eigenen Funktionen und je geladener Bibliothek deren Funktionen, jeweils mit ihrem Code; "
+        "blättern die Tasten auf eine Bibliothek, springt sie zu deren Abschnitt. Die Domäne wählt MENÜ. "
+        "Siehe [[#funktionen]]. "
         "Weiter: [[app:variablen]]."),
     "app:variablen": Hilfe("app:variablen", "Anzeige: Variablen", [
       Verwendung("Funktionstasten", "zeigen die Variablen und Tags, ein Tipp liest sie"),
@@ -112,7 +125,7 @@ abstract final class AppHilfe {
     if (kennung == "app:bibliotheken") return [bibliothekenSeite(api)];
     final eigene = eintraege[kennung];
     final vomRechner = kennung.startsWith("app:") ? null : api.hilfe(kennung);
-    return [?eigene, ?vomRechner];
+    return [?eigene, if (kennung == "#") eintraege["app:start"]!, ?vomRechner];
   }
 
   /// Titel eines Verweisziels.
@@ -269,7 +282,7 @@ abstract final class AppHilfe {
           grund.add(zeile(v.schreibweise, v.kurz));
         }
       }
-    } else if (t.reserviert || t.text.isEmpty) {
+    } else if (t.reserviert || t.text.isEmpty) {  
       final text = _reserviert[t.text];
       if (text != null) grund.add(zeile(t.text.isEmpty ? "–" : t.text, text));
     } else if (t.aktion == Aktion.apostroph) {
@@ -369,7 +382,7 @@ abstract final class AppHilfe {
   /// Hilfe zu einem Wert auf dem Stack: der volle Wert und seine Tags, dazu der Stack im Rechner.
   static List<Hilfe> stackWert(RpnApi api, StackZeile s) => [
         Hilfe("app:wert", "Stack-Wert an Position ${s.position}", [
-          Verwendung(zahl(s.wert), s.position == 0 ? "x, der Tos" : "${positionsName(s.position)} (Position ${s.position})"),
+          Verwendung(zahl(s.wert), s.position == 0 ? "x, der oberste Wert" : "${positionsName(s.position)} (Position ${s.position})"),
           for (final t in s.tags) Verwendung("'$t", "Tag auf dieser Zelle"),
         ], "Siehe [[app:stack]]."),
         ?api.hilfe("#stack"),

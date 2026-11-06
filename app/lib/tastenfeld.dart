@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'farben.dart';
@@ -22,7 +23,7 @@ class Tastenfeld extends StatelessWidget {
   static const double hoehe =
       randOben + 5 * obenHoehe + 4 * obenAbstand + blockAbstand + 4 * untenHoehe + 3 * untenAbstand + randUnten;
 
-  /// Breite ohne Dehnung (doc/app.md Punkt 5): 400 Punkte abzüglich des Rands der Seite; breiter werden nur die
+  /// Breite ohne Dehnung (doc/app.md 1.1): 400 Punkte abzüglich des Rands der Seite; breiter werden nur die
   /// Tasten, das Cursorkreuz behält seine Größe, die beiden kleinen Tasten darunter füllen den Platz neben ihm.
   static const double normalBreite = 376;
 
@@ -59,46 +60,69 @@ class Tastenfeld extends StatelessWidget {
     }
 
     // Rahmen um die zehn Funktionstasten (R3 und R4, Spalten 2 bis 6), wenn sie der gewählte Bereich sind
-    final funktionenGewaehlt = m.bereich == Bereich.funktionen || m.bereich == Bereich.variablen;
+    // nach Wischen oder Mausrad auch kurz ohne gewählten Bereich (doc/app.md 3.3)
+    final funktionenGewaehlt = m.bereich == Bereich.funktionen || m.bereich == Bereich.variablen || m.funktionenHinweis;
     List<Widget> rahmen(double breite) {
       final taste = (breite - 5 * (obenAbstand - 1)) / 6;
       final links = taste + obenAbstand - 1 - 4, oben = randOben + 2 * (obenHoehe + obenAbstand) - 4;
-      final hoch = 2 * obenHoehe + obenAbstand + 8;
+      final hoch = 2 * obenHoehe + obenAbstand + 8, weit = 5 * taste + 4 * (obenAbstand - 1) + 8;
       final variablen = m.bereich == Bereich.variablen;
+      Widget pfeil(IconData icon) => Container(color: Farben.gehaeuse, child: Icon(icon, size: 18, color: Farben.shift));
       return [
+        // Wischen und Mausrad blättern die Seiten der Funktionstasten (doc/app.md 3.3); durchlässig, damit die
+        // Tasten ihre Tipps behalten, ein Wischen gewinnt erst nach etwas Weg
         Positioned(
           left: links,
-          width: 5 * taste + 4 * (obenAbstand - 1) + 8,
+          width: weit,
           top: oben,
           height: hoch,
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: Farben.shift, width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerSignal: (e) {
+              if (e is! PointerScrollEvent || e.scrollDelta.dy == 0) return;
+              TippSperre.sperren(); // beim Drehen keine Tooltips der Tasten darunter
+              m.mausrad(e.scrollDelta.dy > 0 ? 1 : -1);
+            },
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragEnd: (d) {
+                final v = d.primaryVelocity ?? 0;
+                if (v.abs() > 100) m.blaettereFunktionen(v < 0 ? 1 : -1); // nach links wischen: nächste Seite
+              },
             ),
           ),
         ),
-        // der Name des Bereichs unten auf dem Rahmen, mit Tooltip (doc/app.md 7, Punkt 12)
-        Positioned(
-          left: links + 10,
-          top: oben + hoch - 7,
-          child: tipp(
-            [
-              for (final v in AppHilfe.eintraege[variablen ? "app:variablen" : "app:funktionen"]!.verwendungen)
-                "${v.schreibweise}  ${v.kurz}",
-            ].join("\n"),
-            Container(
-              color: Farben.gehaeuse,
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Text(
-                variablen ? "Variablen" : "Funktionen",
-                style: const TextStyle(fontSize: 10, height: 1.1, fontWeight: FontWeight.w600, color: Farben.shift),
+        if (funktionenGewaehlt) ...[
+          Positioned(
+            left: links,
+            width: weit,
+            top: oben,
+            height: hoch,
+            // unten eine Lücke für den Namen, damit er ohne eigenen Hintergrund auf dem Rahmen stehen kann
+            child: IgnorePointer(child: CustomPaint(painter: _Rahmen(luecke: (10, 10 + 6 + _breite(m.seitenName, _nameStil))))),
+          ),
+          // der Name des Bereichs unten auf dem Rahmen, mit Tooltip (doc/app.md 7, Punkt 12)
+          Positioned(
+            left: links + 10,
+            top: oben + hoch - 7,
+            child: tipp(
+              [
+                for (final v in AppHilfe.eintraege[variablen ? "app:variablen" : "app:funktionen"]!.verwendungen)
+                  "${v.schreibweise}  ${v.kurz}",
+              ].join("\n"),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                // die Seite statt „Funktionen“: Grundfunktionen, schwingungen 2/3, Eigene (doc/app.md 3.3)
+                child: Text(m.seitenName, style: _nameStil),
               ),
             ),
           ),
-        ),
+          // mehr als eine Seite: Pfeile links und rechts, das Blättern läuft im Kreis
+          if (!variablen && m.funktionsSeiten > 1) ...[
+            Positioned(left: links - 9, top: oben + hoch / 2 - 9, child: IgnorePointer(child: pfeil(Icons.arrow_left))),
+            Positioned(left: links + weit - 9, top: oben + hoch / 2 - 9, child: IgnorePointer(child: pfeil(Icons.arrow_right))),
+          ],
+        ],
       ];
     }
 
@@ -107,7 +131,7 @@ class Tastenfeld extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, platz) => Stack(
           clipBehavior: Clip.none,
-          children: [_bloecke(m, reihe, oben), if (funktionenGewaehlt) ...rahmen(platz.maxWidth)],
+          children: [_bloecke(m, reihe, oben), ...rahmen(platz.maxWidth)],
         ),
       ),
     );
@@ -250,13 +274,22 @@ class TasteWidget extends StatelessWidget {
         ? (enterTaste ? (modus == Modus.alpha ? 30.0 : 14.0) : 21.0)
         : (lang ? 12.0 : 16.0);
     final zeigeKlein = !m.alpha;
+    // ~ und | zeigen unter dem Zeichen, was sie allein tun: ± bzw. □|.□ (doc/app.md 3.1)
+    final rechenfunktion = zeigeKlein && (t.aktion == Aktion.tilde || t.aktion == Aktion.strich);
 
     final knopf = Material(
       color: hinten,
       // nur shape, nicht zusätzlich borderRadius: beides zusammen verbietet Material
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(9),
-        side: aktiv ? const BorderSide(color: Farben.tasteText, width: 2) : BorderSide.none,
+        // nach ~ bzw. | ein dünner Rand in der Farbe des Präfixes auf den Tasten, auf die er wirkt (doc/app.md 3.2)
+        side: aktiv
+            ? const BorderSide(color: Farben.tasteText, width: 2)
+            : farbe == null && modus == Modus.tilde
+                ? const BorderSide(color: Farben.tilde, width: 1)
+                : farbe == null && modus == Modus.strich
+                    ? const BorderSide(color: Farben.strich, width: 1)
+                    : BorderSide.none,
       ),
       elevation: 0,
       child: InkWell(
@@ -298,8 +331,21 @@ class TasteWidget extends StatelessWidget {
                   bottom: 2,
                   child: Text(alphaBuchstabe, style: _klein(Farben.alpha, mono: true).copyWith(fontSize: 9)),
                 ),
+              if (rechenfunktion)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 5,
+                  height: 9,
+                  child: CustomPaint(
+                    painter: _Rechenfunktion(
+                      vorzeichen: t.aktion == Aktion.tilde,
+                      farbe: Farben.tasteText.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
               Align(
-                alignment: const Alignment(0, 0.45),
+                alignment: Alignment(0, rechenfunktion ? -0.4 : 0.45),
                 child: t.aktion == Aktion.tab
                     // TAB mit großem Zeichen: ⇥ vorwärts, mit Shift ⇤ rückwärts
                     // (auf schmalen Bildschirmen verkleinert, statt überzulaufen)
@@ -315,15 +361,25 @@ class TasteWidget extends StatelessWidget {
                           ],
                         ),
                       )
-                    : Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: groesse,
-                    fontWeight: FontWeight.w600,
-                    color: vorne,
-                    letterSpacing: lang ? 0.3 : 0,
-                  ),
-                ),
+                    // lange Wörter (INSPEKT, BEENDEN) nie umbrechen: ist die Schrift breiter (Handy), wird es kleiner;
+                    // seitlich Abstand, damit der Rand einer hervorgehobenen Taste nichts verdeckt
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          text,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: groesse,
+                            fontWeight: FontWeight.w600,
+                            color: vorne,
+                            letterSpacing: lang ? 0.3 : 0,
+                          ),
+                        ),
+                      ),
+                      ),
               ),
             ],
           ),
@@ -450,7 +506,7 @@ class _Ecke extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // zeigt, was ein Druck bewirkt: geteilt → maximieren [ ], maximiert → wieder teilen [|]
+    // zeigt, was ein Druck bewirkt: geteilt → maximieren □, maximiert → wieder teilen ◫
     final wirkt = rechts && (m.bereich == Bereich.eingabe || m.bereich == Bereich.stack);
     // bei gedehnten Tasten wächst die Spalte, das Cursorkreuz nicht: die Taste füllt den zusätzlichen Platz
     Widget taste(double spalte) => Material(
@@ -475,12 +531,82 @@ class _Ecke extends StatelessWidget {
           alignment: rechts ? Alignment.bottomRight : Alignment.bottomLeft,
           // zeigt, was ein Druck bewirkt (doc/app.md 7, Punkt 10)
           child: rechts
-              ? tipp(m.maximiert ? "[|] 2 Seiten" : "[ ] Vollbild für die markierte Seite", taste(platz.maxWidth))
+              ? tipp(m.maximiert ? "◫ 2 Seiten" : "□ Vollbild für die markierte Seite", taste(platz.maxWidth))
               : taste(platz.maxWidth),
         ),
       ),
     );
   }
+}
+
+const _nameStil = TextStyle(fontSize: 10, height: 1.1, fontWeight: FontWeight.w600, color: Farben.shift);
+
+double _breite(String text, TextStyle stil) =>
+    (TextPainter(text: TextSpan(text: text, style: stil), textDirection: TextDirection.ltr)..layout()).width;
+
+/// Der orange Rahmen um die Funktionstasten, unten mit einer Lücke von x = luecke.$1 bis luecke.$2 für den Namen.
+class _Rahmen extends CustomPainter {
+  final (double, double) luecke;
+  const _Rahmen({required this.luecke});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = RRect.fromRectAndRadius((Offset.zero & size).deflate(1), const Radius.circular(12));
+    canvas.saveLayer(Offset.zero & size, Paint());
+    canvas.drawRRect(
+      r,
+      Paint()
+        ..color = Farben.shift
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    // die Lücke ausradieren: nur im eigenen Layer, die Tasten darunter bleiben
+    canvas.drawRect(Rect.fromLTRB(luecke.$1, size.height - 4, luecke.$2, size.height), Paint()..blendMode = BlendMode.clear);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_Rahmen alt) => alt.luecke != luecke;
+}
+
+/// Die Rechenfunktion von ~ und | unter ihrem Zeichen (doc/app.md 3.1): ± bzw. □|.□, mittig in der Höhe der
+/// Zeichenfläche.
+class _Rechenfunktion extends CustomPainter {
+  final bool vorzeichen;
+  final Color farbe;
+  const _Rechenfunktion({required this.vorzeichen, required this.farbe});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stift = Paint()
+      ..color = farbe
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final h = size.height, mitte = size.width / 2;
+    if (vorzeichen) {
+      // ±: Plus oben, Strich darunter
+      canvas.drawLine(Offset(mitte - 3.5, h * 0.35), Offset(mitte + 3.5, h * 0.35), stift);
+      canvas.drawLine(Offset(mitte, 0), Offset(mitte, h * 0.7), stift);
+      canvas.drawLine(Offset(mitte - 3.5, h), Offset(mitte + 3.5, h), stift);
+      return;
+    }
+    // □|.□: Kasten, Strich, Punkt, Kasten
+    const kasten = 6.5, abstand = 2.5;
+    final breite = 2 * kasten + 4 * abstand + 1.5;
+    var x = mitte - breite / 2;
+    final oben = h - kasten;
+    canvas.drawRect(Rect.fromLTWH(x, oben, kasten, kasten), stift);
+    x += kasten + abstand;
+    canvas.drawLine(Offset(x, 0), Offset(x, h), stift);
+    x += abstand;
+    canvas.drawCircle(Offset(x + 0.75, h - 0.75), 0.9, stift..style = PaintingStyle.fill);
+    stift.style = PaintingStyle.stroke;
+    x += 1.5 + abstand;
+    canvas.drawRect(Rect.fromLTWH(x, oben, kasten, kasten), stift);
+  }
+
+  @override
+  bool shouldRepaint(_Rechenfunktion alt) => alt.vorzeichen != vorzeichen || alt.farbe != farbe;
 }
 
 /// Die Zeichen von VS Code: ein Rahmen, bei [geteilt] mit einem Strich in der Mitte.

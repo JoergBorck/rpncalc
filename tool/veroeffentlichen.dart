@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
+
+import 'changelog.dart' show changelog;
 
 /// Legt einen Stand des aktuellen `main` im öffentlichen Repository an, ohne die Ausschlüsse (z.B. Kursmaterial).
 ///
@@ -11,7 +14,11 @@ import 'dart:io';
 ///   dart run tool/veroeffentlichen.dart                Stand anlegen, noch nicht pushen
 ///   dart run tool/veroeffentlichen.dart --push         Stand anlegen und ins öffentliche Repository pushen
 ///   dart run tool/veroeffentlichen.dart --web --push   dazu die Browser-Version bauen und pushen
-const ausschluesse = ["scratchpad", "spec"];
+///
+/// Gate: Solange im Backlog (process/backlog.md) ein Eintrag mit dem Merkmal „· Gate“ offen ist oder einer unter
+/// „Erforderlich“ steht, bricht es ab; ebenso, wenn CHANGELOG.md nicht zum Backlog passt (tool/changelog.dart).
+const ausschluesse = ["scratchpad", "spec", "doc/requirements.md"]; // requirements.md: Ideensammlung, nur im Akademie-Repository
+const backlog = "process/backlog.md";
 const remote = "oeffentlich";
 const adresse = "https://github.com/JoergBorck/rpncalc.git";
 const zweig = "oeffentlich";
@@ -19,6 +26,29 @@ const webZweig = "gh-pages";
 const webPfad = "/rpncalc/"; // Pages liegt unter dem Namen des Repositorys
 
 void main(List<String> argumente) {
+  final offen = erforderlich(File(backlog).readAsStringSync());
+  if (offen.isNotEmpty) {
+    stderr.writeln("Nicht veröffentlicht: im Backlog ist noch offen (Gate)");
+    for (final e in offen) {
+      stderr.writeln("  $e");
+    }
+    exit(1);
+  }
+  // CHANGELOG.md aus „Erledigt“ (DG-2): muss aktuell und in main committet sein, sonst fehlt er im Stand
+  final log = changelog(File(backlog).readAsStringSync(), File("pubspec.yaml").readAsStringSync());
+  if (log.fehler.isNotEmpty) {
+    stderr.writeln("Nicht veröffentlicht: CHANGELOG.md lässt sich nicht erzeugen");
+    for (final f in log.fehler) {
+      stderr.writeln("  $f");
+    }
+    exit(1);
+  }
+  final show = Process.runSync("git", ["show", "main:CHANGELOG.md"], stdoutEncoding: utf8);
+  final committet = show.exitCode == 0 ? (show.stdout as String).replaceAll("\r\n", "\n") : "";
+  if (committet.trim() != log.text.trim()) {
+    stderr.writeln("Nicht veröffentlicht: CHANGELOG.md ist nicht aktuell; dart run tool/changelog.dart, dann committen");
+    exit(1);
+  }
   final push = argumente.contains("--push");
   final web = argumente.contains("--web");
   final index = File("${git(["rev-parse", "--git-dir"])}/oeffentlich.index").absolute.path; // absolut, weil git für --web woanders läuft
@@ -104,4 +134,24 @@ String git(List<String> argumente, {Map<String, String>? umgebung, String? verze
     throw StateError("git ${argumente.first} ist fehlgeschlagen");
   }
   return (r.stdout as String).trim();
+}
+
+/// Die Titel der offenen Gate-Einträge des Backlogs: mit dem Merkmal „· Gate“ in einem Bereich außer „Erledigt“
+/// und „Abgelehnt“, dazu alle unter „Erforderlich“.
+List<String> erforderlich(String text) {
+  final eintraege = <String>[];
+  var bereich = "";
+  String? titel;
+  for (final zeile in const LineSplitter().convert(text)) {
+    if (zeile.startsWith("## ")) bereich = zeile.substring(3).trim();
+    final offen = bereich != "Erledigt" && bereich != "Abgelehnt" && !bereich.startsWith("Version");
+    if (zeile.startsWith("### ")) {
+      titel = zeile.substring(4).trim();
+      if (bereich == "Erforderlich") eintraege.add(titel);
+    } else if (titel != null && offen && bereich != "Erforderlich" && zeile.contains("· Gate")) {
+      eintraege.add(titel); // die Merkmalszeile direkt unter dem Titel
+    }
+    if (!zeile.startsWith("### ")) titel = null;
+  }
+  return eintraege;
 }

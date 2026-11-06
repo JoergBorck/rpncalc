@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,7 +9,13 @@ import 'modell.dart';
 import 'tastenfeld.dart';
 import 'tipp.dart';
 
-void main() => runApp(const RpnApp());
+void main() {
+  // im Browser das eigene Kontextmenü der App statt dem des Browsers (doc/app.md 2.1); das geht erst, wenn
+  // Flutter läuft, deshalb zuerst ensureInitialized
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) BrowserContextMenu.disableContextMenu();
+  runApp(const RpnApp());
+}
 
 class RpnApp extends StatelessWidget {
   const RpnApp({super.key});
@@ -27,7 +34,7 @@ class RpnApp extends StatelessWidget {
   static const double minAnzeige = 240; // so viel Höhe braucht die Anzeige mindestens
   static const double maxDehnung = 1.5; // so viel breiter werden die Tasten, bevor links und rechts Rand bleibt
 
-  /// Zoom (doc/app.md Punkt 5): alles um Fensterbreite / [breite], höchstens so viel, dass Tastenfeld und eine
+  /// Zoom (doc/app.md 1.1): alles um Fensterbreite / [breite], höchstens so viel, dass Tastenfeld und eine
   /// Anzeige von [minAnzeige] in die Höhe passen. Höher ziehen gibt der Anzeige mehr Zeilen.
   static Widget _zoom(BuildContext context, Widget kind) => LayoutBuilder(builder: (context, platz) {
         final minHoehe = Tastenfeld.hoehe + minAnzeige + 22; // 22: Rand oben und unten
@@ -62,6 +69,26 @@ class RechnerSeite extends StatefulWidget {
 
 class _RechnerSeiteState extends State<RechnerSeite> {
   final modell = RechnerModell();
+
+  @override
+  void initState() {
+    super.initState();
+    modell.meldung.addListener(_zeigeMeldung);
+  }
+
+  /// Meldungen des Modells (z.B. nach dem Kopieren) kurz unten anzeigen (doc/app.md 2.1).
+  void _zeigeMeldung() {
+    final text = modell.meldung.value;
+    if (text == null || !mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(text, style: Schrift.monospace(13, Farben.anzeigeText)),
+        backgroundColor: Farben.anzeige,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
 
   @override
   void dispose() {
@@ -167,12 +194,24 @@ class _RechnerSeiteState extends State<RechnerSeite> {
   /// das muss durch, sonst fehlen auf der deutschen Tastatur | ~ { } und ².
   KeyEventResult _taste(FocusNode knoten, KeyEvent e) {
     if (e is KeyUpEvent) return KeyEventResult.ignored;
+    TippSperre.bisMausWechselt(); // wer tippt, braucht keinen Tooltip unter der Maus (doc/app.md 5.1)
     final tastatur = HardwareKeyboard.instance;
     final altGr = tastatur.isControlPressed && tastatur.isAltPressed;
-    if ((tastatur.isControlPressed && !altGr) || tastatur.isMetaPressed) return KeyEventResult.ignored;
     final k = e.logicalKey;
     final umschalt = tastatur.isShiftPressed;
-    if (k == LogicalKeyboardKey.numpadEnter) {
+    // Strg+C kopiert x, mit Umschalt den Stack; Strg+V fügt im Stack Werte ein, sonst Text (doc/app.md 2.1)
+    if ((tastatur.isControlPressed && !altGr) || tastatur.isMetaPressed) {
+      if (k == LogicalKeyboardKey.keyC) {
+        modell.kopiere(umschalt ? Kopie.stack : Kopie.wert);
+      } else if (k == LogicalKeyboardKey.keyV) {
+        modell.fuegeEin(werte: modell.bereich == Bereich.stack);
+      } else {
+        return KeyEventResult.ignored;
+      }
+      return KeyEventResult.handled;
+    }
+    // die ENTER-Taste im Ziffernblock: manche Browser melden sie als Return, erkennbar nur an der physischen Taste
+    if (k == LogicalKeyboardKey.numpadEnter || e.physicalKey == PhysicalKeyboardKey.numpadEnter) {
       modell.tastaturReturn(); // ENTER und Zeilenumbruch
     } else if (k == LogicalKeyboardKey.enter) {
       modell.tastaturZeilenumbruch(); // Return: nur Zeilenumbruch, wie ALPHA ⏎

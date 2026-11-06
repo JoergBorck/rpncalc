@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'farben.dart';
@@ -12,36 +13,142 @@ import 'hilfe.dart';
 /// Elemente ganz oben (Statuszeile), über denen kein Platz ist.
 Widget tipp(String nachricht, Widget kind, {bool unten = false}) {
   if (nachricht.isEmpty) return kind;
-  return _tooltip(kind, message: nachricht, unten: unten);
+  return _Gesperrt(nachricht, (schluessel) => _tooltip(kind, schluessel: schluessel, message: nachricht, unten: unten));
 }
 
 /// Tooltip einer Taste als Tabelle (doc/app.md 5.1): Spalten Schreibweise, Stack, Beschreibung; innerhalb eines
 /// Bereichs wechselt der Hintergrund zwischen Gelb und Hellgelb, zwischen zwei Bereichen steht eine dunklere Linie.
 /// [beiAnzeige] meldet, dass der Tooltip erschienen ist (die Hilfe startet dann mit seiner Seite, doc/app.md 5.2).
-Widget tippTabelle(List<List<TippZeile>> bereiche, Widget kind, {VoidCallback? beiAnzeige}) {
+/// Ohne [langesDruecken] erscheint der Tooltip nur beim Darüberfahren, z.B. in der Anzeige, wo langes Drücken
+/// das Kontextmenü öffnet (doc/app.md 2.1).
+Widget tippTabelle(List<List<TippZeile>> bereiche, Widget kind, {VoidCallback? beiAnzeige, bool langesDruecken = true}) {
   if (bereiche.isEmpty) return kind;
-  // verlässt die Maus das Element, ruhen die Tooltips kurz, damit sie nicht von Taste zu Taste springen
-  return MouseRegion(
-    onExit: (_) => TippSperre.sperren(),
-    child: ValueListenableBuilder<bool>(
-      valueListenable: TippSperre.gesperrt,
-      builder: (context, gesperrt, kind) => TooltipVisibility(visible: !gesperrt, child: kind!),
-      child: _tooltip(kind, rich: WidgetSpan(child: _TippTabelle(bereiche)), beiAnzeige: beiAnzeige, beiLangemDruck: beiAnzeige),
-    ),
-  );
+  return _Gesperrt(
+      bereiche.toString(), // gleicher Inhalt, gleiche Kennung: Zeilen einer Spalte und der Name am Rahmen
+      (schluessel) => _tooltip(kind,
+          schluessel: schluessel,
+          rich: WidgetSpan(child: _TippTabelle(bereiche)),
+          beiAnzeige: beiAnzeige,
+          beiLangemDruck: beiAnzeige,
+          langesDruecken: langesDruecken));
 }
 
-/// Kurze Pause der Tooltips nach dem Verlassen einer Taste. Ohne sie zeigt Flutter den Tooltip der Nachbartaste
-/// sofort, weil der vorige noch als offen gilt; so wartet er wieder die übliche Zeit.
+/// Blendet den Tooltip aus, solange [TippSperre] sperrt. Wechselt die Maus von einem gezeigten Tooltip auf ein
+/// Element mit demselben Inhalt, erscheint er dort sofort wieder, ohne Pause und Wartezeit.
+class _Gesperrt extends StatefulWidget {
+  final String kennung;
+  final Widget Function(GlobalKey<TooltipState> schluessel) tooltip;
+  const _Gesperrt(this.kennung, this.tooltip);
+
+  @override
+  State<_Gesperrt> createState() => _GesperrtState();
+}
+
+class _GesperrtState extends State<_Gesperrt> {
+  final _schluessel = GlobalKey<TooltipState>();
+
+  void _betreten(PointerEnterEvent e) {
+    TippSperre.mausGewechselt(e.position);
+    if (!TippSperre.uebernimm(widget.kennung)) return;
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) => _schluessel.currentState?.ensureTooltipVisible())
+      ..scheduleFrame();
+  }
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+        onEnter: _betreten,
+        onExit: (_) => TippSperre.sperren(widget.kennung),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: TippSperre.gesperrt,
+          builder: (context, gesperrt, kind) => TooltipVisibility(visible: !gesperrt, child: kind!),
+          child: widget.tooltip(_schluessel),
+        ),
+      );
+}
+
+/// Wann Tooltips ruhen (doc/app.md 5.1):
+/// - kurz nach dem Verlassen eines Elements; sonst zeigt Flutter den Tooltip des Nachbarn sofort, weil der vorige
+///   noch als offen gilt, so wartet er wieder die übliche Zeit. Hat das nächste Element denselben Inhalt, bleibt
+///   der Tooltip ohne Pause stehen;
+/// - solange ein Kontextmenü offen ist;
+/// - nach einem Tastendruck auf der PC-Tastatur und nach dem Kontextmenü, bis die Maus bewegt wird und ein anderes
+///   Element betritt: wer tippt oder gerade gewählt hat, schaut nicht auf das Element unter der Maus.
 abstract final class TippSperre {
   static const dauer = Duration(seconds: 1);
+  static const warten = Duration(milliseconds: 600); // so lange ruht die Maus, bis ein Tooltip erscheint
   static final ValueNotifier<bool> gesperrt = ValueNotifier(false);
   static Timer? _uhr;
+  static bool _pause = false, _menue = false, _tastatur = false;
 
-  static void sperren() {
-    gesperrt.value = true;
+  static void _neu() => gesperrt.value = _pause || _menue || _tastatur;
+
+  /// Wann die Maus das aktuelle Element betreten hat und welchen Inhalt der zuletzt gezeigte Tooltip hatte.
+  static DateTime? _betreten;
+  static String? _gezeigt;
+
+  static void sperren([String? kennung]) {
+    final betreten = _betreten;
+    _gezeigt = !gesperrt.value && betreten != null && DateTime.now().difference(betreten) >= warten ? kennung : null;
+    _betreten = null;
+    _pause = true;
     _uhr?.cancel();
-    _uhr = Timer(dauer, () => gesperrt.value = false);
+    _uhr = Timer(dauer, () {
+      _pause = false;
+      _neu();
+    });
+    _neu();
+  }
+
+  /// Beim Betreten: Stand eben ein Tooltip mit derselben [kennung], endet die Pause, und er soll gleich wieder
+  /// erscheinen.
+  static bool uebernimm(String kennung) {
+    final gleich = _pause && !_menue && !_tastatur && _gezeigt == kennung;
+    _betreten = DateTime.now().subtract(gleich ? warten : Duration.zero); // er gilt dann schon als gezeigt
+    if (!gleich) return false;
+    _uhr?.cancel();
+    _pause = false;
+    _neu();
+    return true;
+  }
+
+  static set menue(bool offen) {
+    _verfolge();
+    _menue = offen;
+    _neu();
+  }
+
+  /// Sperrt, bis die Maus bewegt wird und ein anderes Element betritt (nach einem Tastendruck, nach dem Menü).
+  static void bisMausWechselt() {
+    _verfolge();
+    if (_maus == null) return; // ohne Maus (Handy) gäbe es nichts, was die Sperre wieder aufhebt
+    _tastatur = true;
+    _ort = _maus;
+    _neu();
+  }
+
+  /// Wo die Maus beim Sperren stand. Ändert sich die Anzeige unter der ruhenden Maus, meldet Flutter auch ein
+  /// Betreten; das zählt nicht, erst wenn sich die Maus bewegt hat.
+  static Offset? _ort, _maus;
+  static bool _verfolgt = false;
+
+  static void _verfolge() {
+    if (_verfolgt) return;
+    _verfolgt = true;
+    GestureBinding.instance.pointerRouter.addGlobalRoute((e) {
+      if (e.kind == PointerDeviceKind.mouse) _maus = e.position;
+      // ein Finger auf dem Bildschirm hebt die Sperre auf: am Handy zeigt langes Drücken den Tooltip
+      if (e.kind == PointerDeviceKind.touch && e is PointerDownEvent && _tastatur) {
+        _tastatur = false;
+        _neu();
+      }
+    });
+  }
+
+  static void mausGewechselt(Offset ort) {
+    if (!_tastatur || (_ort != null && (ort - _ort!).distance < 2)) return;
+    _tastatur = false;
+    _neu();
   }
 }
 
@@ -49,21 +156,30 @@ abstract final class TippSperre {
 Widget tippTabelleInhalt(List<List<TippZeile>> bereiche) => _TippTabelle(bereiche);
 
 Widget _tooltip(Widget kind,
-    {String? message, InlineSpan? rich, bool unten = false, VoidCallback? beiAnzeige, VoidCallback? beiLangemDruck}) {
+    {GlobalKey<TooltipState>? schluessel,
+    String? message,
+    InlineSpan? rich,
+    bool unten = false,
+    VoidCallback? beiAnzeige,
+    VoidCallback? beiLangemDruck,
+    bool langesDruecken = true}) {
   // onTriggered meldet nur Antippen und langes Drücken; am PC erscheint der Tooltip beim Darüberfahren. Gemerkt
   // wird er erst, wenn der Zeiger eine Weile auf der Taste ruht, nicht beim bloßen Überfahren (doc/app.md 5.2)
   if (beiAnzeige != null) {
     return _Verweilen(
         beiAnzeige: beiAnzeige,
-        child: _tooltip(kind, message: message, rich: rich, unten: unten, beiLangemDruck: beiLangemDruck));
+        child: _tooltip(kind,
+            schluessel: schluessel, message: message, rich: rich, unten: unten, beiLangemDruck: beiLangemDruck, langesDruecken: langesDruecken));
   }
   return Tooltip(
+    key: schluessel,
     message: message,
     richMessage: rich,
     onTriggered: beiLangemDruck,
+    triggerMode: langesDruecken ? null : TooltipTriggerMode.manual, // manual: nur noch beim Darüberfahren
     preferBelow: unten,
     verticalOffset: unten ? 30 : 20,
-    waitDuration: const Duration(milliseconds: 600),
+    waitDuration: TippSperre.warten,
     // sofort weg beim Verlassen: sonst gilt er noch als offen, und der Tooltip der Nachbartaste käme ohne Wartezeit
     exitDuration: Duration.zero,
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

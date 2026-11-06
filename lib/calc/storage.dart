@@ -57,12 +57,8 @@ mixin Speicher on Kern {
   }
 
   /// Führt ein Variablen-Token aus. [name] beginnt mit dem Modifikator (einfach oder doppelt),
-  /// z.B. "~x", "+x", "!!x", "::f", oder nur "x" bzw. "3" (Argument-Zugriff).
+  /// z.B. "~x", "+x", "!!x", "::f", oder nur "x".
   void variable(String name, Argumente a) {
-    if (RegExp(r'^[0-9]$').hasMatch(name)) {
-      error("arg?", "'$name");
-      return;
-    }
     String mod = RegExp(r'^[^a-z]*').stringMatch(name)!;
     String v   = name.substring(mod.length);
     if (!["", "!", "!!", "=", "==", "~", "~~", "+", "++", "-", "--", "*", "/", ":", "::"].contains(mod)) {

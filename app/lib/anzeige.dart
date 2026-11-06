@@ -261,26 +261,40 @@ class _Rechnen extends StatelessWidget {
               // annehmen
               tippTabelle(
                 _tippEingabe,
+                langesDruecken: false, // langes Drücken öffnet das Kontextmenü (doc/app.md 2.1)
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => m.hilfeModus ? m.zeigeHilfe(_hilfeEingabe(r)) : m.tippeBereich(Bereich.eingabe),
-                  child: SizedBox(
-                    width: links,
-                    height: g * 1.3,
-                    child: r == 0 ? _aktuelleZeile(z, g) : _alteZeile(r, g),
+                  child: _Kontextmenue(
+                    m,
+                    stack: false,
+                    zeile: r,
+                    hilfe: () => _hilfeEingabe(r),
+                    child: SizedBox(
+                      width: links,
+                      height: g * 1.3,
+                      child: r == 0 ? _aktuelleZeile(z, g) : _alteZeile(r, g),
+                    ),
                   ),
                 ),
               ),
               SizedBox(width: luecke),
               tippTabelle(
                 _tippStack,
+                langesDruecken: false,
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => m.hilfeModus ? m.zeigeHilfe(_hilfeStack(r)) : m.tippeBereich(Bereich.stack),
-                  child: SizedBox(
-                    width: rechts,
-                    height: g * 1.3,
-                    child: rechts < _nummer + 12 ? null : _stackZeile(r, g), // zu schmal: leer
+                  child: _Kontextmenue(
+                    m,
+                    stack: true,
+                    zeile: r,
+                    hilfe: () => _hilfeStack(r),
+                    child: SizedBox(
+                      width: rechts,
+                      height: g * 1.3,
+                      child: rechts < _nummer + 12 ? null : _stackZeile(r, g), // zu schmal: leer
+                    ),
                   ),
                 ),
               ),
@@ -502,73 +516,154 @@ class _Rechnen extends StatelessWidget {
   }
 }
 
-/// Seiten „Variablen und Tags“ und „Funktionen“: Name und Inhalt. Im Hilfe-Modus zeigt ein Tipp auf einen
-/// Eintrag dessen Hilfe, ein Tipp daneben die Hilfe zur Seite (doc/app.md 5.3).
-class _Liste extends StatelessWidget {
+typedef _Eintrag = ({String anzeige, String inhalt, String name});
+
+/// Ein Abschnitt der Seiten Variablen bzw. Funktionen: Überschrift, Einträge, Text, wenn er leer ist; [ziel] ist
+/// der Name, unter dem man zu ihm scrollen kann (die Bibliothek).
+typedef _Abschnitt = ({String titel, List<_Eintrag> eintraege, String leer, String? ziel});
+
+/// Die Seiten „Variablen und Tags“ und „Funktionen“ der Anzeige, in Abschnitten (doc/app.md 2). Im Hilfe-Modus
+/// zeigt ein Tipp auf einen Eintrag dessen Hilfe, ein Tipp daneben die Hilfe zur Seite (doc/app.md 5.3).
+class _Liste extends StatefulWidget {
   final RechnerModell m;
-  final String titel;
   final String hilfe; // Hilfe zur Seite
   final Bereich bereich; // Antippen wählt ihn
-  final List<({String anzeige, String inhalt, String name})> eintraege;
-  final String leer;
-  const _Liste(this.m, this.titel, this.hilfe, this.bereich, this.eintraege, this.leer);
+  final List<_Abschnitt> abschnitte;
+  // wohin die Liste scrollt, wenn es sich ändert: Abschnitt einer Bibliothek bzw. eine Funktion darin; null: nach oben
+  final ({String bibliothek, String? funktion})? ziel;
+  const _Liste(this.m, this.hilfe, this.bereich, this.abschnitte, {this.ziel});
 
-  factory _Liste.variablen(RechnerModell m) => _Liste(m, "Variablen und Tags", "app:variablen", Bereich.variablen, [
-    for (Speicher s in m.zustand.speicher)
-      if (s.art != SpeicherArt.funktion)
+  factory _Liste.variablen(RechnerModell m) => _Liste(m, "app:variablen", Bereich.variablen, [
         (
-          anzeige: "${s.art == SpeicherArt.tag ? "|" : ""}${s.name}",
-          inhalt: s.werte.map(zahl).join(" "), // Felder ohne [ ], die sind für Einheiten reserviert
-          name: s.name,
+          titel: "Variablen und Tags",
+          eintraege: [
+            for (Speicher s in m.zustand.speicher)
+              if (s.art != SpeicherArt.funktion)
+                (
+                  anzeige: "${s.art == SpeicherArt.tag ? "|" : ""}${s.name}",
+                  inhalt: s.werte.map(zahl).join(" "), // Felder ohne [ ], die sind für Einheiten reserviert
+                  name: s.name,
+                ),
+          ],
+          leer: "Noch keine Variablen. Anlegen z.B. mit 5'!a",
+          ziel: null,
         ),
-  ], "Noch keine Variablen. Anlegen z.B. mit 5'!a");
+      ]);
 
-  factory _Liste.funktionen(RechnerModell m) => _Liste(m, "Eigene Funktionen", "app:funktionen", Bereich.funktionen, [
-    for (Speicher s in m.zustand.speicher)
-      if (s.art == SpeicherArt.funktion) (anzeige: s.name, inhalt: "{${s.code.replaceAll("\n", "↵")}}", name: s.name),
-  ], "Noch keine eigenen Funktionen. Anlegen z.B. mit {1+}':inc");
+  /// Eigene Funktionen zuerst, dann je geladener Bibliothek ein Abschnitt mit ihrem Code; beim Blättern der
+  /// Funktionstasten scrollt die Liste zum Abschnitt der gezeigten Bibliothek.
+  factory _Liste.funktionen(RechnerModell m) {
+    _Eintrag eintrag(Speicher s) => (anzeige: s.name, inhalt: "{${s.code.replaceAll("\n", "↵")}}", name: s.name);
+    final funktionen = [for (Speicher s in m.zustand.speicher) if (s.art == SpeicherArt.funktion) s];
+    final bibliotheken = <String, List<Speicher>>{};
+    for (final s in funktionen) {
+      final von = m.api.herkunft(s.name);
+      if (von != null) (bibliotheken[von] ??= []).add(s);
+    }
+    // in der Reihenfolge der Datei wie auf den Funktionstasten, damit das Scrollen zu ihren Seiten passt
+    List<_Eintrag> geordnet(String name, List<Speicher> liste) {
+      final reihe = m.api.bibliotheksFunktionen(name);
+      return [for (final s in liste..sort((a, b) => reihe.indexOf(a.name).compareTo(reihe.indexOf(b.name)))) eintrag(s)];
+    }
+    return _Liste(m, "app:funktionen", Bereich.funktionen, ziel: m.seitenZiel, [
+      (
+        titel: "Eigene Funktionen",
+        eintraege: [for (final s in funktionen) if (m.api.herkunft(s.name) == null) eintrag(s)],
+        leer: "Noch keine eigenen Funktionen. Anlegen z.B. mit {1+}':inc",
+        ziel: null,
+      ),
+      for (final MapEntry(key: name, value: liste) in bibliotheken.entries)
+        (titel: "Bibliothek $name", eintraege: geordnet(name, liste), leer: "", ziel: name),
+    ]);
+  }
+
+  @override
+  State<_Liste> createState() => _ListeState();
+}
+
+class _ListeState extends State<_Liste> {
+  final _scroll = ScrollController();
+  final _marken = <String, GlobalKey>{};
+
+  @override
+  void didUpdateWidget(_Liste alt) {
+    super.didUpdateWidget(alt);
+    // nur wenn die Funktionstasten auf eine andere Bibliothek blättern; sonst bleibt die Liste, wo man sie hinscrollt
+    if (alt.ziel != widget.ziel) WidgetsBinding.instance.addPostFrameCallback((_) => _springe());
+  }
+
+  void _springe() {
+    final z = widget.ziel;
+    final ziel = z == null ? null : _marken[z.funktion == null ? z.bibliothek : "${z.bibliothek}:${z.funktion}"]?.currentContext;
+    if (ziel != null && ziel.mounted) {
+      Scrollable.ensureVisible(ziel, duration: const Duration(milliseconds: 250));
+    } else if (_scroll.hasClients) {
+      _scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final m = widget.m;
     final klein = Schrift.monospace(11, Farben.anzeigeBlass, gewicht: FontWeight.w600);
     final stil = Schrift.monospace(13, Farben.anzeigeText);
     void zeige(String kennung) => m.zeigeHilfe(AppHilfe.nachschlagen(m.api, kennung));
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => m.hilfeModus ? zeige(hilfe) : m.waehleBereich(bereich),
-      child: ListView(
+      onTap: () => m.hilfeModus ? zeige(widget.hilfe) : m.waehleBereich(widget.bereich),
+      // alle Einträge gebaut (keine ListView), damit sich zu jedem Abschnitt scrollen lässt
+      child: SingleChildScrollView(
+        controller: _scroll,
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-        children: [
-          Text(titel.toUpperCase(), style: klein),
-          const SizedBox(height: 4),
-          if (eintraege.isEmpty) Text(leer, style: stil.copyWith(color: Farben.anzeigeBlass)),
-          for (final e in eintraege)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => m.hilfeModus ? zeige(e.name) : m.waehleBereich(bereich),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFF16231D))),
-                ),
-                child: Row(
-                  children: [
-                    Text(e.anzeige, style: stil),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        e.inhalt,
-                        style: stil.copyWith(color: Farben.anzeigeBlass),
-                        textAlign: TextAlign.right,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (i, a) in widget.abschnitte.indexed) ...[
+              if (i > 0) const SizedBox(height: 10),
+              Text(
+                a.titel.toUpperCase(),
+                key: a.ziel == null ? null : _marken.putIfAbsent(a.ziel!, GlobalKey.new),
+                style: klein,
               ),
-            ),
-        ],
+              const SizedBox(height: 4),
+              if (a.eintraege.isEmpty && a.leer.isNotEmpty) Text(a.leer, style: stil.copyWith(color: Farben.anzeigeBlass)),
+              for (final e in a.eintraege)
+                GestureDetector(
+                  // Marke für das Scrollen zu den Funktionen einer weiteren Seite der Funktionstasten
+                  key: a.ziel == null ? null : _marken.putIfAbsent("${a.ziel}:${e.name}", GlobalKey.new),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => m.hilfeModus ? zeige(e.name) : m.waehleBereich(widget.bereich),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    decoration: const BoxDecoration(
+                      border: Border(bottom: BorderSide(color: Color(0xFF16231D))),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(e.anzeige, style: stil),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            e.inhalt,
+                            style: stil.copyWith(color: Farben.anzeigeBlass),
+                            textAlign: TextAlign.right,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -666,6 +761,78 @@ class Hilfeschirm extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Kontextmenü einer Zeile der Eingabe- bzw. Stackspalte: Rechtsklick am PC, langes Drücken am Handy
+/// (doc/app.md 2.1). Im Hilfe-Modus nicht, dort zeigt ein Tipp die Hilfe.
+class _Kontextmenue extends StatelessWidget {
+  final RechnerModell m;
+  final bool stack;
+  final int zeile;
+  final List<Hilfe> Function() hilfe;
+  final Widget child;
+  const _Kontextmenue(this.m, {required this.stack, required this.zeile, required this.hilfe, required this.child});
+
+  void _zeige(BuildContext context, Offset ort) {
+    if (m.hilfeModus) return;
+    m.waehleBereich(stack ? Bereich.stack : Bereich.eingabe);
+    m.markiereKontext((stack: stack, zeile: zeile)); // die Zeile ist hervorgehoben, solange das Menü offen ist
+    PopupMenuItem<void> eintrag(String text, VoidCallback wirkung, {bool an = true}) => PopupMenuItem(
+          height: 36,
+          enabled: an, // ausgegraut, wenn es an dieser Stelle nichts zu kopieren gibt
+          onTap: wirkung,
+          child: Text(text, style: Schrift.monospace(13, an ? Farben.anzeigeText : Farben.anzeigeBlass)),
+        );
+    bool kann(Kopie k) => m.kannKopieren(k, zeile);
+    // die Stelle in den Koordinaten der Ebene, in der das Menü liegt (beim Zoom ist sie vergrößert, doc/app.md 1.1)
+    final ebene = Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final hier = ebene.globalToLocal(ort);
+    TippSperre.menue = true; // keine Tooltips über dem Menü
+    showMenu<void>(
+      context: context,
+      position: RelativeRect.fromRect(hier & Size.zero, Offset.zero & ebene.size),
+      // etwas heller als die Anzeige, mit dünnem Rand und Schatten, damit es sich abhebt
+      color: Farben.kontext,
+      elevation: 12,
+      shadowColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Farben.kontextRand),
+      ),
+      items: [
+        if (stack) ...[
+          eintrag("Wert kopieren", () => m.kopiere(Kopie.wert, zeile), an: kann(Kopie.wert)),
+          eintrag("Stack ab hier kopieren", () => m.kopiere(Kopie.stackAb, zeile), an: kann(Kopie.stackAb)),
+          eintrag("Ganzen Stack kopieren", () => m.kopiere(Kopie.stack), an: kann(Kopie.stack)),
+          const PopupMenuDivider(),
+          eintrag("Werte einfügen", () => m.fuegeEin(werte: true, nachMenue: true)),
+        ] else ...[
+          eintrag("Zeile kopieren", () => m.kopiere(Kopie.zeile, zeile), an: kann(Kopie.zeile)),
+          eintrag("Zeilen ab hier kopieren", () => m.kopiere(Kopie.zeilenAb, zeile), an: kann(Kopie.zeilenAb)),
+          eintrag("Ganzen Verlauf kopieren", () => m.kopiere(Kopie.verlauf), an: kann(Kopie.verlauf)),
+          const PopupMenuDivider(),
+          eintrag("Text einfügen", () => m.fuegeEin(werte: false, nachMenue: true)),
+        ],
+        const PopupMenuDivider(),
+        eintrag("Hilfe", () => m.oeffneHilfe(hilfe())),
+      ],
+    ).whenComplete(() {
+      m.markiereKontext(null);
+      TippSperre.menue = false;
+      TippSperre.bisMausWechselt(); // erst nach einer Bewegung wieder Tooltips, nicht sofort unter der Maus
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onSecondaryTapUp: (d) => _zeige(context, d.globalPosition),
+        onLongPressStart: (d) => _zeige(context, d.globalPosition),
+        child: ColoredBox(
+          color: m.kontext == (stack: stack, zeile: zeile) ? Farben.kontextZeile : Colors.transparent,
+          child: child,
+        ),
+      );
 }
 
 /// Lässt, solange [aktiv], alle Tipps durch außer denen auf einen [_Verweis] darin (Inspekt-Modus, doc/app.md 5.2).

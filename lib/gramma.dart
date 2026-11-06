@@ -92,7 +92,6 @@ const UebergangsTabelle rpnGramma = {
 ('q_Split'         , 'split' ) :('q0'              , '+|+o!O__') , // Token fertig (||)
 ('q_Split'         , 'ops'   ) :('q0'              , '+|+o!O__') , // Token fertig (|op)
 ('q_Split'         , 'alle'  ) :('q0'              , '+|!O?___') , // Token fertig (Einzelnes | als Operator)
-('q_VarStart'      , 'zif'   ) :('q0'              , '+v!V____') , // Argument-Zugriff ('3), immer genau eine Ziffer
 ('q_VarStart'      , 'tilde' ) :('q_VarInv'        , '+v______') , // ~ als Modifikator oder '~Befehl
 ('q_VarStart'      , 'gbu'   ) :('q0'              , "+'+n!B__") , // Befehl mit Tags ('D, 'S, 'R, 'C)
 ('q_VarStart'      , 'varmod') :('q_VarMod'        , '+v______') , // Modifikator ('!x, '=x, '+x …)

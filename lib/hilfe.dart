@@ -79,13 +79,14 @@ class Hilfe {
   final String titel;
   final List<Verwendung> verwendungen;
   final String text;
+  final List<String> weitere; // Verweise, die nicht im Text stehen (Feld „verweise“, doc/api.md 8.3)
 
-  const Hilfe(this.kennung, this.titel, this.verwendungen, [this.text = ""]);
+  const Hilfe(this.kennung, this.titel, this.verwendungen, [this.text = "", this.weitere = const []]);
 
   static final RegExp _verweis = RegExp(r"\[\[(.+?)\]\]");
 
-  /// Die Kennungen aller Verweise im Text, in ihrer Reihenfolge, ohne Wiederholungen.
-  List<String> get verweise => <String>{for (final m in _verweis.allMatches(text)) m[1]!}.toList();
+  /// Die Kennungen aller Verweise: erst die im Text in ihrer Reihenfolge, dann die weiteren, ohne Wiederholungen.
+  List<String> get verweise => <String>{for (final m in _verweis.allMatches(text)) m[1]!, ...weitere}.toList();
 
   /// Der Text mit [darstellung] für jeden Verweis, z.B. dem Titel des Ziels.
   String textMit(String Function(String kennung) darstellung) => text.replaceAllMapped(_verweis, (m) => darstellung(m[1]!));
@@ -95,6 +96,7 @@ class Hilfe {
         "titel": titel,
         "verwendungen": [for (final v in verwendungen) v.toJson()],
         "text": text,
+        if (weitere.isNotEmpty) "verweise": weitere,
       };
 
   /// Fehlen Titel oder Verwendungen (z.B. bei einem Thema), gelten die Kennung bzw. keine.
@@ -103,6 +105,7 @@ class Hilfe {
         j["titel"] as String? ?? j["kennung"] as String,
         [for (final v in j["verwendungen"] as List? ?? const []) Verwendung.fromJson((v as Map).cast<String, Object?>())],
         j["text"] as String? ?? "",
+        [for (final v in j["verweise"] as List? ?? const []) v as String],
       );
 }
 
@@ -110,7 +113,7 @@ class Hilfe {
 abstract final class Hilfetexte {
   /// Namen, die zu einem anderen Eintrag gehören.
   static const Map<String, String> _aliase = {
-    "}": "{", "exp": "ln", "asin": "sin", "acos": "cos", "atan": "tan", "rad": "deg", "grd": "deg",
+    "}": "{", "exp": "ln", "asin": "sin", "acos": "cos", "atan": "tan", "asinh": "sinh", "acosh": "cosh", "atanh": "tanh", "rad": "deg", "grd": "deg",
     "codeswap": "codedrop", "codedup": "codedrop", "codeover": "codedrop", "ifel": "if", "?": "#",
   };
 
@@ -152,13 +155,8 @@ abstract final class Hilfetexte {
   /// Alle Schreibweisen, für den Vollständigkeitstest.
   static Set<String> get schreibweisen => _schreibweisen.keys.toSet();
 
-  /// Die Übersicht aller Zeichen und Namen, nach Gruppen.
-  static Hilfe _alle() {
-    String gruppe(String titel, Iterable<String> kennungen) => "$titel: ${[for (final k in kennungen) "[[$k]]"].join(", ")}";
-    return Hilfe("#alle", "Alle Zeichen und Namen", const [], [
-      gruppe("Zeichen", _zeichen),
-      gruppe("Funktionen und Befehle", _namen),
-      gruppe("Themen", _themen),
-    ].join("\n"));
-  }
+  /// Die Übersicht aller Zeichen und Namen: nur Verweise, erst die Zeichen, dann Funktionen und Befehle, zuletzt
+  /// die Themen (Gruppen mit Überschrift kommen mit VA-5).
+  static Hilfe _alle() => Hilfe("#alle", "Alle Zeichen und Namen", const [],
+      "Erst die Zeichen, dann Funktionen und Befehle, zuletzt die Themen.", [..._zeichen, ..._namen, ..._themen]);
 }

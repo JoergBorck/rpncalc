@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rpncalc_app/anzeige.dart';
+import 'package:rpncalc_app/farben.dart';
 import 'package:rpncalc_app/main.dart';
 import 'package:rpncalc_app/modell.dart';
 import 'package:rpncalc_app/tasten.dart';
@@ -34,7 +36,7 @@ void main() {
     m.druecke(taste("~"));
     expect(m.tilde, isTrue);
     expect(m.beschriftung(taste("x²")).text, "√x");
-    expect(m.beschriftung(taste("D")).gedimmt, isTrue);
+    expect(m.beschriftung(taste("D")).gedimmt, isFalse, reason: "D bleibt bedienbar, ~ wirkt dann allein");
     tippe(["x²"]);
     expect(stack(), [3]);
     expect(m.tilde, isFalse);
@@ -47,7 +49,7 @@ void main() {
     expect(stack(), [1]);
     tippe(["ENTER", "2"]);
     m.druecke(taste("~"));
-    expect(m.beschriftung(taste("+")).gedimmt, isTrue, reason: "~+ hat keine Bedeutung");
+    expect(m.beschriftung(taste("+")).modus, Modus.normal, reason: "~+ hat keine Bedeutung");
     tippe(["SHIFT"]);
     expect([for (final t in ["÷", "×", "−", "+"]) m.beschriftung(taste(t)).text], ["≤", "oder", "≥", "≠"]);
     tippe(["+"]);
@@ -55,6 +57,32 @@ void main() {
     expect(stack().last, 1, reason: "1 ist ungleich 2");
     tippe(["SHIFT"]);
     expect([for (final t in ["÷", "×", "−"]) m.beschriftung(taste(t)).text], [">", "&", "<"]);
+  });
+
+  test('Präfix vor einer Taste ohne Wirkung: der Präfix wirkt allein, mit Trenner (doc/app.md 3.2)', () {
+    for (final (tasten, zeile, grund) in [
+      (["3", "~", "D"], "3~ D", "3~D wäre die Umkehrung von D"),
+      (["2", "~", "+"], "2~ +", "~+ hat keine Bedeutung"),
+      (["5", "ENTER", "~", "1"], "5 ~1", "~ vor einer Ziffer ist eine negative Zahl"),
+      (["3", ".", "7", "|", "D"], "3.7| D", "| wirkt allein: Ganzzahl- und Nachkommateil"),
+    ]) {
+      m = RechnerModell()..zeichenProZeile = 20;
+      tippe(tasten);
+      expect(m.zeile, zeile, reason: grund);
+      expect(m.zustand.fehler, isNull, reason: zeile);
+    }
+  });
+
+  test('Hyperbelfunktionen auf Shift von sin cos tan, ~ Shift ist ihre Umkehrung (doc/reference.md 6.2)', () {
+    tippe(["2", "SHIFT"]);
+    m.druecke(fn("sin"));
+    expect(m.zeile, "2sinh_");
+    expect(stack().last, closeTo(3.626860407847019, 1e-14));
+    tippe(["~", "SHIFT"]);
+    expect(m.beschriftung(fn("sin")).text, "asinh");
+    m.druecke(fn("sin"));
+    expect(m.zeile.endsWith("~sinh_"), isTrue, reason: m.zeile);
+    expect(stack().last, closeTo(2, 1e-12));
   });
 
   test('~ und | zusammen, || ist der Betrag', () {
@@ -266,6 +294,74 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('nach ~ tragen die Tasten, auf die es wirkt, einen dünnen Rand (doc/app.md 3.2)', (tester) async {
+    tester.view.physicalSize = const Size(400 * 3, 860 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    BorderSide rand(String text) =>
+        ((tester.widget<Material>(find.ancestor(of: find.text(text), matching: find.byType(Material)).first).shape
+                as RoundedRectangleBorder)
+            .side);
+    expect(rand("x²"), BorderSide.none);
+    // die Taste ~ selbst, nicht die kleinen ~ rechts oben auf anderen Tasten
+    await tester.tap(find.byWidgetPredicate((w) => w is Material && w.color == Farben.tildeTaste));
+    await tester.pump();
+    expect([rand("√x").color, rand("√x").width], [Farben.tilde, 1], reason: "~ wirkt: dünner Rand in Teal");
+    expect(rand("D"), BorderSide.none, reason: "D bleibt normal");
+  });
+
+  testWidgets('~ und | zeigen ihre Rechenfunktion, im Alpha-Modus nicht (doc/app.md 3.1)', (tester) async {
+    tester.view.physicalSize = const Size(400 * 3, 860 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    final rechenfunktion =
+        find.byWidgetPredicate((w) => w is CustomPaint && w.painter.runtimeType.toString() == "_Rechenfunktion");
+    expect(rechenfunktion, findsNWidgets(2), reason: "± auf ~, □|.□ auf |");
+    await tester.tap(find.text("ALPHA"));
+    await tester.pump();
+    expect(rechenfunktion, findsNothing, reason: "im Alpha-Modus ausgeblendet wie die anderen kleinen Hinweise");
+  });
+
+  testWidgets('Wischen und Mausrad über den Funktionstasten blättern ihre Seiten (doc/app.md 3.3)', (tester) async {
+    tester.view.physicalSize = const Size(400 * 3, 860 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    await tester.tap(find.text("MENÜ")); // Schwingungen hat drei Seiten
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("schwingungen"));
+    await tester.pumpAndSettle();
+    expect(find.text("F: schwingungen 1/3"), findsOneWidget);
+    int pfeile() => find.byIcon(Icons.arrow_left).evaluate().length + find.byIcon(Icons.arrow_right).evaluate().length;
+    final vorher = pfeile(); // ohne gewählten Bereich Funktionen kein Rahmen (andere Pfeile gibt es woanders)
+    final mitte = tester.getCenter(find.text("omega")); // auf anderen Seiten steht dort eine andere Taste
+    await tester.flingFrom(mitte, const Offset(150, 0), 800); // nach rechts wischen: vorige Seite
+    await tester.pumpAndSettle();
+    expect(find.text("F: Grundfunktionen"), findsOneWidget, reason: "vor der Domäne stehen die Grundfunktionen");
+    expect(pfeile(), vorher + 2, reason: "der Rahmen erscheint kurz, mehr als eine Seite: Pfeile am Rahmen");
+    expect(find.text("Rechnen"), findsOneWidget, reason: "die Anzeige bleibt, der Bereich wird nicht gewählt");
+    expect(find.text("Grundfunktionen"), findsOneWidget, reason: "der Name der Seite unten am Rahmen");
+    final maus = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(maus.hover(mitte));
+    Future<void> rad(int rasten, double dy) async {
+      for (var i = 0; i < rasten; i++) {
+        await tester.sendEventToBinding(maus.scroll(Offset(0, dy)));
+        await tester.pump();
+      }
+    }
+    await rad(3, -40);
+    expect(find.text("F: Grundfunktionen"), findsOneWidget, reason: "das Mausrad hält an der ersten Seite an");
+    await rad(2, 40);
+    expect(find.text("F: Grundfunktionen"), findsOneWidget, reason: "erst die dritte Raste wechselt die Seite");
+    await rad(1, 40);
+    expect(find.text("F: schwingungen 1/3"), findsOneWidget, reason: "dritte Raste nach unten: nächste Seite");
+    expect(find.text("Rechnen"), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2)); // Pause der Tooltips und Hinweis-Rahmen ablaufen lassen
+    expect(pfeile(), vorher, reason: "der Rahmen verschwindet wieder");
+  });
+
   testWidgets('Doppelklick in Eingabe oder Stack wechselt zwischen [ ] und [|] (doc/app.md 3.5)', (tester) async {
     tester.view.physicalSize = const Size(400 * 3, 860 * 3);
     tester.view.devicePixelRatio = 3;
@@ -288,7 +384,7 @@ void main() {
     expect(find.text("Stack"), findsOneWidget);
   });
 
-  testWidgets('Zoom:breiter vergrößert alles, höher nur die Anzeige, niedrig erst breitere Tasten (doc/app.md Punkt 5)', (tester) async {
+  testWidgets('Zoom:breiter vergrößert alles, höher nur die Anzeige, niedrig erst breitere Tasten (doc/app.md 1.1)', (tester) async {
     addTearDown(tester.view.reset);
     tester.view.devicePixelRatio = 1;
     // der Zoom als Höhe des Tastenfelds (sie hängt nur vom Faktor ab), dazu die Größe der Anzeige

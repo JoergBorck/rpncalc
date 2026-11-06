@@ -33,8 +33,8 @@ void main() {
     expect(schreibweisen(taste("x²")).reversed.take(2), [["PC-Tastatur"], ["Alpha"]],
         reason: "Alpha als eigener Bereich, zuletzt die PC-Tastatur");
     expect(schreibweisen(taste("÷")).first, ["/", "~/", "|/"]);
-    // sinh gibt es im Rechner noch nicht (doc/app.md 7), also auch keine Zeile dafür
     expect(schreibweisen(taste("sin")).first, ["sin", "~sin"]);
+    expect(schreibweisen(taste("sin"))[1], ["sinh", "~sinh"], reason: "Shift mit der Umkehrung, ~ ⇧ sin ist asinh");
   });
 
   test('Bereiche: Präfix vorweg, Shift mit seinen Varianten, Bedientasten nach Umschaltung', () {
@@ -54,7 +54,7 @@ void main() {
   });
 
   test('Seite Bibliotheken: von der Startseite erreichbar, je Bibliothek ein Verweis mit Ziel', () {
-    expect(AppHilfe.eintraege["#"]!.verweise, contains("app:bibliotheken"));
+    expect(AppHilfe.eintraege["app:start"]!.verweise, contains("app:bibliotheken"));
     final seite = AppHilfe.nachschlagen(m.api, "app:bibliotheken").single;
     expect([for (final v in seite.verwendungen) v.schreibweise], ["schwingungen", "statistik"]);
     expect(seite.verweise, containsAll(["#statistik", "#schwingungen", "#"]));
@@ -77,7 +77,7 @@ void main() {
 
   test('App und Rechner zusammen: erst die App, dann der Rechner (api.md 8.4)', () {
     expect([for (final h in AppHilfe.fuerTaste(m.api, taste("~"))) h.titel], ["Die Taste ~", "Vorzeichen, Umkehrung, Entfernen"]);
-    expect([for (final h in AppHilfe.nachschlagen(m.api, "#")) h.titel], ["Hilfe zur App", "Hilfe zum RPN-Rechner"]);
+    expect([for (final h in AppHilfe.nachschlagen(m.api, "#")) h.titel], ["Hilfe zur Hilfe", "Hilfe zur App", "Hilfe zum RPN-Rechner"]);
     expect([for (final h in AppHilfe.fuerTaste(m.api, taste("x²"))) h.kennung], ["²"], reason: "x² und √x stehen beide bei ²");
   });
 
@@ -86,7 +86,7 @@ void main() {
     m.druecke(shift);
     m.druecke(menue);
     expect([m.hilfeModus, m.hilfeLesen, m.shift], [true, false, false]);
-    expect(m.hilfeSeite!.first.titel, "Hilfe zur App", reason: "ohne frischen Tooltip die Startseite");
+    expect(m.hilfeSeite!.first.titel, "Hilfe zur Hilfe", reason: "ohne frischen Tooltip die Startseite");
     expect(m.beschriftung(menue).text, "BEENDEN");
     m.druecke(taste("!"));
     expect(m.hilfeSeite!.first.kennung, "!");
@@ -108,16 +108,16 @@ void main() {
     m.druecke(menue);
     m.hilfeSchliessen();
     m.druecke(const Taste("ALPHA", aktion: Aktion.alpha));
-    expect([m.hilfeLesen, m.hilfeSeite!.first.titel], [true, "Hilfe zur App"], reason: "LESEN ohne Schirm: Startseite");
+    expect([m.hilfeLesen, m.hilfeSeite!.first.titel], [true, "Hilfe zur Hilfe"], reason: "LESEN ohne Schirm: Startseite");
     m.pfeil(AxisDirection.left);
-    expect(m.hilfeSeite!.first.titel, "Hilfe zur App", reason: "◄ auf der ersten Seite bleibt stehen");
+    expect(m.hilfeSeite!.first.titel, "Hilfe zur Hilfe", reason: "◄ auf der ersten Seite bleibt stehen");
     m.pfeil(AxisDirection.right);
-    expect([m.hilfeVerweis, m.hilfeSeite!.first.titel], [0, "Hilfe zur App"], reason: "► wählt erst den ersten Verweis");
+    expect([m.hilfeVerweis, m.hilfeSeite!.first.titel], [0, "Hilfe zur Hilfe"], reason: "► wählt erst den ersten Verweis");
     final ziel = m.hilfeVerweise.first;
     m.pfeil(AxisDirection.right);
     expect(m.hilfeSeite!.first.kennung, ziel, reason: "► folgt ihm dann");
     m.pfeil(AxisDirection.left);
-    expect([m.hilfeSeite!.first.titel, m.hilfeVerweis], ["Hilfe zur App", -1]);
+    expect([m.hilfeSeite!.first.titel, m.hilfeVerweis], ["Hilfe zur Hilfe", -1]);
   });
 
   test('Lese-Modus: ALPHA, Verweise mit TAB und ENTER, ANFANG, ⌫ beendet (doc/app.md 5.2)', () {
@@ -130,7 +130,7 @@ void main() {
     m.druecke(const Taste("TAB", aktion: Aktion.tab));
     expect(m.hilfeVerweis, 0);
     m.druecke(taste("!"));
-    expect(m.hilfeSeite!.first.titel, "Hilfe zur App", reason: "im Lese-Modus lösen Tasten keine Hilfe aus");
+    expect(m.hilfeSeite!.first.titel, "Hilfe zur Hilfe", reason: "im Lese-Modus lösen Tasten keine Hilfe aus");
     m.druecke(const Taste("ENTER", aktion: Aktion.enter));
     expect(m.hilfeSeite!.first.kennung, ziel, reason: "ENTER folgt dem gewählten Verweis");
     m.druecke(menue);
@@ -166,7 +166,7 @@ void main() {
     await tester.pumpWidget(const RpnApp());
     for (final t in [
       "ältere Zeilen", // ▲ im Bereich Eingabe
-      "[ ] Vollbild für die markierte Seite",
+      "□ Vollbild für die markierte Seite",
       "Winkelmodus = 360°",
       "Seiten: Rechnen, Variablen und Tags, Funktionen\nWechsel durch Wischen oder mit TAB",
     ]) {
@@ -224,7 +224,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text("HILFE").last); // mit Shift trägt MENÜ die Beschriftung HILFE
     await tester.pump();
-    expect(find.text("Hilfe zur App"), findsOneWidget, reason: "die Hilfe startet mit der Startseite");
+    expect(find.text("Hilfe zur Hilfe"), findsOneWidget, reason: "die Hilfe startet mit der Startseite");
     await tester.tapAt(const Offset(60, 120)); // in die Eingabe, unter dem Hilfeschirm
     await tester.pump();
     expect(find.text("Anzeige: Eingabe"), findsOneWidget, reason: "gleich der erste Tipp zeigt die Hilfe der Eingabe");

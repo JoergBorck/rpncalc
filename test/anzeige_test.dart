@@ -65,6 +65,11 @@ void main() {
     expect(Anzeige.ausExcel("1.5,2.5,3.5"), ["1.5", "2.5", "3.5"]);   // höchstens ein Dezimalzeichen je Zahl
     expect(Anzeige.ausExcel("x-1 -2"), ["1", "~2"]);
     expect(Anzeige.ausExcel(""), isEmpty);
+    // Kommas (BA-3): einzeln Dezimalkomma, in einer Folge oder neben einem Dezimalpunkt Trennzeichen
+    expect(Anzeige.ausExcel("4,5,6,7"), ["4", "5", "6", "7"]);
+    expect(Anzeige.ausExcel("4,5;6"), ["4.5", "6"]);
+    expect(Anzeige.ausExcel("1.5,2"), ["1.5", "2"]);
+    expect(Anzeige.ausExcel("1,5 2,5 3,5"), ["1.5", "2.5", "3.5"]);
   });
 
   test('Einfügen: die umgeschriebenen Zahlen versteht der Rechner', () {

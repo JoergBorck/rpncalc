@@ -139,6 +139,16 @@ mixin Funktionen on Kern {
     "~cos" : (a) { ops=1; result(angle(math.acos(x),true)); },
     "atan" : (a) { ops=1; result(angle(math.atan(x),true)); },
     "~tan" : (a) { ops=1; result(angle(math.atan(x),true)); },
+    // Hyperbelfunktionen, unabhängig vom Winkelmodus
+    "sinh"  : (a) { ops=1; result(sinh(x)); },
+    "cosh"  : (a) { ops=1; result(cosh(x)); },
+    "tanh"  : (a) { ops=1; result(tanh(x)); },
+    "asinh" : (a) { ops=1; result(asinh(x)); },
+    "~sinh" : (a) { ops=1; result(asinh(x)); },
+    "acosh" : (a) { ops=1; result(acosh(x)); },
+    "~cosh" : (a) { ops=1; result(acosh(x)); },
+    "atanh" : (a) { ops=1; result(atanh(x)); },
+    "~tanh" : (a) { ops=1; result(atanh(x)); },
     "dms"  : (a) { ops=1; var [d,m,s] = dms(angle(x)); result(d,m,s); },
     // Erweiterungen: Versionsangaben und Hilfetexte aus einem JSON-Block (doc/reference.md 10.5)
     "rpnjson": (a) { _rpnjson(); },
@@ -225,6 +235,26 @@ mixin Funktionen on Kern {
     if (v == null) return math.tan(angle(phi));
     return v.$1 == 0 ? 0 : v.$1 / v.$2;
   }
+
+  // Hyperbelfunktionen (dart:math hat keine); für kleine x die Reihe, sonst gehen durch Auslöschung Stellen
+  // verloren (sinh 1e-10 wäre nur auf 6 Stellen genau). Außerhalb des Definitionsbereichs NaN bzw. unendlich
+  // wie bei asin (doc/reference.md 2).
+  static const double _klein = 1e-3;
+  num sinh(num x) => x.abs() < _klein ? x + x * x * x / 6 + x * x * x * x * x / 120 : (math.exp(x) - math.exp(-x)) / 2;
+  num cosh(num x) => (math.exp(x) + math.exp(-x)) / 2;
+  num tanh(num x) {
+    if (x.abs() < _klein) return x - x * x * x / 3 + 2 * x * x * x * x * x / 15;
+    final e = math.exp(-2 * x.abs()); // für große x kein Überlauf
+    return x.sign * (1 - e) / (1 + e);
+  }
+  num asinh(num x) {
+    if (x.abs() < _klein) return x - x * x * x / 6 + 3 * x * x * x * x * x / 40;
+    final b = x.abs();
+    return x.sign * math.log(b + math.sqrt(b * b + 1));
+  }
+  num acosh(num x) => x < 1 ? double.nan : math.log(x + math.sqrt(x * x - 1));
+  num atanh(num x) =>
+      x.abs() < _klein ? x + x * x * x / 3 + x * x * x * x * x / 5 : math.log((1 + x) / (1 - x)) / 2;
 
   /// Rechnet den Wert in rad um oder mit [rev] zurück.
   num angle(num phi, [bool rev = false]) {

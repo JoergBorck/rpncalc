@@ -283,6 +283,9 @@ class RpnApi {
   /// Funktionen aus geladenen Bibliotheken (mit version-Eintrag); „Funktionen speichern“ lässt sie aus.
   Set<String> get geladeneBibliotheksFunktionen => Set.unmodifiable(calculator.herkunft.keys);
 
+  /// Die Bibliothek, aus der eine Funktion stammt, oder null bei eigenen Funktionen.
+  String? herkunft(String name) => calculator.herkunft[name];
+
   /// Hinweise seit dem letzten Abruf, z.B. unbekannte Schlüssel in rpnjson; danach leer.
   List<String> hinweise() {
     final h = List.of(calculator.hinweise);
