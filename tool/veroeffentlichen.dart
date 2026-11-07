@@ -1,15 +1,7 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'changelog.dart' show changelog;
-
-/// Legt einen Stand des aktuellen `main` im öffentlichen Repository an, ohne die Ausschlüsse (z.B. Kursmaterial).
-///
-/// Die Stände liegen auf dem eigenen Zweig `oeffentlich`; jeder baut auf dem vorigen auf, so kommt der Push ohne
-/// Überschreiben aus. Die Historie von `main` (mit allen Commits) bleibt im Akademie-Repository.
-///
-/// Mit `--web` wird zusätzlich die App für den Browser gebaut und auf den Zweig `gh-pages` gelegt; GitHub Pages
-/// zeigt sie dann unter https://joergborck.github.io/rpncalc/.
+/// Aufgabe: legt einen Stand des aktuellen `main` im öffentlichen Repository an, ohne die Ausschlüsse (z.B.
+/// Kursmaterial). Die Stände liegen auf dem eigenen Zweig `oeffentlich`; jeder baut auf dem vorigen auf, so kommt
+/// der Push ohne Überschreiben aus. Mit `--web` wird zusätzlich die App für den Browser gebaut und auf den Zweig
+/// `gh-pages` gelegt; GitHub Pages zeigt sie dann unter https://joergborck.github.io/rpncalc/.
 ///
 ///   dart run tool/veroeffentlichen.dart                Stand anlegen, noch nicht pushen
 ///   dart run tool/veroeffentlichen.dart --push         Stand anlegen und ins öffentliche Repository pushen
@@ -17,6 +9,18 @@ import 'changelog.dart' show changelog;
 ///
 /// Gate: Solange im Backlog (process/backlog.md) ein Eintrag mit dem Merkmal „· Gate“ offen ist oder einer unter
 /// „Erforderlich“ steht, bricht es ab; ebenso, wenn CHANGELOG.md nicht zum Backlog passt (tool/changelog.dart).
+///
+/// Abgrenzung: Die Historie von `main` (mit allen Commits) bleibt im Akademie-Repository. CHANGELOG.md erzeugt
+/// tool/changelog.dart, hier wird er nur geprüft. Die Windows-Version wird von Hand gebaut und hochgeladen.
+///
+/// Siehe auch: process/workflow.md (Veröffentlichen), tool/changelog.dart, process/backlog.md.
+library;
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'changelog.dart' show changelog;
+
 const ausschluesse = ["scratchpad", "spec", "doc/requirements.md"]; // requirements.md: Ideensammlung, nur im Akademie-Repository
 const backlog = "process/backlog.md";
 const remote = "oeffentlich";

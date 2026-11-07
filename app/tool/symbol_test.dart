@@ -1,3 +1,15 @@
+/// Aufgabe: erzeugt das App-Symbol in allen Größen für Android, Web und Windows: der Stack, oben der Tos
+/// hellorange, links der orange Cursor. Schreibt die PNG-Dateien (Android klassisch und adaptiv, Web normal und
+/// maskierbar, Favicon), die XML-Dateien des adaptiven Symbols und app_icon.ico für Windows.
+/// Aufruf im Verzeichnis app: flutter test tool/symbol_test.dart
+///
+/// Abgrenzung: Kein Test, ein Werkzeug, das nur bei einer Änderung am Symbol läuft. Die Farben kommen aus
+/// colors.dart (Gehäuse, Anzeige, Tos, Shift); eine Vorschau in 512 px liegt danach in
+/// process/testing/preview/symbol.png.
+///
+/// Siehe auch: colors.dart, doc/app.md Kapitel 2 (Anzeige, Tos).
+library;
+
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -5,11 +17,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-/// Erzeugt das App-Symbol in allen Größen für Android, Web und Windows: der Stack, oben der Tos hellorange,
-/// links der orange Cursor. Aufruf im Verzeichnis app: flutter test tool/symbol_test.dart
-
-const _gehaeuse = Color(0xFF1A1D24), _anzeige = Color(0xFF0D1512);
+import 'package:rpncalc_app/colors.dart';
 
 /// [rand]: Abstand der Anzeige vom Rand (Anteil der Breite); [gehaeuse]: abgerundetes Gehäuse dahinter,
 /// [vollflaechig]: Gehäuse ohne Rundung bis in die Ecken (für Symbole, die das System selbst zuschneidet).
@@ -22,17 +30,17 @@ class _Symbol extends CustomPainter {
   void paint(Canvas c, Size s) {
     final w = s.width;
     if (vollflaechig) {
-      c.drawRect(Offset.zero & s, Paint()..color = _gehaeuse);
+      c.drawRect(Offset.zero & s, Paint()..color = Farben.gehaeuse);
     } else if (gehaeuse) {
-      c.drawRRect(RRect.fromRectAndRadius(Offset.zero & s, Radius.circular(w * 0.22)), Paint()..color = _gehaeuse);
+      c.drawRRect(RRect.fromRectAndRadius(Offset.zero & s, Radius.circular(w * 0.22)), Paint()..color = Farben.gehaeuse);
     }
     // die Anzeige, darin alles relativ zu ihrer Breite d
     final x0 = w * rand, d = w * (1 - 2 * rand);
-    c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x0, x0, d, d), Radius.circular(d * 0.11)), Paint()..color = _anzeige);
+    c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x0, x0, d, d), Radius.circular(d * 0.11)), Paint()..color = Farben.anzeige);
     final balken = [
-      (breite: 0.66, hoehe: 0.18, farbe: const Color(0xFFFFD9AE)), // Tos
-      (breite: 0.52, hoehe: 0.14, farbe: const Color(0xFFD9EFE4)),
-      (breite: 0.40, hoehe: 0.11, farbe: const Color(0xFF6F8F80)),
+      (breite: 0.66, hoehe: 0.18, farbe: Farben.tosHinten), // Tos
+      (breite: 0.52, hoehe: 0.14, farbe: Farben.anzeigeText),
+      (breite: 0.40, hoehe: 0.11, farbe: Farben.anzeigeBlass),
     ];
     const luecke = 0.08;
     final gesamt = balken.fold(0.0, (s, b) => s + b.hoehe) + luecke * (balken.length - 1);
@@ -46,7 +54,7 @@ class _Symbol extends CustomPainter {
     final tosOben = (1 - gesamt) / 2;
     c.drawRRect(
       RRect.fromRectAndRadius(Rect.fromLTWH(x0 + d * 0.11, x0 + d * tosOben, d * 0.065, d * 0.18), Radius.circular(d * 0.016)),
-      Paint()..color = const Color(0xFFFF9D4D),
+      Paint()..color = Farben.shift,
     );
   }
 
@@ -102,7 +110,7 @@ void main() {
       ..createSync(recursive: true)
       ..writeAsStringSync('''<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1A1D24</color>
+    <color name="ic_launcher_background">#${(Farben.gehaeuse.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, "0").toUpperCase()}</color>
 </resources>
 ''');
 
@@ -134,8 +142,7 @@ void main() {
     }
     File("windows/runner/resources/app_icon.ico").writeAsBytesSync(ico.toBytes());
 
-    // Vorschau im Scratchpad
-    File(r"C:\Users\xiabo\AppData\Local\Temp\claude\d--AA-Dart-rpncalc\fdb9109b-b596-417a-98e1-c21826f3d11a\scratchpad\symbol_neu.png")
-        .writeAsBytesSync(await png(normal, 512));
+    // Vorschau (nicht committet, siehe process/testing/README.md)
+    await schreibe("../process/testing/preview/symbol.png", normal, 512);
   });
 }

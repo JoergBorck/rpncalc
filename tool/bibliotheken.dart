@@ -1,15 +1,22 @@
+/// Aufgabe: übernimmt die mitgelieferten Bibliotheken aus library/*.rpnlib und die Systemdateien aus
+/// library/system/*.rpnlib (z.B. die eingebaute Hilfe) als Konstanten in lib/src/libraries/libraries.g.dart,
+/// damit es sie überall gibt, auch in der App und im Browser (doc/api.md 9.1). Nach jeder Änderung an einer
+/// dieser Dateien aufrufen: dart run tool/bibliotheken.dart. Ein Test merkt, wenn das vergessen wurde.
+///
+/// Abgrenzung: Laden und Prüfen der Bibliotheken macht `RpnApi` (lib/rpnapi.dart), Nachschlagen in der
+/// eingebauten Hilfe lib/src/api/builtin_help.dart. [erzeugen] benutzt auch test/libraries_test.dart.
+///
+/// Siehe auch: doc/api.md 9.1, doc/reference.md 10.6, doc/architecture.md 2.2.
+library;
+
 import 'dart:io';
 
-/// Übernimmt die mitgelieferten Bibliotheken aus library/*.rpnlib und die Systemdateien aus
-/// library/system/*.rpnlib (z.B. die eingebaute Hilfe) als Konstanten in lib/bibliotheken.g.dart, damit es sie
-/// überall gibt, auch in der App und im Browser (doc/api.md 9.1). Nach jeder Änderung an einer dieser Dateien
-/// aufrufen: dart run tool/bibliotheken.dart. Ein Test merkt, wenn das vergessen wurde.
 void main() {
-  File("lib/bibliotheken.g.dart").writeAsStringSync(erzeugen(Directory("library")));
-  print("lib/bibliotheken.g.dart geschrieben");
+  File("lib/src/libraries/libraries.g.dart").writeAsStringSync(erzeugen(Directory("library")));
+  print("lib/src/libraries/libraries.g.dart geschrieben");
 }
 
-/// Der Inhalt von lib/bibliotheken.g.dart zu den .rpnlib-Dateien in [verzeichnis] und seinem Unterverzeichnis
+/// Der Inhalt von lib/src/libraries/libraries.g.dart zu den .rpnlib-Dateien in [verzeichnis] und seinem Unterverzeichnis
 /// system, jeweils nach Namen sortiert.
 String erzeugen(Directory verzeichnis) {
   List<String> eintraege(Directory d) {

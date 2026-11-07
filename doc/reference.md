@@ -538,12 +538,19 @@ Funktionen haben einen eigenen Namensraum, denn sie werden ohne `'` aufgerufen.
 | `{…}'::name` | legt die Funktion ab oder ersetzt eine vorhandene eigene Funktion |
 | `name` | ruft die Funktion auf, als hätte man ihren Code an dieser Stelle eingetippt |
 | `'~name` | entfernt die Funktion |
+| `{…}':name rpnintern` | kennzeichnet die zuletzt abgelegte Funktion als intern |
 
 - **Eingebaute Funktionen** können nicht überschrieben werden, Funktionen aus Bibliotheken ebenfalls nicht (10.6).
 - **Ersetzen nur ausdrücklich:** Wer eine Funktion beim Entwickeln neu fasst, schreibt `'::name`. So
   überschreibt `':` nie versehentlich eine Funktion, die man noch braucht.
 - **Namen mit `rpn` am Anfang** sind für das System reserviert (z.B. `rpnjson`, 10.5); eigene Funktionen dürfen
   nicht so heißen.
+- **Interne Funktionen** (`rpnintern`): Hilfsfunktionen, die andere Funktionen benutzen. Sie bekommen keine
+  Funktionstaste; in Listen und in der Hilfe stehen sie wie alle anderen, aufrufen lassen sie sich ebenso.
+  `rpnintern` bezieht sich auf die zuletzt mit `':` oder `'::` abgelegte Funktion (gibt es keine mehr, ist das
+  ein Fehler) und wirkt beim Ausführen der Zeile, der Code der Funktion bleibt unverändert. Wird die Funktion mit
+  `'::` ersetzt oder entfernt, verliert sie die Kennzeichnung; folgt wieder `rpnintern`, hat sie sie erneut.
+  „Funktionen speichern“ und der Export als Bibliothek schreiben `rpnintern` mit.
 - **Verschachtelte Aufrufe:** Eigene Funktionen dürfen weitere eigene Funktionen aufrufen, auch sich selbst. Mehr als 100 verschachtelte Aufrufe sind ein Fehler.
 - **Fehler im Code** werden als Fehler des Aufrufs gemeldet, z.B. „Fehler in f: Variable ist nicht definiert: q“.
 
@@ -697,6 +704,7 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
 | `fktName` | Eingebaute Funktionen können nicht überschrieben werden |
 | `fktDa`   | Funktion gibt es schon, ersetzen mit '::name |
 | `bibFkt`  | Funktion gehört zu einer Bibliothek |
+| `intern`  | rpnintern: keine Funktion abgelegt |
 | `konflikt` | Name ist schon vergeben |
 | `geschuetzt` | Geschützt, entfernen mit '~~ |
 | `ungeschuetzt` | Nicht geschützt, entfernen mit '~ |
@@ -859,7 +867,7 @@ pq-Formel als eigene Funktion, x₁,₂ = −p/2 ± √(p²/4 − q):
 ## Anhang D: Tests zu den Kapiteln
 
 Die Tests sind die ausführbare Fassung dieser Referenz (`dart test` oder Menü „Test“).
-Die Nummern beziehen sich auf die Fälle in `lib/selftest/test_calculator.dart`.
+Die Nummern beziehen sich auf die Fälle in `lib/src/selftest/test_calculator.dart`.
 
 | Kapitel | Tests |
 |---------|-------|
@@ -868,8 +876,8 @@ Die Nummern beziehen sich auf die Fälle in `lib/selftest/test_calculator.dart`.
 | 5 Argumente | Rechner 59–71 |
 | 6 Funktionen | Rechner 29–42, 52–58 (`dms`), 116–123 (Logarithmus, Zufall), 124–135 (`round`), 136–138 (unbekannte Namen), 203–207 (exakte Viertelkreise) |
 | 7 Stackbefehle | Rechner 43–51, 143–148 (`Y`) |
-| 8 Variablen | Rechner 82–85, 103–115, 190–192; `test/schutz_test.dart` |
-| 9 Tags | Rechner 86–102, 193–195; `test/schutz_test.dart` |
+| 8 Variablen | Rechner 82–85, 103–115, 190–192; `test/protection_test.dart` |
+| 9 Tags | Rechner 86–102, 193–195; `test/protection_test.dart` |
 | 10 Code | Rechner 149–164, 184–189, 196–197 (`~\|:`); `test/multiline_test.dart`, `test/times_test.dart` |
 | 11 Kontrollstrukturen | Rechner 174–183, 198–202 (`times`, `loop`); `test/multiline_test.dart` (loop), `test/times_test.dart` |
-| Beispiele | Rechner 76–77; `test/statistik_test.dart`, `test/schwingungen_test.dart` |
+| Beispiele | Rechner 76–77; `test/statistics_test.dart`, `test/oscillations_test.dart` |

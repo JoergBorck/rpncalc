@@ -53,6 +53,7 @@ Unter Windows und im Browser lässt sich das Fenster größer und kleiner ziehen
 - **Seiten:** Die Anzeige lässt sich seitlich wischen: Rechnen, Variablen und Tags, Funktionen.
 - **Seite Funktionen:** zuerst der Abschnitt „Eigene Funktionen“, darunter je geladener Bibliothek ein Abschnitt
   „Bibliothek name“, jeweils mit dem Code der Funktionen; so lässt sich nachlesen, wie eine Bibliothek gebaut ist.
+  Interne Funktionen stehen hier wie die anderen, ihr Name kursiv und ausgegraut.
   Blättern die Funktionstasten auf eine Seite einer Bibliothek, scrollt die Liste so, dass deren Funktionen zu
   sehen sind (erste Seite: der Abschnitt, weitere Seiten: ihre erste Funktion oben), sonst nach oben; umgekehrt ändert Scrollen in der Liste die Tasten nicht.
 - **Statuszeile:** Winkelmodus, aktive Umschaltungen (Shift, `~`, `|`, `'`, Alpha) und die Seite der
@@ -82,7 +83,9 @@ lange Drücken für ihren Tooltip. Im Browser ist das eigene Kontextmenü des Br
   legt sie auf den Stack, die erste unten, die letzte wird x; alles andere wird übergangen, es wird nichts
   ausgeführt.
 - **Text einfügen** gibt den Text Zeichen für Zeichen an den Rechner, als wäre er getippt; Zeilenumbrüche
-  brechen die Zeile um.
+  brechen die Zeile um. Besteht der Text nur aus Zahlen, z.B. aus dem Stack oder aus Excel kopiert (Dezimalkomma,
+  getrennt durch `;`, Tab oder Zeilenumbruch), schreibt es sie so, wie man sie tippen würde: Dezimalpunkt, `~` für
+  negative Zahlen, `ê` für den Exponenten, Leerzeichen dazwischen.
 - **Hilfe** zeigt die Seite des Elements wie ein Tipp im Inspekt-Modus (5.3); am Handy ersetzt das den Tooltip
   der Anzeige.
 - Danach steht kurz eine Meldung unten in der App (z.B. „Kopiert: 2,25“, „3 Zahlen eingefügt“).
@@ -101,7 +104,7 @@ Oberer Block (Hauptfunktion / Shift; `~` und `|` zeigen erlaubte Präfixe):
 | | 1 | 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|---|
 | R1 | SHIFT | ALPHA | Cursorkreuz, in der Ecke frei | Cursorkreuz, in der Ecke □ / ◫ | TAB / ⇤ | MENÜ / HILFE |
-| R2 | `'` | `( )` reserviert | `[ ]` reserviert | `{` / `}` | frei | ⌫ / `C` |
+| R2 | `'` | `( )` reserviert | `[ ]` reserviert | `{` / `}` | CL / AC | ⌫ / `C` |
 | R3 | `D` / `Y` | F1 | F2 | F3 | F4 | F5 |
 | R4 | `S` / `R`, `~`: `~R` | F6 | F7 | F8 | F9 | F10 |
 | R5 | `!` | `^`, `~`: ˣ√y | `²`, `~`: √x | `³`, `~`: ∛x | `°`, `~`: →kart | `%`, `~%`, `\|%`, `~\|%` |
@@ -116,6 +119,11 @@ Unterer Block:
 | R9 | Präfix `~` (eingefärbt) | `ê` | 0 | `.` | `+` / `=`, `~`: ≠ |
 
 - `( )` und `[ ]` sind für Vektoren und Einheiten reserviert.
+- **CL** (Clear Line) leert die aktuelle Eingabezeile, ohne den Stack zu ändern: Was schon ausgeführt ist, bleibt
+  wirksam; verworfen werden das offene Token, ein vorgemerktes Enter und alle Tasten nach einem Fehler
+  (api.md 5.4). Die Zeile kommt nicht in den Verlauf. Ist die aktuelle Zeile leer, löscht CL die Zeile darunter
+  im Verlauf, die Liste rückt hoch. **AC** (Shift+CL) löscht die Eingabe (aktuelle Zeile und Verlauf) und den
+  Stack mit allen Tags (`'C`); Variablen und eigene Funktionen bleiben, sie werden über das Menü gelöscht.
 - ENTER liegt wie beim HP links neben der 7.
 - **Rechenfunktion auf `~` und `|`:** Mittig unter dem großen Zeichen steht klein, was die Taste allein tut:
   ± auf `~` (Vorzeichenwechsel), □|.□ auf `|` (Ganzzahl- und Nachkommateil, die Kästen als Platzhalter). Die
@@ -140,7 +148,8 @@ Unterer Block:
   Belegung (⌫ bleibt ⌫, nicht C). ⌫ löscht zeichenweise und lässt Alpha an. ALPHA beendet den Alpha-Modus,
   auch mit Shift; Shift+ALPHA bei ausgeschaltetem Alpha schaltet ihn ein, für einen Großbuchstaben. Das Alphabet
   beginnt bei `( )` und läuft zeilenweise durch den oberen Block (`a b c d`, `e`–`j`, `k`–`p`, `q`–`v`),
-  `w x y z` liegen auf `/ * - +`. ⌫ bleibt ⌫, `\` liegt auf `'`. Alpha+ENTER ist ein Zeilenumbruch.
+  `w x y z` liegen auf `/ * - +`. ⌫ bleibt ⌫, `\` liegt auf `'`. Alpha+ENTER ist ein Zeilenumbruch. Die
+  Funktionstasten haben im Alpha-Modus keine eigene Farbe, belegt oder nicht: Sie sind Buchstaben wie die anderen.
 - **Farben:** SHIFT ist orange, ALPHA hellgrün wie ihre Hinweise auf den Tasten; ist eine aktiv, hat sie
   einen hellen Rahmen. TAB zeigt groß ⇥, mit Shift ⇤.
 - Befehle aus Großbuchstaben wie `X` und Funktionsnamen wie `if` werden mit Alpha getippt.
@@ -156,19 +165,40 @@ Unterer Block:
   Die aktuelle Zeile zeigt zuerst ihr Ende.
 - **Stack:** ▲ und ▼ blättern zu tieferen Werten, ◄ und ► schieben lange Werte seitlich. ▼ geht so weit, bis der
   unterste Wert in der 7. Zeile steht; so viele Zeilen zeigt auch die kleinste Anzeige ganz.
+- **Wischen und Mausrad in Eingabe und Stack:** Senkrecht wischen schiebt den Inhalt mit dem Finger, in
+  Zeilenschritten: je Weg einer Zeilenhöhe eine Zeile (die Höhe der 3. Zeile von oben, weil die Zeilen nach unten
+  kleiner werden). Nach oben wischen zeigt ältere Zeilen bzw. tiefere Werte, nach unten zurück. Nach einer
+  schnellen Bewegung läuft es nach und bremst ab wie eine Liste am Handy; an Anfang und Ende hält es an. Das
+  Mausrad schiebt je Raste eine Zeile, nach unten gedreht wie nach oben gewischt; danach zeigen sich Tooltips wie
+  nach dem Kontextmenü erst wieder, wenn die Maus ein anderes Element betritt. Wischen und Mausrad wählen den
+  Bereich wie ein Tipp; im Hilfe-Modus tun sie nichts. Seitliches Wischen (Seiten der Anzeige), langes Drücken und
+  Doppeltipp bleiben.
 - Der gewählte Bereich hat einen orangen Rahmen; kleine orange Pfeile links bzw. rechts am Rahmen zeigen, dass
   sich mit ◄ bzw. ► etwas schieben lässt. Jede Eingabe stellt Blättern und Schieben zurück.
-- **Funktionen:** ◄ und ► blättern zwischen den Seiten der Funktionstasten: zuerst die Grundfunktionen (sie
+- **Funktionen:** ▲ und ▼ blättern zwischen den Seiten der Funktionstasten wie das Mausrad (▼ nächste Seite, an
+  der ersten bzw. letzten hält es an, die Tasten schieben sich senkrecht); ◄ und ► ebenso, im Kreis und waagrecht
+  wie das Wischen. Die Reihenfolge: zuerst die Grundfunktionen (sie
   sind immer dabei), dann die gewählte Domäne, zuletzt die eigenen Funktionen. Reichen 10 Tasten nicht, gibt es
   weitere Seiten. Wählt man im Menü eine Domäne, zeigen die Tasten ihre erste Seite. Ohne eigene Funktionen gibt
   es keine (leere) Seite „Eigene“. Unten am orangen Rahmen steht der Name der Seite (z.B. Grundfunktionen, schwingungen 2/3,
   Eigene), bei den Variablen „Variablen“; der Rahmen hat dort eine Lücke, der Name keinen eigenen Hintergrund.
-- **Wischen und Mausrad:** Seitlich über die Funktionstasten wischen blättert ebenso (nach links wischen: nächste
-  Seite), im Kreis wie ◄ ►. Am PC blättert das Mausrad über ihnen: erst jede dritte Raste in dieselbe Richtung
-  wechselt die Seite (nach unten: nächste), und es hält an der ersten bzw. letzten Seite an; solange es dreht,
-  zeigen die Tasten keine Tooltips. Beides wählt den Bereich nicht, die Anzeige bleibt, wo sie ist; der orange
-  Rahmen erscheint nur kurz (etwa 1,5 s) als Hinweis. Gibt es mehr als eine Seite, zeigt er links und rechts kleine
-  Pfeile. Zeigen die Funktionstasten die Variablen, blättern Wischen und Mausrad nicht.
+- **Wischen und Mausrad:** Die Funktionstasten lassen sich sichtbar verschieben; die nächste Seite schiebt sich
+  herein, zwischen zwei Seiten steht eine dünne orange Linie.
+  - **Wischen** (seitlich, nach links: nächste Seite): Die Tasten folgen dem Finger in Spaltenschritten. Langsam
+    losgelassen rasten sie auf der Seite ein, von der mehr als die Hälfte zu sehen ist; mit Schwung laufen sie bis
+    zur nächsten Seite nach. Sie ruhen immer auf einer ganzen Seite. Das Wischen läuft im Kreis wie ◄ ►.
+  - **Mausrad** (am PC): Jede Raste schiebt die Tasten um eine drittel Seite nach oben bzw. unten (nach unten:
+    nächste Seite). Ruht das Rad eine halbe Sekunde, rasten sie auf einer ganzen Seite ein, und zwar in Drehrichtung:
+    Eine angefangene Seite wird in der Richtung vollendet, in die zuletzt gedreht wurde; eine Raste blättert so genau
+    eine Seite. An der ersten bzw. letzten Seite hält es an.
+  - Es gilt die Seite, von der mehr als die Hälfte zu sehen ist; ihr Name steht am Rahmen. Solange geschoben wird,
+    zeigen die Tasten keine Tooltips, und der orange Rahmen ist zu sehen (danach noch etwa 1,5 s); den Bereich wählt
+    das nicht, die Anzeige bleibt, wo sie ist. Gibt es mehr als eine Seite, zeigt der Rahmen kleine Pfeile: am PC
+    ▲ ▼ oben und unten, sonst ◄ ► links und rechts.
+  - Zeigen die Funktionstasten die Variablen oder im Alpha-Modus Buchstaben, verschieben Wischen und Mausrad nichts.
+- **Maus über den Funktionstasten:** Am PC wird der Hintergrund des Blocks ganz leicht orange, solange die Maus
+  darüber steht und das Mausrad dort blättern würde, auch ohne gewählten Bereich. Die Tasten selbst behalten
+  ihre Farbe. Am Handy gibt es das nicht, dort zeigt der kurze Rahmen beim Wischen, dass geblättert wird.
 - **Variablen:** Die Funktionstasten zeigen die Variablen und Tags.
 
 - **Beschriftung:** Jede Taste zeigt, was ein Druck bewirkt, nicht den aktuellen Zustand. TAB zeigt mit Shift
@@ -190,7 +220,8 @@ Unterer Block:
   ([api.md](api.md) 9.1), mit ihrem Namen als Titel. Wählt man eine, wird sie einmal geladen; die
   Funktionstasten zeigen ihre Funktionen in der Reihenfolge der Datei, bei mehr als zehn auf mehreren Seiten,
   die ◄ ► im Bereich Funktionen durchblättern. Die Tasten tragen den Funktionsnamen (`mean`, `omega`); schönere
-  Beschriftungen (ω) kommen mit den Hilfetexten der Bibliotheken.
+  Beschriftungen (ω) kommen mit den Hilfetexten der Bibliotheken. Interne Funktionen (`rpnintern`, reference.md
+  10.2) bekommen keine Taste, ebenso auf der Seite „Eigene“.
 - Grundfunktionen: π / e, rnd / seed, round, dms, DEG; sin, cos, tan (Shift: sinh, cosh, tanh;
   `~`: asin, acos, atan), ln (Shift: log, `~`: eˣ), RAD / GRD.
 
@@ -299,7 +330,7 @@ Funktion hat eine eigene Zeile. Die Zeilen sind in Bereiche gegliedert, in diese
   ⇧ orange, „Alpha“ grün. Gefärbt wird nur das Zeichen, nicht die ganze Zeile. Tooltip (gelber Grund) und
   Hilfeschirm (dunkler Grund) haben je eigene, gut lesbare Töne derselben Farbe. Das gilt auch im Fließtext der
   Hilfeseiten.
-- **Themes:** Die Farben kommen aus benannten Rollen in `farben.dart` (z.B. „Tilde im Tooltip“), nie als feste
+- **Themes:** Die Farben kommen aus benannten Rollen in `colors.dart` (z.B. „Tilde im Tooltip“), nie als feste
   Werte im Widget. Ein späteres Theme tauscht nur die Werte der Rollen aus.
 
 Beispiele:
@@ -346,6 +377,12 @@ LESEN“ in eigener Farbe (hellblau), die MENÜ-Taste leuchtet.
 | **◄** | zurück zur vorigen Seite; die erste Seite bleibt stehen |
 | **BEENDEN** (MENÜ) | beendet die Hilfe; die Taste trägt im Hilfe-Modus diese Beschriftung |
 | **LESEN** (ALPHA) | wechselt in den Lese-Modus; ist kein Hilfeschirm offen, mit der Startseite |
+
+**Funktionstasten im Hilfe-Modus** (Inspekt- und Lese-Modus): Der orange Rahmen mit dem Seitennamen ist immer zu
+sehen, als wäre der Bereich gewählt. Mausrad und Wischen blättern die Seiten wie sonst (3.3), unter der Maus ist
+der Block hinterlegt. Ein Klick in den Rahmen, aber nicht auf eine Taste, oder auf den Seitennamen zeigt die
+Hilfe zur Seite: bei einer Bibliothek ihre Übersicht (`#name`), bei „Eigene“ die Hilfe des Rechners zu eigenen
+Funktionen (`#funktionen`), sonst die Hilfe zur Anzeige Funktionen (`app:funktionen`).
 
 **Lese-Modus:** Tasten lösen keine Hilfe aus; die gezeigte Seite bleibt, mit dem vollen Text.
 
@@ -422,7 +459,7 @@ Eine echte Tastatur (PC, Browser, Bluetooth am Handy) bedient die App wie die Kn
 | Strg+C / Strg+Shift+C | x bzw. den ganzen Stack kopieren (2.1) |
 | Strg+V | einfügen: im Stack Werte, sonst Text (2.1) |
 | `\c` `\s` `\v` | wie in der Konsole: x kopieren, Stack kopieren, Werte einfügen; das `\` wartet, bis das nächste Zeichen kommt |
-| Esc | im Hilfe-Modus: Hilfeschirm schließen, beim zweiten Mal den Hilfe-Modus beenden; sonst ohne Wirkung |
+| Esc | im Hilfe-Modus: beendet ihn; sonst wie CL (3.1) |
 
 - **Rückmeldung:** Der Knopf, der dem getippten Zeichen entspricht, leuchtet kurz auf: Ziffern, `.`, `ê` und
   ENTER etwa 250 ms, Operatoren etwa 600 ms. Ein Buchstabe leuchtet auf seiner Alpha-Taste und zeigt dabei den

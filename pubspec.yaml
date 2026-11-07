@@ -1,6 +1,6 @@
 name: rpncalc
 description: Ein RPN-Rechner mit konfigurierbarer Grammatik.
-version: 0.2.0
+version: 0.3.0
 # repository: https://github.com/my_org/my_repo
 
 environment:

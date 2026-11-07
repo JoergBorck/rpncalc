@@ -12,7 +12,7 @@ Flutter-App. Was die Eingaben bedeuten, steht in der [Sprachreferenz](reference.
 Die Klasse `RpnApi` (`lib/rpnapi.dart`) ist die einzige Schnittstelle zwischen Oberfläche und Rechner:
 
 ```
-Oberfläche ── Eingabezeile ──▶ RpnApi ──▶ Parser ──▶ Calculator
+Oberfläche ── Eingabezeile ──▶ RpnApi ──▶ Interpreter ──▶ Parser ──▶ Calculator
            ◀──── Zustand ─────
 ```
 
@@ -52,6 +52,17 @@ print(z.fehler?.text);           // Division durch 0
 | `exportieren({bool nurFunktionen = false})` | `Export` | der Zustand als RPN-Skript (Kapitel 4) |
 | `importieren(String text, {bool ersetzen = true})` | `String?` | führt ein Skript aus; `null` oder der erste Fehler (Kapitel 4) |
 | `testString({int zeilen = 4})` | `String` | nur für Tests: Stack im Format `Stack: ...[a] [b]<tos` |
+
+Dazu exportiert `rpnapi.dart` Hilfsfunktionen, damit eine Oberfläche nichts anderes aus dem Paket importieren
+muss (architecture.md 5):
+
+| Funktion | Ergebnis | Beschreibung |
+|----------|----------|--------------|
+| `zahl(num w)` | `String` | Zahl für die Anzeige, ganze Zahlen ohne „.0“ |
+| `positionsName(int p, {bool symbol = true})` | `String` | Name einer Stackposition: x, y, z, t, darunter ≡₄, ≡₅ … |
+| `fuerExcel(Iterable<num> werte)` | `String` | Werte für die Zwischenablage (Kapitel 7) |
+| `ausExcel(String text)` | `List<String>` | alle Zahlen aus einem Text in der Schreibweise des Rechners (Kapitel 7, „Einfügen mit `\v`“) |
+| `nurZahlen(String text)` | `bool` | der Text besteht nur aus Zahlen, getrennt durch `;`, Kommas in einer Folge, Leerzeichen, Tab oder Zeilenumbruch |
 
 ### 2.1 Eingabezeilen
 
@@ -108,6 +119,7 @@ Alle Klassen sind unveränderliche Datenobjekte: Die Felder sind `final`, die Li
 | `werte` | `List<num>` | Elemente, Element 0 zuerst; bei Tags die aktuellen Werte der Zellen; bei Funktionen leer |
 | `code` | `String` | nur bei Funktionen: der Code ohne `{ }` |
 | `schreibschutz` | `bool` | Konstante bzw. Tag mit Schreibschutz |
+| `intern` | `bool` | nur bei Funktionen: mit `rpnintern` als intern gekennzeichnet (reference.md 10.2), bekommt keine Funktionstaste; im JSON fehlt es bei älteren Servern und gilt dann als `false` |
 
 Die Liste enthält erst die Variablen, dann die Tags, dann die Funktionen, jeweils in der Reihenfolge, in der sie angelegt wurden.
 
@@ -193,6 +205,7 @@ Tastendruck mitläuft, soll der Rechner auch einzelne Zeichen annehmen.
 | `taste(String zeichen)` | `Zustand` | verarbeitet ein einzelnes Zeichen |
 | `zeilenende()` | `Zustand` | schließt die Zeile ab, wie das Zeilenende bei `eingabe` |
 | `loeschen()` | `Zustand` | nimmt das zuletzt eingegebene Zeichen zurück (5.4) |
+| `verwerfen()` | `Zustand` | verwirft, was in der Zeile noch nicht ausgeführt ist, und schließt sie ab (5.4) |
 
 **Grundregel:** `eingabe(zeile)` ist dasselbe wie `taste()` für jedes Zeichen der Zeile und danach
 `zeilenende()`. Beide Wege liefern denselben Zustand. Das lässt sich mit allen vorhandenen Testfällen prüfen.
@@ -246,6 +259,9 @@ Das gilt auch, wenn vorher in einer anderen Oberfläche oder Eingabeart gerechne
 - **Nach einem Fehler:** siehe 5.6.
 - **Schon ausgeführte Token:** braucht ein Undo (vorgemerkt, siehe 9). Löschen nimmt dann die Wirkung des
   Tokens zurück und öffnet es wieder zum Bearbeiten.
+- **Verwerfen** (`verwerfen()`): wie Löschen, bis sich nichts mehr ändert (offenes Token, vorgemerktes Enter,
+  nach einem Fehler die Tasten danach und das fehlerhafte Token), dann schließt es die Zeile ab. Der Stack bleibt,
+  wie er nach den schon ausgeführten Token ist. Die App nutzt das für CL (app.md 3.1).
 
 ### 5.5 Ohne Zeilenende
 
@@ -265,11 +281,11 @@ Ein Fehler darf den Stack nicht unbemerkt weiter verändern. Deshalb gilt:
 
 1. **Ein Fehler sperrt die Eingabe.** Weitere Tasten werden nicht ausgeführt. Der Stack bleibt so, wie er vor
    dem fehlerhaften Token war, denn ein fehlerhaftes Token legt seine Werte zurück.
-2. **Löschen repariert.** Löschen nimmt zuerst die Tasten nach dem Fehler zurück, dann die Taste, die den
-   Fehler ausgelöst hat. Danach ist das fehlerhafte Token wieder offen und lässt sich korrigieren. Die Sperre
-   ist aufgehoben.
+2. **Löschen repariert.** Das erste Löschen nimmt alle Tasten nach dem Fehler auf einmal zurück (sie wurden
+   nie ausgeführt, z.B. ein langer eingefügter Text), das nächste die Taste, die den Fehler ausgelöst hat. Danach
+   ist das fehlerhafte Token wieder offen und lässt sich korrigieren. Die Sperre ist aufgehoben.
    Beispiel `1q2`: Die `2` schließt `q` ab, `q` ist unbekannt. Löschen nimmt die `2` zurück, `q` ist wieder
-   offen. Ein zweites Löschen entfernt das `q`.
+   offen. Ein zweites Löschen entfernt das `q`. Bei `1q2abc` nimmt das erste Löschen `abc` zurück.
 3. **Verwerfen:** Return (5.5) hebt die Sperre auf und verwirft das fehlerhafte Token samt der Tasten danach,
    ohne den Stack anzufassen. Ob es zusätzlich eine eigene Taste wie `Esc` braucht, ist offen (siehe 9).
 
@@ -386,7 +402,7 @@ Optional kann jede Nachricht `"zeilen": n` mitgeben, wie viele Stack-Zeilen der 
 - Die Zwischenablage gehört zum Client, weil sie auf dessen Rechner liegt: `\c` und `\s` kopieren aus dem
   zuletzt empfangenen Zustand, `\v` schickt die Zahlen als `{"taste":"_…_"}`.
 - Die Anzeige ist dieselbe wie bei der zeichenweisen Eingabe im Menüprogramm (gemeinsamer Code in
-  `lib/console/screen.dart`).
+  `lib/src/console/screen.dart`).
 - Beendet der Client sich, schließt er nur seine Verbindung. Der Server läuft weiter.
 - Kommt `{"ende":…}` oder bricht die Verbindung ab, verlässt der Client die Eingabe sofort und zeigt den Grund an.
 - Läuft beim Start noch kein Server, versucht der Client es jede Sekunde wieder.
@@ -398,7 +414,7 @@ Optional kann jede Nachricht `"zeilen": n` mitgeben, wie viele Stack-Zeilen der 
 | Aufgabe | Heute (Konsole) | Später (Flutter) |
 |---------|-----------------|------------------|
 | Eingabe | Zeile für Zeile über `stdin`, zurück zum Menü mit `\q`; oder Taste für Taste im Rohmodus (Backspace löscht, die letzten 5 Zeilen bleiben sichtbar, `\q` führt zurück; Strg+C beendet unter Windows das ganze Programm) | Bildschirmtastatur; Enter auf der Leertaste |
-| Anzeige | `Anzeige.kompakt` / `Anzeige.uebersicht` (`lib/console/display.dart`); der Tos hellorange hinterlegt, vor der Eingabe `RPN>` mit „RPN“ in Orange | eigene Widgets auf Basis von `Zustand` |
+| Anzeige | `Darstellung.kompakt` / `Darstellung.uebersicht` (`lib/src/console/display.dart`); der Tos hellorange hinterlegt, vor der Eingabe `RPN>` mit „RPN“ in Orange | eigene Widgets auf Basis von `Zustand` |
 | Fehler | `^` unter der Fehlerstelle | Markierung in der Eingabe |
 | Zwischenablage | `\c` kopiert den Tos, `\s` den Stack (tiefster zuerst), für ein deutsches Excel: Dezimalkomma, getrennt mit `;`. Ein offenes Token wird vorher mit `_` abgeschlossen, wie eine Funktionstaste beim HP die Zahleneingabe abschließt (nach `2.25` kopiert `\c` also 2,25); geht das nicht, bleibt es offen. In der zeilenweisen Eingabe dürfen `\c` und `\s` auch am Ende einer Zeile stehen (`2.25\c`): erst wird die Zeile gerechnet, dann kopiert, bei einem Fehler nicht. `\v` fügt alle Zahlen aus der Zwischenablage ein (siehe unten) | `Clipboard.setData` / `getData` von Flutter |
 | Hilfe | `\?` und ein Zeichen, Name oder Thema zeigt die Hilfe dazu (siehe unten und Kapitel 8) | Hilfe-Modus und Tooltips ([app.md](app.md) Kapitel 5) |
@@ -443,7 +459,7 @@ Hilfezeile unter der Eingabe zeigt sie, der gewählte steht in Orange.
 - **Nach einer Eingabe** (Taste, Enter, Backspace) springen Stack und Verlauf zurück zum Tos bzw. zur neuesten
   Zeile, geschobene Verlaufszeilen wieder auf Fehler bzw. Ende; der gewählte Bereich bleibt.
 - **Tasten:** Pfeiltasten kommen als Escape-Folgen (`Esc [ A` … `D`). Unter Windows schaltet die Konsole dafür
-  „Virtual Terminal Input“ ein (`lib/console/terminal.dart`) und am Ende wieder aus, und zwar erst nach dem
+  „Virtual Terminal Input“ ein (`lib/src/console/terminal.dart`) und am Ende wieder aus, und zwar erst nach dem
   Zurückschalten des Zeilenmodus, weil Dart dabei selbst am Konsolenmodus dreht. Sonst kämen die Pfeiltasten in
   der zeilenweisen Eingabe als `^[[A` an. Ein einzelnes Esc wird
   überlesen; zurück geht es weiterhin mit `\q`.
@@ -697,7 +713,7 @@ Versionsangabe mit dem Namen, dann die Funktionen, zuletzt die Hilfetexte, beide
   die Angabe `app` übergangen.
 - **Hilfe neu aufbereiten:** Die Oberfläche kann sich die Version einer Bibliothek merken und ihre Hilfe nur neu
   aufbereiten, wenn sie sich geändert hat (`bibliotheksVersion(name)`).
-- **Erzeugt:** `dart run tool/bibliotheken.dart` schreibt daraus `lib/bibliotheken.g.dart` mit den Texten als
+- **Erzeugt:** `dart run tool/bibliotheken.dart` schreibt daraus `lib/src/libraries/libraries.g.dart` mit den Texten als
   Konstanten. Die erzeugte Datei wird mit eingecheckt.
 - **Wächter-Test:** Ein Test vergleicht die erzeugte Datei mit den Dateien in `library/`. Wurde eine Bibliothek
   geändert, ohne das Werkzeug laufen zu lassen, schlägt `dart test` fehl.
@@ -711,7 +727,7 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
 | `String? bibliothek(String name)` | der Text einer Bibliothek oder `null` |
 | `String? bibliothekHinzufuegen(String name, String text)` | meldet eine Bibliothek an; eine hinzugefügte mit gleichem Namen wird ersetzt. Liefert `null` oder einen Fehler, z.B. wenn eine mitgelieferte so heißt oder der Text kein gültiges Skript aus Funktionen ist |
 | `String? ladeBibliothek(String name)` | lädt die Bibliothek in den Rechner wie `importieren(text, ersetzen: false)`; liefert `null` oder den Fehler. Gibt es einen ihrer Namen schon als eigene Funktion oder in einer anderen Bibliothek, wird sie gar nicht geladen („Name ist schon vergeben“) |
-| `List<String> bibliotheksFunktionen(String name)` | die Namen ihrer Funktionen in der Reihenfolge der Datei, z.B. für die Funktionstasten |
+| `List<String> bibliotheksFunktionen(String name, {bool ohneIntern = false})` | die Namen ihrer Funktionen in der Reihenfolge der Datei; mit `ohneIntern` ohne die internen, z.B. für die Funktionstasten |
 | `String? herkunft(String name)` | die Bibliothek, aus der eine geladene Funktion stammt, oder `null` bei eigenen Funktionen |
 | `Map<String, Object?>? bibliotheksVersion(String name)` | die Versionsangabe einer geladenen Bibliothek |
 | `({String beschreibung, String version, int funktionen})? bibliotheksInfo(String name)` | Kurzinfo, auch ohne die Bibliothek zu laden: der Satz aus `beschreibung`, die Version, die Zahl der Funktionen; für Menüs und Tooltips |

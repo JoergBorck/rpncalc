@@ -1,12 +1,19 @@
-import 'dart:io';
-
-import 'package:rpncalc/client/client.dart';
-import 'package:rpncalc/console/screen.dart';
-import 'package:rpncalc/console/terminal.dart';
-
-/// Konsolen-Client für den Socket-Server (doc/api.md 6.1): liest die Tastatur, schickt jede Taste an den
+/// Aufgabe: Konsolen-Client für den Socket-Server (doc/api.md 6.1): liest die Tastatur, schickt jede Taste an den
 /// Server und zeigt den Zustand, den er zurückschickt. Bedienung wie bei der zeichenweisen Eingabe.
 /// Ein anderer Port lässt sich als Argument angeben: dart run bin/client.dart 4042
+/// Läuft noch kein Server, versucht es der Client weiter, bis einer antwortet.
+///
+/// Abgrenzung: Verbindung und Protokoll ([EntfernterRechner]) kommen aus net.dart, Bildschirm und Tasten
+/// ([Bildschirm], [TastenStrom]) aus console.dart; gerechnet wird im Server.
+///
+/// Siehe auch: bin/server.dart, doc/api.md 6.1, doc/architecture.md 3.
+library;
+
+import 'dart:io';
+
+import 'package:rpncalc/console.dart';
+import 'package:rpncalc/net.dart';
+
 Future<void> main(List<String> argumente) async {
   const host = "127.0.0.1";
   final port = argumente.isEmpty ? 4040 : int.parse(argumente.first);

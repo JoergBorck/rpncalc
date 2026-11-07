@@ -1,10 +1,12 @@
 import 'package:rpncalc/rpnapi.dart';
 import 'package:test/test.dart';
 
+import 'internals.dart';
+
 /// Eingaben über mehrere Zeilen: ein offener Code-Block bleibt über das Zeilenende hinweg erhalten.
 void main() {
   test('Code-Block über zwei Zeilen', () {
-    final api = RpnApi();
+    final api = apiMitEinblick();
     expect(api.eingabe("{1").codeOffen, isTrue);
     Zustand z = api.eingabe("2}':pq");
     expect(z.codeOffen, isFalse);
@@ -13,7 +15,7 @@ void main() {
   });
 
   test('Enter am Zeilenende bleibt vorgemerkt, die nächste Zeile entscheidet', () {
-    final api = RpnApi();
+    final api = apiMitEinblick();
     api.eingabe("5 ");
     api.eingabe("+");                        // Operator: das Enter wirkt, 5 + 5
     expect(api.testString(), "Stack: ...[0.0] [0.0] [0.0] [10.0]<tos");
@@ -24,13 +26,13 @@ void main() {
   });
 
   test('loop bricht nach der eingestellten Höchstzahl an Durchläufen ab', () {
-    final api = RpnApi();
+    final api = apiMitEinblick();
     api.calculator.maxSchleife = 50;
     expect(api.eingabe("{1}loop").fehler?.code, "schleife");
   });
 
   test('reset verwirft einen offenen Code-Block', () {
-    final api = RpnApi();
+    final api = apiMitEinblick();
     api.eingabe("{1 2");
     api.reset();
     expect(api.zustand().codeOffen, isFalse);

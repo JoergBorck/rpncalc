@@ -1,20 +1,25 @@
+/// Aufgabe: das Konsolenprogramm mit Menü: zeilen- und zeichenweise Eingabe (mit oder ohne Übersicht), Session
+/// speichern und laden, Funktionen speichern, Bibliotheken laden (mitgelieferte und gespeicherte .rpnlib-Dateien,
+/// vor jeder Auswahl neu gesucht), die Selbsttests für DEA, Parser und Rechner und den Socket-Server als
+/// Abkürzung. Aufruf: dart run bin/rpncalc.dart
+///
+/// Abgrenzung: Menü, Eingabe und Darstellung stehen in lib/src/console (über console.dart), der Rechner hinter
+/// rpnapi.dart. Der Server ist eigentlich ein eigenes Programm (bin/server.dart).
+///
+/// Siehe auch: doc/api.md Kapitel 7, doc/architecture.md 3.
+library;
+
 import 'dart:io';
 
-import 'package:rpncalc/console/library.dart';
-import 'package:rpncalc/console/menu.dart';
-import 'package:rpncalc/console/terminal.dart';
-import 'package:rpncalc/console/ui.dart';
+import 'package:rpncalc/console.dart';
+import 'package:rpncalc/net.dart';
 import 'package:rpncalc/rpnapi.dart';
-import 'package:rpncalc/selftest/test_calculator.dart';
-import 'package:rpncalc/selftest/test_dea.dart';
-import 'package:rpncalc/selftest/test_parser.dart';
-import 'package:rpncalc/server/server.dart';
 
 void main(List<String> arguments) async {
   RpnApi api = RpnApi();
   UI ui = UI(api);
 
-  Menu menu = Menu(testmenu);
+  Menu menu = Menu(hauptmenue);
 
   // Falls ein früherer Lauf im Rohmodus abgebrochen wurde (z.B. mit Strg+C), ist das Terminal noch
   // ohne Echo, ohne Zeilenmodus und ohne Cursor. Deshalb beim Start immer zurücksetzen.
@@ -31,7 +36,7 @@ void main(List<String> arguments) async {
   // Menü „Bibliotheken“ vor „Beenden“; der Inhalt wird vor jeder Auswahl neu gesucht,
   // damit eben gespeicherte Funktionen (.rpnlib) gleich erscheinen
   MenuItem bibliothekenMenue = MenuItem("Bibliotheken", []);
-  testmenu.subMenu!.insert(testmenu.subMenu!.length - 1, bibliothekenMenue);
+  hauptmenue.subMenu!.insert(hauptmenue.subMenu!.length - 1, bibliothekenMenue);
   Map<MenuItem, Bibliothek> bibliotheken = {};
 
   while (true) {
@@ -80,7 +85,8 @@ void main(List<String> arguments) async {
         print("Der Socket-Server ist ein eigenes Programm und läuft am besten in einem eigenen Terminal:\n"
               "  dart run bin/server.dart\n"
               "oder in VS Code über die Startkonfiguration \"RPN Server\" bzw. \"Server & Client gleichzeitig\".\n"
-              "Hier im Menü gestartet, ist das Menü blockiert, bis ein Client \"exit\" schickt.");
+              "Hier im Menü gestartet, ist das Menü blockiert, bis ein Client {\"stopp\":true} schickt (doc/api.md 6);\n"
+              "Strg+C beendet hier das ganze Programm.");
         stdout.write("Server jetzt hier starten? (j/N) ");
         if ((stdin.readLineSync() ?? "").trim().toLowerCase() == "j") {
           await starteMultiClientSocketInterface();

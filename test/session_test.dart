@@ -1,10 +1,12 @@
 import 'package:rpncalc/rpnapi.dart';
 import 'package:test/test.dart';
 
+import 'internals.dart';
+
 /// Laden und Speichern: der Zustand als RPN-Skript.
 void main() {
   RpnApi mit(List<String> zeilen) {
-    final api = RpnApi();
+    final api = apiMitEinblick();
     for (final z in zeilen) {
       expect(api.eingabe(z).fehler, isNull, reason: z);
     }
@@ -25,7 +27,7 @@ void main() {
   test('Export und Import ergeben denselben Zustand', () {
     final api = mit(["grd 7seed", "{a\nb}':g", "{1+}':inc", "4_'!w", "9_8_7_2:'|blk_6_'|tt", "{p}{q}", "3:4:"]);
     final text = api.exportieren().text;
-    final neu = RpnApi();
+    final neu = apiMitEinblick();
     expect(neu.importieren(text), isNull);
     expect(neu.exportieren().text, text);
     expect(neu.calculator.eigeneFunktionen["g"], "a\nb");     // mehrzeiliger Code
@@ -51,8 +53,8 @@ void main() {
   });
 
   test('Fehler beim Import nennt die Zeile', () {
-    expect(RpnApi().importieren("1 2+\n'q"), startsWith("Zeile 2:"));
-    expect(RpnApi().importieren("{1 2"), contains("nicht abgeschlossen"));
+    expect(apiMitEinblick().importieren("1 2+\n'q"), startsWith("Zeile 2:"));
+    expect(apiMitEinblick().importieren("{1 2"), contains("nicht abgeschlossen"));
   });
 
   test('Unendlich lässt sich nicht speichern', () {

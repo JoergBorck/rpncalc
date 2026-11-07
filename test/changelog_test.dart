@@ -10,11 +10,12 @@ void main() {
   String backlog(String erledigt) => "# Backlog\n\n## Geplant\n\n### FA-9 offen\nFeature · App\n\n"
       "## Erledigt\n\n$erledigt\n## Abgelehnt\n\n### FA-8 nein\nFeature · App\nEN: never\n";
 
-  test('je Version die Zeilen „EN:“ der sichtbaren Einträge, ohne Hashes; der Anfang steht am Ende', () {
+  test('je Version die Zeilen „EN:“ der sichtbaren Einträge, ohne Hashes und ohne „EN: –“; der Anfang am Ende', () {
     final r = changelog(
         backlog("### Version 0.3.0\n\n"
             "### FA-2 Neu\nFeature · App · Reife 5\nEN: New thing.\nErledigt 2026-11-07, abc1234\n\n"
             "### TA-2 Test\nTest · App · Reife 5\nErledigt 2026-11-07, abc1234\n\n"
+            "### BA-9 Fehler in FA-2\nBug · App · Reife 5\nEN: –\nErledigt 2026-11-07, abc1234\n\n"
             "### DG-7 Hilfe\nDoku · Gesamt · sichtbar · Reife 5\nEN: Better help.\nErledigt 2026-11-07, abc1234\n\n"
             "### Version 0.2.0\n\n"
             "### BA-1 Fehler\nBug · App · Reife 5\nEN: Fixed.\nErledigt 2026-11-03, def5678\n\n"),
@@ -31,6 +32,17 @@ void main() {
       "VA-3: Zeile „EN: …“ fehlt",
       "die neueste Version im Backlog (0.2.0) passt nicht zu pubspec.yaml (0.3.0)",
     ]);
+  });
+
+  test('gleiche Zeilen je Version nur einmal; „Nächste Version“ wird „Unreleased“ und zählt nicht für pubspec', () {
+    const umbau = "Verbesserung · Rechner\nEN: Internal restructuring, no visible change\nErledigt\n\n";
+    final r = changelog(
+        backlog("### Nächste Version\n\n### VR-4 Umbau\n$umbau### VR-5 Umbau\n$umbau"
+            "### Version 0.3.0\n\n### BA-1 Fehler\nBug · App\nEN: Fixed.\nErledigt\n\n"),
+        pubspec);
+    expect(r.fehler, isEmpty);
+    expect(r.text, "# Changelog\n\n## Unreleased\n\n- Internal restructuring, no visible change\n\n"
+        "## 0.3.0\n\n- Fixed.\n\n## 0.1.0\n\n- Initial version.\n");
   });
 
   test('CHANGELOG.md ist aktuell (sonst: dart run tool/changelog.dart)', () {

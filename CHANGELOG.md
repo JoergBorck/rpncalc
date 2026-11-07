@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0
+
+- In the functions area, the up and down arrow keys page the function keys like the mouse wheel
+- The function keys slide visibly: swiping follows the finger column by column and snaps to a page (a quick swipe turns one page); the mouse wheel slides them vertically and snaps to a page
+- Pasting numbers as text (from the stack or from Excel) writes them as you would type them, separated by spaces
+- New key CL clears the input line without touching the stack (empty line: removes the line below); Shift+CL (AC) also clears the history, the stack and its tags; Esc works like CL
+- After an error, backspace first removes all keys typed after it at once
+- Swiping vertically in the input and stack columns scrolls line by line and keeps moving after a fast swipe; the mouse wheel scrolls one line per notch
+- Libraries can mark helper functions as internal (rpnintern): they get no function key; schwingungen hides rw, wr, osz and fpol
+- Help mode: the mouse wheel and swiping page the function keys; clicking inside their frame shows help on the page (e.g. the library)
+- In alpha mode, the function keys look like all other letter keys
+- In alpha mode, the mouse wheel and swiping no longer page the function keys in the background
+- On the PC, the function key block turns slightly orange while the mouse is over it (the mouse wheel pages there)
+- Internal restructuring, no visible change
+- Console menu: the note on starting the server names the message that stops it
+
 ## 0.2.0
 
 - Pasting values: commas in a row (4,5,6,7) or next to a decimal point separate numbers.

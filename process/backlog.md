@@ -7,48 +7,9 @@ Oben das Konkrete, in der Mitte das Diffuse, am Ende das Log. Regeln am Ende der
 
 ## Bereit
 
-### RG-1 Architektur-Review vor dem Menü: passt der Aufbau zu dem, was in „Angedacht“ steht?
-Recherche · Gesamt · mittel · von Claude · angelegt 2026-11-03 · Reife 5
-1. Aufteilung des Modells der App: `modell.dart` ist groß geworden.
-2. Grenze zwischen API und Oberfläche: z.B. sind `parser` und `calculator` öffentlich (VR-2).
-3. Wohin die Modi des Tastenfelds kommen (Menue.md 3.1).
-4. Ob der Aufbau schon zu Menü, Fachbereichen, Querformat und Sitzungen passt (FA-5 bis FA-8).
-Jörgs Vorschläge: (a) jede Datei bekommt einen Kopfkommentar: Aufgabe (~10 Zeilen), Abgrenzung zu anderen
-Dateien (2–5), Verweise auf Dateien, die man zum Verständnis braucht (2–5); (b) Dateien über 500 Zeilen auf
-Teilung prüfen (Stand: app/lib/modell.dart 967, anzeige.dart 871, tastenfeld.dart 621); (c) vage: Liste der
-Klassen und welche Klassen sie benutzen, getrennt nach Rechner, App, Konsole; doc/architecture.md ist älter.
-Dazu: die gemeinsame Speicherschicht der App, siehe RG-2.
-Dazu die Frage aus RR-3: Sondertasten in der API als eigene Methoden oder als Steuerzeichen in taste()?
-
 ## Erforderlich
 
 ## Geplant
-
-### FA-24 Senkrechtes Wischen in Eingabe und Stack scrollt zeilenweise mit dem Finger, mit Nachlauf
-Verbesserung · App · klein · von Jörg · angelegt 2026-11-06 · Reife 5
-Der Inhalt folgt dem Finger in Zeilenschritten: je Weg einer Zeilenhöhe eine Zeile (Höhe der 3. Zeile von oben,
-da die Zeilen nach unten kleiner werden; pixelgenau passt nicht zu den wachsenden Schriftgrößen). Nach einer
-schnellen Bewegung läuft es nach und bremst ab (Physik wie bei Android-Listen), an Anfang und Ende Halt.
-Seitliches Wischen, langes Drücken und Doppeltipp bleiben. Am PC das Mausrad ebenso. Das Wischen wählt den
-Bereich wie ein Tipp (entschieden 2026-11-06).
-
-### VA-4 Am PC färbt sich der Block der Funktionstasten leicht orange, solange die Maus darüber steht
-Verbesserung · App · klein · von Claude · angelegt 2026-11-06 · zu FA-3 · Reife 5
-Zeigt, dass Mausrad (und Wischen) dort die Seiten blättern, auch ohne markierten Bereich. Am Handy bleibt der
-kurze orange Rahmen beim Wischen. Entschieden 2026-11-06: nur der Hintergrund, ganz leicht orange (eigene Rolle
-in farben.dart).
-
-### FA-23 Im Hilfe-Modus die Seite Funktionen mit dem Mausrad scrollen können
-Verbesserung · App · klein · von Jörg · angelegt 2026-11-06 · gefunden bei DG-1 · Reife 5
-Heute fängt der Hilfe-Modus die Gesten ab. Nur das Mausrad scrollt die Liste, ein Tipp zeigt weiter die Hilfe.
-
-### FL-2 Einzelne Funktionen einer Bibliothek als intern kennzeichnen (z.B. Hilfsfunktionen wie rw, osz)
-Feature · Bibliotheken · mittel · von Jörg · angelegt 2026-11-03 · Reife 5
-Interne Funktionen haben nur keine Funktionstaste; in der Liste der Seite Funktionen (dort kursiv) und in der
-Hilfe stehen sie wie alle anderen. Gekennzeichnet mit dem Befehl `rpnintern` hinter der Funktion:
-`{…}':rw rpnintern`. Er bezieht sich auf die zuletzt abgelegte Funktion (ohne eine: Fehler) und läuft nur beim
-Laden, der Code der Funktion bleibt unverändert. „Funktionen speichern“ und der Export schreiben `rpnintern` mit;
-wird die Funktion mit `'::` ersetzt, verliert sie die Markierung, außer es folgt wieder `rpnintern`.
 
 ### FK-1 Verweise in der Hilfe der Konsole mit Nummern wählen, Backspace zurück, Esc verlässt
 Feature · Konsole · mittel · von Jörg · angelegt 2026-11-03 · alt: api.md 10 · Reife 4
@@ -61,6 +22,7 @@ Sprache), Zustand der App (Domäne, Prüfstatus der Hilfe?). Je Umgebung: Ort, F
 .rpnlib), Grenzen (localStorage etwa 5 MB, privater Ordner am Handy), Plugins und ihre Folgen (Entwicklermodus
 beim Bauen), Export und Import zwischen Geräten, Verhalten bei Updates und beim Löschen der App. Ergebnis: eine
 gemeinsame Speicherschicht der App und eigene Einträge.
+In RG-1 (2026-11-07) nur Platz freigehalten: architecture.md 6; die Speicherschicht kommt später unter model/.
 
 ### RS-1 Version des Skriptformats: was passiert mit Code aus einer älteren Sprachversion?
 Recherche · Sprache · mittel · von Claude · angelegt 2026-11-03 · alt: api.md 6 · Reife 4
@@ -101,9 +63,6 @@ Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.m
 
 ### RR-2 Verwerfen nach einem Fehler: braucht es neben Return eine eigene Taste?
 Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.md 8 · Reife 4
-
-### RR-3 Sondertasten in der API: eigene Methoden oder Steuerzeichen in taste()?
-Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.md 9 (Sondertasten) · Reife 4
 
 ### FA-5 Querformat: Anzeige oben über die volle Breite, darunter drei Tastenfelder
 Feature · App · groß · von Jörg · angelegt 2026-11-03 · alt: app.md 4 · Details: app.md 1.1 · Reife 3
@@ -149,6 +108,13 @@ path_provider. Das ist ein Plugin: beim Bauen unter Windows braucht es symbolisc
 Entwicklermodus auf dem Rechner, auf dem gebaut wird (nicht bei den Nutzern). Offen: eine gemeinsame
 Speicherschicht mit den Sitzungen (FA-8), siehe RG-2.
 
+### RG-4 Logging, um Laufzeitfehler zu finden
+Recherche · Gesamt · mittel · von Jörg · angelegt 2026-11-07 · aus RG-3 · Reife 2
+Bisher gab es nur `verbosity` in Parser, DEA und Kern mit einzelnen print-Ausgaben (entfernt mit VG-3).
+Offen: was geloggt wird (Tokens, Übergänge des DEA, Ausführung im Calculator, Bedienung der App), wohin (Konsole,
+Datei, in der App eine Ansicht oder Export), wie man es einschaltet (Befehl, Menü, Startparameter), Stufen, und
+ob es ein Paket wie `logging` sein soll. Ergebnis: Entscheidung und Einträge.
+
 ### FA-7 Fachbereiche statt Domänen: Bibliotheken und Programme ein- und ausschalten
 Feature · App · groß · von Jörg · angelegt 2026-11-03 · Details: Menue.md 3.7, 4.1 · Reife 2
 
@@ -187,6 +153,15 @@ auf dem Code-Stapel, die Anzeige zählt „Code 1, 2, 3“ hoch. Vielleicht gewo
 oder später im Zeilenmodus (FA-16) auswählen, einem Namen geben oder ausführen. Offen: anzeigen, auswählen,
 ausführen, verwerfen, und ob ein Fehler den Block liegen lassen soll.
 
+### FK-2 Konsolenmenü zum Benutzen statt zum Testen überarbeiten
+Feature · Konsole · mittel · von Jörg · angelegt 2026-11-07 · Reife 2
+Das Menü (console/menu.dart, bin/rpncalc.dart) ist zum Ausprobieren entstanden: Nummern eintippen, Meldungen wie
+„… wurde ausgewählt!“, ein Untermenü „Test“ mit Beispiel-Einträgen und Selbsttests, die Eingabearten als eigene
+Einträge, der Server als Menüpunkt. Ziel: ein Menü, mit dem man die Konsole wirklich benutzt. Offene Fragen:
+welche Einträge (Sitzung, Bibliotheken, Einstellungen, Hilfe; Selbsttests nur noch als Startparameter?), ob es
+aus der laufenden Eingabe erreichbar ist (z.B. mit einem `\`-Befehl), Bedienung (Pfeiltasten, Esc, Kürzel),
+Nähe zum Menü der App (FA-6, scratchpad/Menue.md), Hilfe zu den Einträgen.
+
 ### FA-8 Sitzungen: letzter Stand automatisch, benannte Sitzungen mit Verlauf
 Feature · App · groß · von Jörg · angelegt 2026-11-03 · alt: app.md 3, api.md 9 · Details: Menue.md 4.3 · Reife 1
 Offen: Frage B (trägt der Vorschlag?).
@@ -223,6 +198,12 @@ Feature · Sprache · groß · von Jörg · angelegt 2026-11-03 · die Taste [ ]
 
 ## Vorgeschlagen
 
+### VG-2 Englische Bezeichner auf Deutsch
+Verbesserung · Gesamt · klein · von Claude · angelegt 2026-11-07 · aus VG-1 · Reife 3
+Nach workflow.md heißen Bezeichner deutsch. Englisch sind noch Namen in net/server.dart, console/menu.dart,
+selftest/ und `times` (helper.dart). Offen: ob sich das lohnt; die Grundbausteine (push, pull, drop, stack)
+bleiben englisch wie in der Sprache.
+
 ### PT-1 `--exe` für tool/veroeffentlichen.dart: Windows-Version bauen und als Release hochladen
 Prozess · Werkzeuge · klein · von Claude · angelegt 2026-11-03 · Reife 4
 Braucht die GitHub CLI (`winget install GitHub.cli`, einmal `gh auth login`).
@@ -257,6 +238,404 @@ Zu klären: welcher Lua-Interpreter für Dart (Konsole, App, Web), wie Plots in 
 LuaJIT voraus.
 
 ## Erledigt
+
+### Version 0.3.0
+
+### BA-13 Zweimal schnell ▼ im Bereich Funktionen blättert nur eine Seite
+Bug · App · klein · von Jörg · angelegt 2026-11-07 · gefunden beim Test von VA-14 am PC · Reife 5
+Während die Tasten zur neuen Seite glitten, meldete der Block die Zwischenseite ans Modell zurück und setzte die
+Seite des zweiten Drucks zurück; man musste langsam drücken.
+Umgesetzt: function_block.dart (`_ziel`: beim Gleiten zu einer Seite des Modells keine Meldung, ein weiterer
+Druck rechnet vom Ziel aus), Test.
+EN: –
+Erledigt 2026-11-07, a8ee2ce
+
+### VA-14 Im Bereich Funktionen blättern die Pfeiltasten mit ◄ ►, passend wäre ▲ ▼
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-07 · gefunden beim Test von VA-10 am PC · Reife 5
+Seit VA-10 schiebt das Mausrad die Funktionstasten senkrecht, und der Rahmen zeigt am PC ▲ ▼; die Pfeiltasten
+blätterten aber nur mit ◄ ►. Entschieden (Jörg): ▲ ▼ blättern wie das Mausrad (▼ nächste Seite, begrenzt,
+senkrecht); ◄ ► bleiben, im Kreis und waagrecht wie das Wischen.
+Umgesetzt: viewport.dart, `funktionenSenkrecht` im Kern, function_block.dart, app.md 3.3, Hilfe, Test.
+EN: In the functions area, the up and down arrow keys page the function keys like the mouse wheel
+Erledigt 2026-11-07, 141f697
+
+### BA-12 Mausrad über den Funktionstasten: einzelne Rasten gehen verloren, das Einrasten fällt aus
+Bug · App · klein · von Claude · angelegt 2026-11-07 · gefunden bei VA-13 · Reife 5
+Über den Lücken zwischen den Tasten kam das Mausrad nicht an (der Listener reagierte nur über einem Kind); in
+Zwischenlagen gingen so Rasten verloren. Kam oder ging die orange Hinterlegung davor, baute Flutter den Block neu
+auf, Lage und Zeitgeber fürs Einrasten gingen verloren. Aufgefallen, weil ein Test nie einrastete.
+Umgesetzt: Listener `translucent`, fester Schlüssel am Block (keypad.dart).
+EN: –
+Erledigt 2026-11-07, 77deb45
+
+### VA-13 Mausrad über den Funktionstasten: beim langsamen Drehen rastet es zu schnell ein
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-07 · gefunden beim Test von VA-10 am PC · Reife 5
+Wer langsam dreht, weil er eine Funktion sucht, sieht nach einer Raste ein Drittel der nächsten Seite; nach
+150 ms rastet es auf der Seite ein, von der mehr als die Hälfte zu sehen ist, also meist zurück. So kommt man
+mit einzelnen Rasten nie weiter, und das Verhalten ist nicht nachvollziehbar.
+Vorschlag (Claude): (a) einrasten erst nach längerer Ruhe, etwa 800 ms (wie früher das Zeitfenster der drei
+Rasten), und (b) in Drehrichtung: eine angefangene Seite wird in der Richtung vollendet, in die zuletzt gedreht
+wurde. Eine Raste und warten blättert dann genau eine Seite, schnelles Drehen bleibt wie jetzt. Offen: (a), (b)
+oder beides; Dauer der Ruhe.
+Entschieden 2026-11-07 (Jörg): Ruhe 500 ms und Einrasten in Drehrichtung (Vorschlag b): eine angefangene Seite
+wird in der Richtung vollendet, in die zuletzt gedreht wurde; eine Raste blättert genau eine Seite. Zuerst war die
+Grenze bei einem Drittel umgesetzt (eine Raste zurück, zwei weiter); das fühlte sich nicht gut an.
+Umgesetzt: function_block.dart (`ruheMausrad`; der Code steckt mit in 77deb45), app.md 3.3, Test.
+EN: –
+Erledigt 2026-11-07, ddcf5bd
+
+### BA-11 Nach dem Mausrad über Eingabe oder Stack erscheint ein Tooltip und bleibt beim Weiterscrollen stehen
+Bug · App · klein · von Jörg · angelegt 2026-11-07 · gefunden beim Test am PC · Reife 5
+Kurz nach dem Loslassen kam der Tooltip der Zeile und ging beim Weiterscrollen nicht weg. Richtig (Jörg): wie
+nach einem Rechtsklick (Kontextmenü) ruhen die Tooltips, bis die Maus ein anderes Element betritt.
+Umgesetzt: calc_page.dart ruft `TippSperre.bisMausWechselt` mit der Mausposition (die Verfolgung beginnt erst mit
+dem ersten Aufruf), app.md 3.3, Test.
+EN: –
+Erledigt 2026-11-07, 88f3fd9
+
+### BA-10 Nach langsamem Wischen bleiben die Funktionstasten zwischen zwei Seiten stehen
+Bug · App · klein · von Jörg · angelegt 2026-11-07 · gefunden beim Test von VA-10 am A33 · Reife 5
+„Spaltenweise“ war als Ruhelage umgesetzt: nach langsamem Wischen standen Spalten zweier Seiten nebeneinander,
+der Trennbalken blieb stehen. Gemeint war: die Tasten folgen dem Finger in Spaltenschritten und ruhen immer auf
+einer ganzen Seite (der, von der mehr als die Hälfte zu sehen ist).
+Umgesetzt: function_block.dart, app.md 3.3, Tests.
+EN: –
+Erledigt 2026-11-07, 7cac4e0
+
+### VA-10 Mausrad schiebt die Funktionstasten sichtbar wie Text, beim Loslassen rasten sie ein
+Verbesserung · App · mittel · von Jörg · angelegt 2026-11-07 · gefunden bei FA-23 · Reife 5
+Heute wechselt erst jede dritte Raste die Seite: wenig Rückmeldung, dann ein plötzlicher Wechsel. Stattdessen
+verschiebt jede Raste die Tastenreihen ein Stück nach oben bzw. unten, sie werden wie Text aus dem Block
+herausgeschoben und die nächsten hereingeschoben; ruht das Rad (etwa 150 ms), rasten sie auf die nächste Lage ein.
+Entschieden 2026-11-07 (Jörg): Wischen bleibt waagrecht, mit derselben Logik: die Tasten folgen dem Finger
+spaltenweise und rasten ein; mit Schwung läuft es nach und blättert seitenweise, langsam geschoben spaltenweise.
+Mausrad: seitenweise, zwischen zwei Seiten eine Trennlinie; es rastet immer auf einer ganzen Seite ein
+(entschieden 2026-11-07). Gilt ausdrücklich auch für das Wischen am Handy (Jörg nach dem Test am A33). Am PC
+zeigen statt der kleinen Pfeile ◄ ► am Rahmen zwei Pfeile ▲ ▼, weil das Mausrad senkrecht dreht. Einzelheiten entschieden 2026-11-07 (Jörg, Vorschlag Claude): Wischen am Handy schiebt waagrecht, das Mausrad
+am PC senkrecht. Schwung wie FA-24 (Nachlauf ab 100 px/s, Physik der Android-Listen). Tooltips aus, solange
+geschoben wird, wie heute beim Mausrad. Der Rahmen bleibt sichtbar; der Seitenname wechselt, sobald mehr als die
+Hälfte der neuen Seite zu sehen ist (dort rastet es auch ein). Trennlinie orange, dünn, halb durchsichtig wie der
+Rahmen.
+Aufwand (Schätzung Claude): mittel. Die Tasten der Nachbarseiten mitbauen, in einem beschnittenen Bereich
+verschieben, Einrasten mit Animation; das Modell braucht einen Versatz in Pixeln neben der Seite.
+Umgesetzt: keypad/function_block.dart (FunktionsBlock), im Raster bleiben die Plätze leer; Modell
+`funktionstastenAuf`, `zeigeFunktionsSeite`; app.md 3.3, architecture.md 4.4; Tests. Abweichung nach dem Bauen:
+ein Wisch mit Schwung geht genau eine Seite weiter (nicht so weit, wie der Schwung trägt), weil das Tempo zwischen
+seiten- und spaltenweise entscheidet und bei wenigen Seiten sonst leicht zwei auf einmal kommen. Am Handy prüfen.
+EN: The function keys slide visibly: swiping follows the finger column by column and snaps to a page (a quick swipe turns one page); the mouse wheel slides them vertically and snaps to a page
+Erledigt 2026-11-07, 5ede1b2
+
+### VA-12 Werte aus dem Stack mit „Text einfügen“ in der Schreibweise des Rechners einsetzen, mit Leerzeichen statt ;
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-07 · gefunden beim Test von FA-24 (process/testing/protocols/2026-11-07_fa-24_phone.md) · Reife 5
+Kopieren aus dem Stack schreibt das Format für ein deutsches Excel (Dezimalkomma, `;`). „Text einfügen“ tippt das
+Zeichen für Zeichen; schon das erste `;` ist ein Fehler, alles danach hängt als Tasten nach dem Fehler in der
+Zeile. Stattdessen: Entschieden 2026-11-07 (Jörg): nach dem Inhalt, nicht nach der Herkunft. Besteht der Text in der Zwischenablage
+nur aus Zahlen im Excel-Format (Dezimalkomma; getrennt durch `;`, Tab oder Zeilenumbruch), setzt „Text
+einfügen“ sie so ein, wie man sie tippen würde: Dezimalpunkt, `~` für negative Zahlen, `ê` für den Exponenten,
+Leerzeichen dazwischen. Das hilft auch bei Zahlen aus Excel. Jeder andere Text, auch kopierte Zeilen aus dem
+Verlauf, wird wie bisher Zeichen für Zeichen getippt; `\v` und „Werte einfügen“ bleiben unverändert.
+Umgesetzt: `nurZahlen()` in lib/src/format.dart (exportiert), clipboard.dart nutzt dafür `ausExcel`; Tests.
+EN: Pasting numbers as text (from the stack or from Excel) writes them as you would type them, separated by spaces
+Erledigt 2026-11-07, 813bf60
+
+### FA-25 Taste CL (Zeile löschen) auf der freien Taste d, mit Shift AC (Eingabe und Stack mit Tags löschen)
+Feature · App · mittel · von Jörg · angelegt 2026-11-07 · gefunden beim Test von FA-24 (process/testing/protocols/2026-11-07_fa-24_phone.md) · Reife 5
+Neu gefasst 2026-11-07 (Jörg): Die freie Taste rechts neben `{ }` (Alpha `d`) wird CL, Clear Line: löscht die
+aktuelle Zeile; ist sie leer, löscht sie die Zeile darunter im Verlauf und schiebt die Eingabeliste hoch. Mit
+Shift AC: löscht Eingabe (aktuelle Zeile und Verlauf) und Stack mit Tags, nicht aber Variablen und eigene
+Funktionen; die werden über das Menü gelöscht (FA-6). Dass ⌫ nach einem Fehler erst alle Tasten danach
+zurücknimmt, ist VR-7.
+Entschieden 2026-11-07 (Jörg): CL leert nur den Eingabebereich, ohne Wirkung auf den Stack. Schon ausgeführte
+Token der Zeile bleiben wirksam (ohne Undo); verworfen werden das offene Token, ein vorgemerktes Enter und die
+Tasten nach einem Fehler (im Rechner eine Methode `verwerfen()`, api.md 5), die Zeile kommt nicht in den
+Verlauf. Am PC löst Esc CL aus (im Rechnen bisher ohne Wirkung). Tooltip und Hilfe zu CL und AC, app.md 3.1.
+Umgesetzt: `RpnApi.verwerfen()`, Taste CL/AC mit `Aktion.zeileLoeschen`, Esc im Rechnen wie CL, Hilfe `app:cl`
+(Prüfseite: neu), Tests in keystroke_test und model_test.
+EN: New key CL clears the input line without touching the stack (empty line: removes the line below); Shift+CL (AC) also clears the history, the stack and its tags; Esc works like CL
+Erledigt 2026-11-07, 32e6a58
+
+### VR-7 Löschen nach einem Fehler nimmt alle Tasten danach auf einmal zurück
+Verbesserung · Rechner · klein · von Jörg · angelegt 2026-11-07 · aus FA-25 · Reife 5
+Bisher nahm ⌫ nach einem Fehler die nicht ausgeführten Tasten einzeln zurück; nach einem eingefügten Text mit
+500 Werten war das nicht machbar. Jetzt nimmt das erste ⌫ alle auf einmal zurück, das nächste wie bisher die
+auslösende Taste (api.md 5.6). Gilt für App und Konsole.
+Umgesetzt: Parser `tastenNachFehler`, Interpreter `loeschen`, Tests.
+EN: After an error, backspace first removes all keys typed after it at once
+Erledigt 2026-11-07, 4027953
+
+### FA-24 Senkrechtes Wischen in Eingabe und Stack scrollt zeilenweise mit dem Finger, mit Nachlauf
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-06 · Reife 5
+Der Inhalt folgt dem Finger in Zeilenschritten: je Weg einer Zeilenhöhe eine Zeile (Höhe der 3. Zeile von oben,
+da die Zeilen nach unten kleiner werden; pixelgenau passt nicht zu den wachsenden Schriftgrößen). Nach einer
+schnellen Bewegung läuft es nach und bremst ab (Physik wie bei Android-Listen), an Anfang und Ende Halt.
+Seitliches Wischen, langes Drücken und Doppeltipp bleiben. Am PC das Mausrad ebenso. Das Wischen wählt den
+Bereich wie ein Tipp (entschieden 2026-11-06).
+Umgesetzt: `schiebeZeilen` im Modell (viewport.dart), Widget `_Wischen` auf der Seite Rechnen mit Nachlauf
+(ClampingScrollSimulation) und Mausrad (je Raste eine Zeile); der Weg zählt ab dem Aufsetzen. app.md 3.3, Hilfe
+zu Eingabe und Stack (auf der Prüfseite ✎), Tests. Am Handy noch von Hand prüfen.
+EN: Swiping vertically in the input and stack columns scrolls line by line and keeps moving after a fast swipe; the mouse wheel scrolls one line per notch
+Erledigt 2026-11-07, 52e3f06
+
+### VA-11 Der Name interner Funktionen ist auf der Seite Funktionen kaum von den anderen zu unterscheiden
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-07 · gefunden bei FL-2 · Reife 5
+Kursiv allein ist kaum zu erkennen. Der Funktionsname wird zusätzlich ausgegraut (Farbe wie der Code daneben).
+Umgesetzt: list_page.dart, app.md 2, Widget-Test.
+EN: –
+Erledigt 2026-11-07, e8d8826
+
+### FL-2 Einzelne Funktionen einer Bibliothek als intern kennzeichnen (z.B. Hilfsfunktionen wie rw, osz)
+Feature · Bibliotheken · mittel · von Jörg · angelegt 2026-11-03 · Reife 5
+Interne Funktionen haben nur keine Funktionstaste; in der Liste der Seite Funktionen (dort kursiv) und in der
+Hilfe stehen sie wie alle anderen. Gekennzeichnet mit dem Befehl `rpnintern` hinter der Funktion:
+`{…}':rw rpnintern`. Er bezieht sich auf die zuletzt abgelegte Funktion (ohne eine: Fehler) und läuft nur beim
+Laden, der Code der Funktion bleibt unverändert. „Funktionen speichern“ und der Export schreiben `rpnintern` mit;
+wird die Funktion mit `'::` ersetzt, verliert sie die Markierung, außer es folgt wieder `rpnintern`.
+Umgesetzt: Befehl `rpnintern` mit Fehler `intern` ohne abgelegte Funktion; `Speicher.intern` (JSON optional),
+`bibliotheksFunktionen(name, ohneIntern: true)`; App ohne Tasten für interne Funktionen, kursiv in der Liste;
+schwingungen 1.2.0 mit rw, wr, osz, fpol intern; Hilfeeintrag rpnintern (auf der Prüfseite neu, dazu ✎ #alle
+und der Tooltip von schwingungen). Beim nächsten Erhöhen der Version: `rechner` in schwingungen auf die Version
+setzen, die rpnintern kennt (heute 0.1.0, ein älterer Rechner meldet sonst „Unbekannte Funktion“).
+EN: Libraries can mark helper functions as internal (rpnintern): they get no function key; schwingungen hides rw, wr, osz and fpol
+Erledigt 2026-11-07, ddf4970
+
+### BA-9 Klick in den Rahmen bei Grundfunktionen zeigt die Hilfe zu eigenen Funktionen
+Bug · App · klein · von Jörg · angelegt 2026-11-07 · gefunden bei FA-23 · Reife 5
+Die Zuordnung aus FA-23 war vertauscht: `#funktionen` ist beim Rechner das Thema „Eigene Funktionen“.
+Umgesetzt: „Eigene“ zeigt `#funktionen`, Grundfunktionen und die übrigen Seiten `app:funktionen` (app.md 5.2).
+EN: –
+Erledigt 2026-11-07, aa363c6
+
+### FA-23 Im Hilfe-Modus blättern Mausrad und Wischen die Funktionstasten, ein Klick in den Rahmen zeigt die Hilfe zur Seite
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-06 · gefunden bei DG-1 · Reife 5
+Neu gefasst 2026-11-07 (Jörg): Im Hilfe-Modus blättern Mausrad und Wischen die Seiten der Funktionstasten wie
+sonst, unter der Maus ist der Block hinterlegt (VA-4); ein Klick auf eine Taste zeigt weiter ihre Hilfe. Der
+orange Rahmen mit dem Seitennamen ist im Hilfe-Modus immer zu sehen, als wäre der Bereich gewählt. Ein Klick in
+den Rahmen, aber nicht auf eine Taste, oder auf den Seitennamen zeigt die Hilfe zur Seite: bei einer Bibliothek
+ihre Übersicht (`#name`), bei „Eigene“ `app:funktionen`, sonst `#funktionen`. Die Seite Funktionen der Anzeige
+bleibt unter dem Hilfeschirm (früherer Wunsch: sie mit dem Mausrad scrollen).
+Umgesetzt: Sperre für den Hilfe-Modus in `funktionenBlaetterbar` entfernt, Rahmen im Hilfe-Modus immer, eine
+Klickfläche unter den Tasten und der Seitenname rufen `hilfeZurSeite` (Kennung aus `seitenHilfe`); Tests.
+EN: Help mode: the mouse wheel and swiping page the function keys; clicking inside their frame shows help on the page (e.g. the library)
+Erledigt 2026-11-07, 3544c7b
+
+### BA-8 Im Alpha-Modus sind die Funktionstasten heller bzw. dunkler als die anderen Buchstaben
+Bug · App · klein · von Jörg · angelegt 2026-11-07 · gefunden bei BA-7 · Reife 5
+Belegte Funktionstasten behielten im Alpha-Modus ihre hellere Farbe, unbelegte die dunkle Farbe für reservierte
+Tasten; je nach Belegung sahen die Buchstaben verschieden aus. Richtig: im Alpha-Modus keine eigene Farbe.
+Umgesetzt: key_widget.dart, app.md 3.2, Widget-Test.
+EN: In alpha mode, the function keys look like all other letter keys
+Erledigt 2026-11-07, 79060dd
+
+### BA-7 Im Alpha-Modus blättern Mausrad und Wischen die Funktionstasten unsichtbar weiter
+Bug · App · klein · von Jörg · angelegt 2026-11-07 · gefunden bei VA-4 · Reife 5
+Im Alpha-Modus zeigen die Funktionstasten Buchstaben. Trotzdem wurde der Block unter der Maus hinterlegt (VA-4),
+das Mausrad zeichnete den Rahmen und blätterte die Seiten im Hintergrund weiter. Richtig: wie bei den Variablen
+kein Blättern, kein Rahmen, keine Färbung (app.md 3.3).
+Umgesetzt: `funktionenBlaetterbar` schließt Alpha ein; Tests für Alpha und ' (Blättern, Rahmen, Färbung).
+EN: In alpha mode, the mouse wheel and swiping no longer page the function keys in the background
+Erledigt 2026-11-07, 9dceeff
+
+### VA-4 Am PC färbt sich der Block der Funktionstasten leicht orange, solange die Maus darüber steht
+Verbesserung · App · klein · von Claude · angelegt 2026-11-06 · zu FA-3 · Reife 5
+Zeigt, dass Mausrad (und Wischen) dort die Seiten blättern, auch ohne markierten Bereich. Am Handy bleibt der
+kurze orange Rahmen beim Wischen. Entschieden 2026-11-06: nur der Hintergrund, ganz leicht orange (eigene Rolle
+in farben.dart).
+Umgesetzt: Rolle `Farben.funktionenMaus` (Gehäuse mit 10 % Orange), nur mit der Maus und nur, wenn das Mausrad
+dort blättert (`funktionenBlaetterbar`); app.md 3.3, Widget-Test in model_test.dart.
+EN: On the PC, the function key block turns slightly orange while the mouse is over it (the mouse wheel pages there)
+Erledigt 2026-11-07, 4f8d811
+
+### VG-3 Aufräumen nach RG-3: Logging-Reste und obsolete Felder entfernen, Konsolenmenü vereinfachen
+Verbesserung · Gesamt · klein · von Claude · angelegt 2026-11-07 · aus RG-3 · Reife 5
+Nach process/testing/reviews/2026-11-07_rg-3_dead_code.md, ohne Verhaltensänderung:
+- entfernen: `verbosity` in parser.dart, dea.dart und core.dart samt Ausgaben, `errorNichtImplementiert`
+  (dea.dart); `hasExponent`, `isTag`, `matissensPuffer`, `exponentenPuffer` (token.dart)
+- Kommentar: `nocmd`, `noparam`, `nyi`, `resultSuccess`, `resultPending` sind Rückfall-Werte bei Fehlern im Code;
+  `eingabe` im Client ist für Clients, die ganze Zeilen schicken
+- console/ui.dart: `_laden` liefert nichts mehr
+- console/menu.dart: `isAction` in `call()` statt `subMenu == null` (ein leeres Untermenü liefe sonst endlos),
+  `call([MenuItem? start])` ohne den Zweig für einen Text, `testmenu` heißt `hauptmenue`
+Umgesetzt wie beschrieben. Die Grammatik setzt die Flags e und t weiter; RpnToken nimmt sie an, ohne etwas zu
+merken. Menü von Hand geprüft (Untermenüs, zurück, Beenden).
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, c6c125d
+
+### RG-3 Toter Code: was ist wirklich unbenutzt, was ist Platz für später, was fliegt raus?
+Recherche · Gesamt · klein · von Jörg · angelegt 2026-11-07 · aus VG-1 · Reife 4
+Kandidaten aus DG-6: parser.dart (`nocmd`, `noparam`, `nyi`, `resultSuccess`, `resultPending`), dea.dart
+(`verbosity`, `errorNichtImplementiert`), token.dart (`hasExponent`, `isTag`, `matissensPuffer`,
+`exponentenPuffer`), stack.dart (`ausgabe`, `x`/`y`/`z`/`t`, Standardgröße 20), net/client.dart (`eingabe`),
+console/ui.dart (Ergebnis von `_laden`), menu.dart (Test-Einträge, Start-Text in `call`, `isAction`). Je
+Kandidat: wer ihn benutzt (auch Tests, Werkzeuge, Selbsttest), ob er eine Naht für Angedachtes ist, Empfehlung
+behalten oder entfernen. Dazu eine Suche nach weiteren Stellen (z.B. öffentliche Bezeichner ohne Aufrufer).
+Ergebnis: Liste mit Entscheidung, das Entfernen wird ein V-Eintrag.
+Ergebnis: process/testing/reviews/2026-11-07_rg-3_dead_code.md, entschieden mit Jörg. Daraus VG-3 (Aufräumen)
+und RG-4 (Logging). Die allgemeine Suche nach weiteren unbenutzten Bezeichnern ist nicht gemacht, eher mit einem
+Werkzeug. Erledigt 2026-11-07, 3983be0
+
+### VA-9 Bedienmodi: Rechnen und Hilfe als eigene Objekte, statt hilfeModus an jeder Stelle abzufragen
+Verbesserung · App · mittel · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+Nach architecture.md 4.3: ein Modus hat `druecke`, `tippeZeichen`, `pfeil`, `tab`, `esc`; das Modell gibt an den
+aktiven Modus weiter. Grundlage für das Menü (FA-6).
+Umgesetzt: model/modes.dart mit `Bedienmodus` (dazu `zeilenende`, `hilfe` für F1 und `beschriftung`) und den
+Modi Rechnen und Hilfe; die öffentlichen Methoden des Modells geben an `modus` weiter, `hilfeModus` ist abgeleitet.
+Die Logik von Tasten, Zeichen und Pfeilen in der Hilfe steht jetzt im Modus Hilfe. Wischen und Mausrad über den
+Funktionstasten fragen `hilfeModus` noch selbst ab (keine Bedienung des Rechnens, kann mit dem Menü kommen).
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, 774d8d9
+
+### RG-1 Architektur-Review vor dem Menü: passt der Aufbau zu dem, was in „Angedacht“ steht?
+Recherche · Gesamt · mittel · von Claude · angelegt 2026-11-03 · Reife 5
+1. Aufteilung des Modells der App: `modell.dart` ist groß geworden.
+2. Grenze zwischen API und Oberfläche: z.B. sind `parser` und `calculator` öffentlich (VR-2).
+3. Wohin die Modi des Tastenfelds kommen (Menue.md 3.1).
+4. Ob der Aufbau schon zu Menü, Fachbereichen, Querformat und Sitzungen passt (FA-5 bis FA-8).
+Jörgs Vorschläge: (a) jede Datei bekommt einen Kopfkommentar: Aufgabe (~10 Zeilen), Abgrenzung zu anderen
+Dateien (2–5), Verweise auf Dateien, die man zum Verständnis braucht (2–5); (b) Dateien über 500 Zeilen auf
+Teilung prüfen (Stand: app/lib/modell.dart 967, anzeige.dart 871, tastenfeld.dart 621); (c) vage: Liste der
+Klassen und welche Klassen sie benutzen, getrennt nach Rechner, App, Konsole; doc/architecture.md ist älter.
+Dazu: die gemeinsame Speicherschicht der App, siehe RG-2.
+Vorgehen (2026-11-06 abgestimmt): 1. Bestandsaufnahme (Dateien, Klassen, Abhängigkeiten, Zuständigkeiten in
+modell.dart); 2. Zielbild als Vorschlag (Schichten, RpnApi als einzige Tür, lib/src, Teilmodelle der App, Regeln
+≤ 400–500 Zeilen und Kopfkommentar), Gegenprobe mit dem Backlog; 3. doc/architecture.md neu, Umbau als kleine
+Einträge; 4. Umbau ohne Verhaltensänderung, Tests grün, ein Commit je Schritt, zuerst die Kopfkommentare.
+Ergebnis (2026-11-07): Zielbild in doc/architecture.md. Entschieden: für RG-2 nur Platz freihalten; RR-3 eigene
+Methoden; englische Dateinamen auch in der App. Reihenfolge: erst teilen, dann die übrigen Kopfkommentare; jeder
+Teilungsschritt schreibt die Kopfkommentare seiner neuen Dateien gleich mit. Umbau in VR-4, VR-5, VA-6 bis VA-9
+und DG-6, in dieser Reihenfolge; RG-1 ist erledigt, wenn sie es sind. Hilfe und Bibliotheken in getrennten
+Verzeichnissen (Jörg). CHANGELOG: alle Umbauschritte bekommen dieselbe Zeile „EN: Internal restructuring, no
+visible change“; tool/changelog.dart schreibt gleiche Zeilen je Version nur einmal (kommt mit VR-4).
+Abgeschlossen mit VA-9: alle Schritte aus architecture.md 8 erledigt (VR-4, VR-5, VA-6 bis VA-9, DG-6), dazu
+VG-1, VR-6 und PG-3. Erledigt 2026-11-07, 774d8d9
+
+### RR-3 Sondertasten in der API: eigene Methoden oder Steuerzeichen in taste()?
+Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.md 9 (Sondertasten) · Reife 4
+Entschieden in RG-1 (2026-11-07): eigene Methoden wie heute (`zeilenende`, `loeschen`); geht mit RG-1 nach
+„Erledigt“.
+Erledigt 2026-11-07 mit RG-1, ohne eigenen Commit (nichts zu ändern).
+
+### VR-6 RpnApi wird reine Tür: die Verarbeitung kommt in einen Interpreter, Daten, Bibliotheken und Hilfe in lib/src
+Verbesserung · Rechner · mittel · von Claude · angelegt 2026-11-07 · aus VG-1 · Reife 5
+Heute steuert RpnApi selbst (rpnapi.dart, 447 Zeilen): führt Zeile und ersten Fehler, bricht mehrzeiligen Text
+nach einem Fehler ab, stimmt beim Löschen Parser und Enter-Logik ab, verwaltet Bibliotheken, baut Hilfen und den
+Zustand; `parser` und `calculator` sind öffentlich. Ziel (Jörg, 2026-11-07): die API ist nur Schnittstelle.
+- `lib/src/engine/interpreter.dart`: Klasse `Interpreter` hält Parser und Calculator, führt Zeile und Fehler;
+  `taste`, `zeilenende`, `loeschen`, `eingabe` (mehrzeilig mit Abbruch), `reset`, `importieren`.
+- `lib/src/api/state.dart`: Zustand, StackZeile, Speicher, SpeicherArt, Fehler mit JSON, dazu das Erzeugen eines
+  Zustands aus dem Interpreter; über rpnapi.dart exportiert.
+- `lib/src/libraries/`: anmelden, laden mit Prüfung auf Namenskonflikte, Info, Herkunft, Export als Bibliothek.
+- `lib/src/help/`: Hilfe nachschlagen (eingebaut, aus Bibliotheken, zu eigenen Namen).
+- `RpnApi` behält alle öffentlichen Methoden als Einzeiler, die weitergeben; die Kommentare beschreiben den
+  Vertrag (was passiert, z.B. dass ein Fehler den restlichen Text abbricht), das Wie steht beim Code.
+- `parser` und `calculator` sind nicht mehr öffentlich. Tests, die hineinschauen (etwa 40 Stellen in 14 Dateien,
+  dazu builtin_help.dart und app/tool/hilfe_test.dart), benutzen den Interpreter direkt; test/ darf lib/src
+  importieren, die Architekturtests bleiben für app/lib und bin/.
+Keine Verhaltensänderung, Schnittstelle für App und Konsole gleich, alle Tests grün; Kopfkommentare der neuen
+Dateien, doc/architecture.md (2 und 6) und doc/api.md nachziehen. Name: Interpreter oder Controller (Jörg),
+gewählt Interpreter, weil Controller nach der Steuerung einer Oberfläche klingt.
+Umgesetzt: interpreter.dart (130 Zeilen) mit eigenem Fehlertyp `Eingabefehler`, damit engine/ nichts über sich
+kennt. Bibliotheken, Hilfesuche und die eingebaute Hilfe liegen nicht in libraries/ und help/, sondern mit
+state.dart in `lib/src/api/`: sie brauchen den Interpreter, libraries/ und help/ bleiben ohne Abhängigkeiten
+(architecture.md 5). rpnapi.dart 141 Zeilen, nur Weitergabe. Tests über `apiMitEinblick()` in
+test/internals.dart, dafür `RpnApi.mit(Interpreter)`; app/tool liest die Hilfen einer Bibliothek selbst.
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, bdd9461
+
+### PG-3 Ein Ordner für die Ergebnisse von Tests und Reviews
+Prozess · Gesamt · klein · von Claude · angelegt 2026-11-07 · Reife 5
+Heute verstreut: Testprotokolle in scratchpad/ (nicht committet), die Prüfseite in app/build/hilfe, die
+Symbolvorschau von app/tool/symbol_test.dart in einem festen Pfad einer alten Sitzung, Review-Ergebnisse in
+Backlog-Einträgen. Vorschlag: `process/testing/` mit `protocols/` (Testprotokolle, committet), `reviews/`
+(Ergebnisse von Reviews wie RG-1 und RG-3, committet) und `preview/` (erzeugte Seiten: Prüfseite,
+Symbolvorschau; in .gitignore). symbol_test.dart schreibt dorthin und importiert colors.dart, statt die Farben zu
+kopieren. Entschieden 2026-11-07 (Jörg): protocols/ und reviews/ werden mit veröffentlicht, es ist ein
+Lernprojekt; die Testprotokolle aus scratchpad/ ziehen dorthin um.
+Umgesetzt: process/testing/ mit README, protocols/ (die beiden Protokolle als 2026-11-06_ta-1_phone.md und
+2026-11-06_dg-1_help_pages.md), reviews/ (ab RG-3) und preview/ in .gitignore. Prüfseite und Symbolvorschau
+schreiben dorthin, symbol_test.dart nimmt die Farben aus colors.dart. Regel in workflow.md „Tests und Reviews“.
+Erledigt 2026-11-07, eb3fd21
+
+### VG-1 Aufräumen nach DG-6: veraltete Kommentare, rpnGramma, help_texts.dart nach Sprache teilen
+Verbesserung · Gesamt · mittel · von Claude · angelegt 2026-11-07 · gefunden bei DG-6 · Reife 5
+Entschieden 2026-11-07 (Jörg): von den Funden nur die veralteten Kommentare und `rpnGramma`; aus help_texts.dart
+alles Sprachabhängige in eine eigene Datei mit „de“ im Namen. Den toten Code untersucht RG-3, rpnapi.dart VR-6,
+die übrigen Namen VG-2.
+Umgesetzt: Kommentare in calculator, code_stack, stack, core, parser (Konzept-Block von früher entfernt, steht
+heute in architecture.md), dea, console/help, protocol, tooltip, colors, help_texts. `rpnGramma` heißt
+`rpnGrammatik`. help_texts_de.dart (195 Zeilen) hält Einträge, Tabellen der Tooltips und kurze Beschriftungen;
+help_texts.dart (257) setzt sie zusammen, `AppHilfe.eintraege` bleibt.
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, 5f53c7d
+
+### BK-1 Der Menütext beim Start des Servers nennt „exit“, der Server endet aber mit {"stopp":true}
+Bug · Konsole · klein · von Claude · angelegt 2026-11-07 · gefunden bei DG-6 · Reife 5
+bin/rpncalc.dart, Menüpunkt „Socket Multi-Client“: „bis ein Client "exit" schickt“. Nach lib/src/net/server.dart
+und doc/api.md 6.1 beendet `{"stopp":true}` den Server. Text anpassen.
+Umgesetzt: Der Text nennt `{"stopp":true}` (doc/api.md 6) und dass Strg+C dort das ganze Programm beendet.
+Der Konsolen-Client selbst kann den Server nicht beenden; das bleibt so (zum Ausprobieren gedacht).
+EN: Console menu: the note on starting the server names the message that stops it
+Erledigt 2026-11-07, 5f53c7d
+
+### DG-6 Kopfkommentare in allen übrigen Dateien, architecture.md auf den erreichten Stand
+Doku · Gesamt · mittel · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+Nach der Vorlage in architecture.md 7: Aufgabe, Abgrenzung, Siehe auch, vor `library;`. Gilt für lib/, app/lib,
+bin/ und tool/. Dazu die Testdateien mit englischen Namen (z.B. modell_test → model_test), entschieden 2026-11-07.
+Umgesetzt: Kopfkommentare in 46 Dateien (lib/, app/lib, app/tool, bin/, tool/), 20 Testdateien englisch benannt,
+architecture.md auf den erreichten Stand. Funde beim Lesen in BK-1 und VG-1.
+Erledigt 2026-11-07, 990daa7
+
+### VA-8 modell.dart über part-Dateien teilen: Kern und Mixins nach Aufgaben
+Verbesserung · App · mittel · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+`modell.dart` (989 Zeilen) nach architecture.md 4.2, wie beim Calculator: ein Kern mit dem gemeinsamen Zustand,
+Mixins für Eingabe, Belegung, Hilfe-Modus, Zwischenablage, Ausschnitt, Tastatur. Die öffentliche Schnittstelle
+von `RechnerModell` bleibt, die Tests bleiben unverändert. Das enum `Modus` (Präfix der Beschriftung) bekommt
+einen Namen, der nicht mit den Bedienmodi verwechselt wird.
+Umgesetzt: model.dart (229 Zeilen: RechnerModell, ModellKern, Enums) und die Mixins input (129), assignment (185),
+help_mode (158), clipboard (140), viewport (108), keyboard (170). Der Kern deklariert abstrakt, was ein Teil vom
+anderen braucht (13 Einträge). Das Cursorkreuz im Hilfe-Modus ist jetzt eine eigene Methode `_hilfePfeil`.
+`Modus` heißt `Beschriftungsart`, das Feld der Beschriftung `art`.
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, af54c7a
+
+### VA-7 tastenfeld.dart teilen: Tastenfeld aus Blöcken, Taste, Cursorkreuz, Zeichnungen
+Verbesserung · App · klein · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+`tastenfeld.dart` (631 Zeilen) nach architecture.md 4.4; die Blöcke so geschnitten, dass FA-5 sie nur anders
+anordnen muss. Neue Dateien mit Kopfkommentar.
+Umgesetzt: keypad.dart (311 Zeilen, Blöcke als _r1, _obererBlock, _untererBlock), key_widget.dart (278),
+cursor_cross.dart (105); die Zeichnungen bleiben privat bei ihrem Widget. Nebenbei die Imports in lib/ und
+app/lib alphabetisch sortiert.
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, f1151b3
+
+### VA-6 App: englische Dateinamen, Ordner model/, display/, keypad/, anzeige.dart teilen
+Verbesserung · App · mittel · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+Umbenennen nach architecture.md 4.1; `anzeige.dart` (876 Zeilen) teilen in Seitenrahmen mit Statuszeile,
+Rechnen-Seite, Listen, Hilfeschirm, Kontextmenü. Neue Dateien mit Kopfkommentar.
+Umgesetzt: farben → colors, tasten → keys, hilfe → help_texts, tipp → tooltip, modell → model/model.dart,
+tastenfeld → keypad/keypad.dart; anzeige.dart geteilt in display/display.dart, status_line, calc_page, list_page,
+help_screen, context_menu (größte Datei 348 Zeilen). Öffentlich wurden Statuszeile, RechnenSeite, ListenSeite und
+Kontextmenue.
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, 2f1fba9
+
+### VR-5 Rechner nach lib/src mit englischen Dateinamen, Türen console.dart und net.dart
+Verbesserung · Rechner · mittel · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+Aufbau nach architecture.md 2 und 3: `language/`, `engine/` (bisher `calc/`), `help/`, `libraries/`, `console/`, `net/`;
+`gramma` → `grammar`, `rpntoken` → `token`, `hilfe` → `help`, `bibliotheken.g` → `libraries.g` (tool/bibliotheken.dart
+zieht mit). Der Kreis Hilfe → RpnApi wird aufgelöst. Doppelte Namen (`Anzeige`, `Bereich` der Konsole) bekommen
+eindeutige Namen. Tests dürfen `src` weiter importieren.
+Umgesetzt: Die Hilfe-Klassen (help/help.dart) hängen von nichts ab; das Nachschlagen in der eingebauten Hilfe
+(builtin_help.dart) gehört zur Tür, weil es zum Laden einen ganzen Rechner braucht. Konsole: `Anzeige` heißt
+`Darstellung`, `Bereich` heißt `KonsolenBereich`. bin/ benutzt nur die Türen (Test in test/architektur_test.dart).
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, 0d1b123
+
+### VR-4 Excel-Format aus der Konsole lösen: die App importiert nur noch rpnapi.dart
+Verbesserung · Rechner · klein · von Claude · angelegt 2026-11-07 · aus RG-1 · Reife 5
+`fuerExcel` und `ausExcel` ziehen aus `console/display.dart` in eine gemeinsame Datei (Ziel `lib/src/format.dart`),
+die `rpnapi.dart` exportiert. Heute holt `app/lib/modell.dart` sie aus der Konsole (architecture.md 5).
+EN: Internal restructuring, no visible change
+Erledigt 2026-11-07, af1d6a8
 
 ### Version 0.2.0
 
@@ -302,7 +681,7 @@ Erledigt 2026-11-06, af664a7
 ### TA-1 APK neu bauen und die App auf dem Handy von Hand prüfen
 Test · App · klein · von Claude · angelegt 2026-11-03 · Gate · Reife 5
 Der Stand auf dem Handy ist veraltet; Zoom, Doppeltipp und Hilfe-Modus am echten Gerät ansehen.
-Am 2026-11-06 auf dem A33 geprüft; Funde (Tooltip ohne Maus, Tastenbeschriftung, □) behoben.
+Am 2026-11-06 auf dem A33 geprüft (process/testing/protocols/2026-11-06_ta-1_phone.md); Funde (Tooltip ohne Maus, Tastenbeschriftung, □) behoben.
 EN: Fixes for phones: tooltips on long press, key labels no longer wrap.
 Erledigt 2026-11-06, bdf67f1
 
@@ -346,7 +725,8 @@ Erledigt 2026-11-06, 6cde5b1
 ### DG-1 Hilfetexte und Tooltips auf der Prüfseite durchgehen und abhaken
 Doku · Gesamt · groß · von Jörg · angelegt 2026-11-03 · alt: app.md 13 · Details: app.md 5, tool/hilfe.dart · Gate · Reife 5
 Prüfseite mit `dart run tool/hilfe.dart`; Stand 2026-11-01: ✓ 38, ○ 180. Das Überarbeiten der Texte ist DG-3.
-Am 2026-11-06 von Jörg durchgesehen, Funde im Protokoll; daraus DG-4, DG-5, TP-1, FA-23. Erledigt 2026-11-06, 537d325
+Am 2026-11-06 von Jörg durchgesehen, Funde im Protokoll
+(process/testing/protocols/2026-11-06_dg-1_help_pages.md); daraus DG-4, DG-5, TP-1, FA-23. Erledigt 2026-11-06, 537d325
 
 ### DS-1 EBNF in reference.md auf den Stand der Sprache bringen
 Doku · Sprache · mittel · von Jörg · angelegt 2026-11-03 · Details: reference.md, Kurzreferenz und EBNF · Gate · Reife 5
@@ -515,6 +895,8 @@ Erledigt 2026-11-01, 47fe04a
 - **Ablauf:** verweist auf ein Muster in [workflow.md](workflow.md), z.B. „Ablauf: Zeitbox 1 h“.
 - **sichtbar:** Ein D-Eintrag, der Hilfetexte ändert, kommt in CHANGELOG.md (F, B, V immer).
 - **EN:** Beim Verschieben nach „Erledigt“ bekommt jeder Eintrag für CHANGELOG.md eine Zeile „EN: …“ (DG-2).
+  „EN: –“ heißt bewusst nichts: für Fehler und Verbesserungen an etwas, das es in der letzten veröffentlichten
+  Version noch nicht gab (widerspricht es der Zeile des Features, wird diese angepasst; process/workflow.md).
 - **Zerlegen:** Größere Aufgaben werden in Spezifikation, Implementierung, Doku/Hilfe und Test zerlegt.
   Die Klammer liegt in „Erforderlich“, bis alle Teile erledigt sind; die Teile verweisen auf sie.
   Kleine Aufgaben werden nicht zerlegt, für sie gilt die DoD in einem Eintrag.

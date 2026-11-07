@@ -8,3 +8,6 @@
 # drawio-Sicherungsdateien
 *.bkp
 *.dtmp
+
+# Erzeugte Vorschauen (Prüfseite, App-Symbol), process/testing/README.md
+process/testing/preview/

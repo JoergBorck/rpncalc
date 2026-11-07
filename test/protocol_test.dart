@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:rpncalc/client/client.dart';
-import 'package:rpncalc/console/screen.dart';
-import 'package:rpncalc/protocol.dart';
+import 'package:rpncalc/src/net/client.dart';
+import 'package:rpncalc/src/console/screen.dart';
+import 'package:rpncalc/src/net/protocol.dart';
 import 'package:rpncalc/rpnapi.dart';
-import 'package:rpncalc/server/server.dart';
+import 'package:rpncalc/src/net/server.dart';
 import 'package:test/test.dart';
+
+import 'internals.dart';
 
 /// Protokoll zwischen Client und Server, siehe doc/api.md 6.1.
 void main() {
   group('Nachrichten ohne Netz', () {
     late RpnApi api;
-    setUp(() => api = RpnApi());
+    setUp(() => api = apiMitEinblick());
 
     Map<String, Object?> antwort(String zeile) => jsonDecode(beantworte(api, zeile).zeile!) as Map<String, Object?>;
     num tos(Map<String, Object?> a) => ((a["zustand"] as Map)["stack"] as List).first["wert"] as num;

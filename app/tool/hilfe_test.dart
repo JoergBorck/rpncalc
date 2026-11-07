@@ -1,3 +1,15 @@
+/// Aufgabe: Prüfseite für alle Hilfetexte. Zeichnet mit den echten Widgets jeden Tooltip (Tasten, Domänen,
+/// Bibliotheken) und jeden Hilfeschirm (Rechner, App, Bibliotheken) als Bild, dazu die Hilfe der Konsole als Text,
+/// prüft Verweise und Kurztexte und schreibt process/testing/preview/hilfe/index.html mit dem Prüfstatus aus
+/// tool/hilfe_geprueft.json (✓ geprüft, ✎ geändert, ○ offen) sowie manifest.json mit den Prüfsummen.
+///
+/// Abgrenzung: Kein Test im üblichen Sinn, er läuft nicht mit `flutter test` in app/test. Aufgerufen wird er von
+/// tool/hilfe.dart im Hauptverzeichnis (über `flutter test tool/hilfe_test.dart` in app/), das auch Einträge als
+/// geprüft markiert. Die Schriften lädt er aus C:\Windows\Fonts.
+///
+/// Siehe auch: tool/hilfe.dart, help_texts.dart, display/help_screen.dart, doc/app.md Kapitel 5.
+library;
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -6,20 +18,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rpncalc/console/help.dart';
+import 'package:rpncalc/console.dart' show KonsolenHilfe;
 import 'package:rpncalc/rpnapi.dart';
-import 'package:rpncalc_app/anzeige.dart';
-import 'package:rpncalc_app/farben.dart';
-import 'package:rpncalc_app/hilfe.dart';
-import 'package:rpncalc_app/modell.dart';
-import 'package:rpncalc_app/tasten.dart';
-import 'package:rpncalc_app/tipp.dart';
+import 'package:rpncalc/src/api/libraries.dart' show ladeAlsBibliothek;
+import 'package:rpncalc/src/engine/interpreter.dart';
+import 'package:rpncalc_app/display/help_screen.dart';
+import 'package:rpncalc_app/colors.dart';
+import 'package:rpncalc_app/help_texts.dart';
+import 'package:rpncalc_app/model/model.dart';
+import 'package:rpncalc_app/keys.dart';
+import 'package:rpncalc_app/tooltip.dart';
 
-/// Prüfseite für alle Hilfetexte (Aufruf über tool/hilfe.dart im Hauptverzeichnis): zeichnet mit den echten
-/// Widgets jeden Tooltip und jeden Hilfeschirm der App als Bild, dazu die Hilfe der Konsole als Text, und
-/// schreibt build/hilfe/index.html mit dem Prüfstatus aus tool/hilfe_geprueft.json.
-
-const _ziel = "build/hilfe";
+const _ziel = "../process/testing/preview/hilfe";
 const _pruefDatei = "../tool/hilfe_geprueft.json";
 
 /// Ein zu prüfender Eintrag: [inhalt] ist das, was geprüft wird; ändert er sich, ist die Prüfung hinfällig.
@@ -178,9 +188,12 @@ void main() {
     }
 
     // Hilfeseiten der Bibliotheken: erst die Übersichten (#name …), dann die Funktionen
+    // (die Kennungen der Hilfen liest ein eigener Interpreter, wie die API selbst, wenn sie eine Bibliothek prüft)
     for (final b in api.bibliotheken()) {
+      final probe = Interpreter();
+      ladeAlsBibliothek(probe, api.bibliothek(b.name)!);
       final kennungen = [
-        for (final k in api.calculator.eigeneHilfen.keys) if (k.startsWith("#${b.name}")) k,
+        for (final k in probe.calculator.eigeneHilfen.keys) if (k.startsWith("#${b.name}")) k,
         ...api.bibliotheksFunktionen(b.name),
       ];
       for (final k in kennungen) {
@@ -297,6 +310,6 @@ pre{background:#0c0c0c;color:#cccccc;font-family:Consolas,monospace;font-size:12
     html.write("</body></html>\n");
     File("$_ziel/index.html").writeAsStringSync(html.toString());
     // ignore: avoid_print
-    print("Prüfseite: ${File("$_ziel/index.html").absolute.path}  (✓ ${zahl["ok"]}, ✎ ${zahl["geaendert"]}, ○ ${zahl["offen"]})");
+    print("Prüfseite: ${File("$_ziel/index.html").absolute.uri.normalizePath().toFilePath()}  (✓ ${zahl["ok"]}, ✎ ${zahl["geaendert"]}, ○ ${zahl["offen"]})");
   });
 }

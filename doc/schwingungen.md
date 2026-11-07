@@ -78,7 +78,8 @@ x″ + 2δ·x′ + ω₀²·x = (F₀/m) · cos Ωt. Nach dem Einschwingen gilt 
 
 ## Hilfsfunktionen
 
-Sie werden von den anderen Funktionen benutzt und können auch direkt aufgerufen werden.
+Sie werden von den anderen Funktionen benutzt und können auch direkt aufgerufen werden. Sie sind mit
+`rpnintern` gekennzeichnet (reference.md 10.2) und haben deshalb in der App keine Funktionstaste.
 
 | Funktion | Eingabe | Ergebnis | Bedeutung |
 |---|---|---|---|
@@ -150,5 +151,5 @@ Phase.
 In `dx` wird nicht mit Argumenten gerechnet, sondern mit `n:Y` (Kopie von Position n), weil die Blöcke von
 `ifel` die Argumente des Aufrufs nicht sehen. Mit `6:~R5:D` bleibt am Ende nur das Ergebnis übrig.
 
-Die Tests stehen in `test/schwingungen_test.dart`. Sie prüfen jede Funktion gegen die Formel, in allen drei
+Die Tests stehen in `test/oscillations_test.dart`. Sie prüfen jede Funktion gegen die Formel, in allen drei
 Winkelmodi.

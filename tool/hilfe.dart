@@ -1,18 +1,26 @@
-import 'dart:convert';
-import 'dart:io';
-
-/// Prüfseite für alle Hilfetexte: Tooltips und Hilfeschirme der App als Bilder, die Hilfe der Konsole als Text,
-/// je Eintrag mit Prüfstatus (✓ geprüft, ✎ seit der Prüfung geändert, ○ offen).
+/// Aufgabe: Prüfseite für alle Hilfetexte: Tooltips und Hilfeschirme der App als Bilder, die Hilfe der Konsole
+/// als Text, je Eintrag mit Prüfstatus (✓ geprüft, ✎ seit der Prüfung geändert, ○ offen).
 ///
-///   dart run tool/hilfe.dart                        Seite erzeugen: app/build/hilfe/index.html
+///   dart run tool/hilfe.dart                          Seite erzeugen (process/testing/preview/hilfe/index.html)
 ///   dart run tool/hilfe.dart --geprueft S taste:R5/*  Einträge als geprüft markieren und die Seite erneuern
 ///
 /// Bei --geprueft passt ein Name zur Kennung eines Eintrags (`rechner:S`, `app:#`, `taste:R3/D`) oder zu ihrem
 /// Teil nach dem Doppelpunkt bzw. Schrägstrich (`S` trifft `rechner:S` und alle Tasten `S`); ein `*` am Ende
 /// nimmt alle Kennungen mit diesem Anfang. Der Status steht in tool/hilfe_geprueft.json (Kennung → Prüfsumme
 /// des Inhalts); ändert sich ein Text, gilt er wieder als ungeprüft.
+///
+/// Abgrenzung: Die Seite selbst zeichnet app/tool/hilfe_test.dart mit den echten Widgets (flutter test im
+/// Verzeichnis app) und schreibt dazu process/testing/preview/hilfe/manifest.json; diese Datei startet das nur
+/// und führt den Prüfstatus. Die Texte stehen in library/system/hilfe.de.rpnlib und app/lib/help_texts_de.dart.
+///
+/// Siehe auch: app/tool/hilfe_test.dart, doc/api.md Kapitel 8, doc/app.md.
+library;
+
+import 'dart:convert';
+import 'dart:io';
+
 const pruefDatei = "tool/hilfe_geprueft.json";
-const manifest = "app/build/hilfe/manifest.json";
+const manifest = "process/testing/preview/hilfe/manifest.json";
 
 void main(List<String> argumente) {
   final i = argumente.indexOf("--geprueft");

@@ -33,7 +33,14 @@ Muster, auf die ein Eintrag im Backlog verweisen kann („Ablauf: Zeitbox“), s
 
 - Verzeichnisse und Dateien heißen englisch, Bezeichner im Code deutsch.
 - Die App in `app/` schreiben wir gemeinsam. Jörgs Flutter-Übungen außerhalb dieses Projekts fasst Claude nicht an.
-- Die Prüfseite der Hilfetexte: `dart run tool/hilfe.dart` (Ergebnis in `app/build/hilfe/index.html`).
+- Die Prüfseite der Hilfetexte: `dart run tool/hilfe.dart` (Ergebnis in `process/testing/preview/hilfe/index.html`).
+
+## Tests und Reviews
+
+- Protokolle von Tests von Hand kommen nach `process/testing/protocols/`, Ergebnisse von Reviews und Recherchen
+  nach `process/testing/reviews/`, beide committet und veröffentlicht (Lernprojekt). Dateiname:
+  `JJJJ-MM-TT_id_thema.md`, z.B. `2026-11-06_ta-1_phone.md`; der Backlog-Eintrag verweist darauf.
+- Erzeugte Vorschauen (Prüfseite, App-Symbol) landen in `process/testing/preview/`, nicht committet.
 
 ## Commit und Push
 
@@ -50,7 +57,12 @@ Muster, auf die ein Eintrag im Backlog verweisen kann („Ablauf: Zeitbox“), s
 - **Gate:** Das Werkzeug bricht ab, solange im Backlog ein Eintrag mit „· Gate“ offen ist oder unter „Erforderlich“ steht.
 - **CHANGELOG.md** entsteht mit `dart run tool/changelog.dart` aus „Erledigt“ (englisch, je Version, aus den Zeilen
   „EN: …“); beim Verschieben nach „Erledigt“ neu erzeugen und mitcommitten. Das Werkzeug veröffentlicht nur, wenn
-  er aktuell und committet ist, und die neueste Version muss zu `pubspec.yaml` passen.
+  er aktuell und committet ist, und die neueste Version muss zu `pubspec.yaml` passen. Erledigtes ohne neue
+  Versionsnummer kommt unter „### Nächste Version“ (im CHANGELOG „Unreleased“); beim Erhöhen der Version wird
+  daraus „### Version x.y.z“. Gleiche EN-Zeilen stehen je Version nur einmal.
+- **Nur, was Nutzer kennen:** Ein Fehler oder eine Verbesserung an etwas, das es in der letzten veröffentlichten
+  Version noch nicht gab, kommt nicht in den CHANGELOG; der Eintrag bekommt „EN: –“. Widerspricht die Änderung der
+  Zeile des Features, wird stattdessen diese Zeile angepasst: Ein Feature hat genau eine Zeile im CHANGELOG.
 - `--web` legt die Browser-Version auf `gh-pages` (https://joergborck.github.io/rpncalc/).
 - Die Windows-Version: `flutter build windows --release` in `app/`, den Ordner `build/windows/x64/runner/Release`
   als Zip; Jörg lädt sie unter Releases hoch (ohne GitHub CLI geht es nicht automatisch, siehe PT-1).

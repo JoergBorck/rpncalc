@@ -1,13 +1,25 @@
+/// Aufgabe: Start der App. [RpnApp] setzt das Thema und den Zoom (alles wächst mit der Fensterbreite, begrenzt
+/// durch die Höhe), [RechnerSeite] ist die einzige Seite: Anzeige oben, Tastenfeld unten, das Cursorkreuz
+/// dazwischen. Sie hält das [RechnerModell], zeigt seine Meldungen, öffnet das Menü der Domänen und gibt die
+/// Tasten der PC-Tastatur (Sondertasten, Strg+C/V, sonst Zeichen) an das Modell weiter.
+///
+/// Abgrenzung: Welches Zeichen welche Taste des Tastenfelds trifft, entscheidet model/keyboard.dart; Anzeige und
+/// Tastenfeld liegen in display/ und keypad/. Hier wird nicht gerechnet.
+///
+/// Siehe auch: doc/app.md 1.1 (Zoom), Kapitel 6 (Tastatur), 2.1 (Kontextmenü, Zwischenablage), doc/architecture.md 4.
+library;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'anzeige.dart';
-import 'farben.dart';
-import 'hilfe.dart';
-import 'modell.dart';
-import 'tastenfeld.dart';
-import 'tipp.dart';
+import 'colors.dart';
+import 'display/display.dart';
+import 'help_texts.dart';
+import 'keypad/cursor_cross.dart';
+import 'keypad/keypad.dart';
+import 'model/model.dart';
+import 'tooltip.dart';
 
 void main() {
   // im Browser das eigene Kontextmenü der App statt dem des Browsers (doc/app.md 2.1); das geht erst, wenn
