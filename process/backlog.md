@@ -33,6 +33,11 @@ Recherche · Sprache · klein · von Jörg · angelegt 2026-11-03 · alt: api.md
 ### VR-1 Import-Fehler als Daten mit Zeilennummer, damit die App die Stelle markieren kann
 Verbesserung · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.md 2 · Reife 4
 
+### FW-1 Browser-Version installierbar und offline nutzbar (PWA)
+Feature · Web · mittel · von Jörg · angelegt 2026-11-11 · Details: requirements/FW-1.md · Reife 5
+Manifest aufräumen (noch Flutters Platzhalter), eigener Service Worker beim Veröffentlichen mit --web, CanvasKit
+selbst ausliefern; neue Versionen still. Entscheidungen 2026-11-11 in der Datei.
+
 ## Zurückgestellt
 
 ## Angedacht
@@ -48,7 +53,7 @@ Beim Blättern mit ▲▼ steht die aktuelle Zeile immer oben, der Verlauf läuf
 Hintergrund zeigt, dass sie nicht zum Verlauf gehört.
 
 ### FA-20 Mausrad in den Bereichen der Anzeige: Verlauf, Stack, Variablen, Funktionen, Hilfe
-Feature · App · klein · von Jörg · angelegt 2026-11-04 · Reife 4
+Feature · App · klein · von Jörg · angelegt 2026-11-04 · Details: requirements/FA-20.md · Reife 4
 Wie ▲▼ im jeweiligen Bereich: in der Eingabe durch den Verlauf, im Stack zu tieferen Werten; die Listen und der
 Hilfeschirm blättern ohnehin schon. Ob das Mausrad den Bereich auch wählt, beim Umsetzen festlegen.
 
@@ -63,6 +68,10 @@ Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.m
 
 ### RR-2 Verwerfen nach einem Fehler: braucht es neben Return eine eigene Taste?
 Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.md 8 · Reife 4
+
+### FA-26 Variablen auf den Funktionstasten blättern: mehr als zehn, mit Mausrad, Wischen und Pfeilen
+Feature · App · klein · von Jörg · angelegt 2026-11-08 · aus FA-20 · Details: requirements/FA-26.md · Reife 3
+Heute zeigen die Funktionstasten nur die ersten zehn Variablen, und nichts blättert dort.
 
 ### FA-5 Querformat: Anzeige oben über die volle Breite, darunter drei Tastenfelder
 Feature · App · groß · von Jörg · angelegt 2026-11-03 · alt: app.md 4 · Details: app.md 1.1 · Reife 3
@@ -88,12 +97,6 @@ Feature · Rechner · groß · von Jörg · angelegt 2026-11-03 · alt: api.md 1
 ### FR-4 Undo über ein Änderungsprotokoll (Journal)
 Feature · Rechner · groß · von Jörg · angelegt 2026-11-03 · alt: api.md 7 · Details: api.md 9.2 · Reife 3
 Offen: ein Schritt je Token der Eingabe oder je ausgeführtem Token im Code; Zufallsgenerator zurücksetzbar.
-
-### FA-18 Freie Taste in R2 (Buchstabe d) mit AC und „Eingabebereich löschen“ belegen
-Feature · App · klein · von Jörg · angelegt 2026-11-03 · Reife 3
-Variante 1: d = AC, Shift+d = Eingabebereich löschen. Variante 2: d = AC, Shift+d = C (heute Shift+⌫),
-Shift+⌫ = Eingabebereich löschen. AC löscht Stack, Variablen und Tags; eigene Funktionen und Verlauf bleiben,
-die zu löschen gehört ins Burger-Menü. Offen: ob AC eine Rückfrage braucht, solange es kein Undo gibt (FR-4).
 
 ### VR-3 Texte der Oberflächen und Fehlermeldungen auslagern wie die Hilfe des Rechners
 Verbesserung · Rechner · mittel · von Claude · angelegt 2026-11-03 · alt: api.md 11 · Vorstufe zu FR-2, FA-13 · Reife 3
@@ -135,7 +138,7 @@ Feature · Rechner · mittel · von Jörg · angelegt 2026-11-03 · alt: api.md 
 Entschieden: im Skript gespeichert, im Zustand gemeldet, die Oberflächen formatieren danach. Noch zu spezifizieren.
 
 ### FS-5 Symbolschreibweise: `\name ` bis einschließlich Leerzeichen wird vor dem DEA durch ein Zeichen ersetzt
-Feature · Sprache · groß · von Jörg · angelegt 2026-11-03 · Details: requirements.md „Sonderzeichen“, reference.md 14.2 · Reife 2
+Feature · Sprache · groß · von Jörg · angelegt 2026-11-03 · Details: scratchpad/requirements.md „Sonderzeichen“, reference.md 14.2 · Reife 2
 Eigene kleine Ersetzungsstufe im Rechner vor dem Haupt-DEA, damit sie auch in Skripten, Socket und Konsole gilt.
 Synonyme (`\oo`, `\inf`, `\infinity` → ∞; `\<`, `\rad` → ∠), Indizes (`\.1` → ₁), Hochstellung (`\^2` → ²),
 nachgestellte Akzente (`x\. ` → ẋ, `a\.. ` → ä), Umkehrung mit `~\` (Zeichen → Namen). Eine Tabelle als Daten
@@ -196,7 +199,16 @@ arbeitet. Die kurzen Übersichten sind noch zu knapp und wenig beschreibend. Off
 ### FS-1 Einheiten in [ ]
 Feature · Sprache · groß · von Jörg · angelegt 2026-11-03 · die Taste [ ] ist dafür reserviert · Reife 0
 
+### FR-6 Code-Debugger
+Feature · Rechner · groß · von Jörg · angelegt 2026-11-09 · Reife 0
+
 ## Vorgeschlagen
+
+### PT-2 tool/requirements.dart: Inhaltsverzeichnis der Anforderungen aus Gliederung und Backlog erzeugen
+Prozess · Werkzeuge · klein · von Claude · angelegt 2026-11-08 · Reife 4
+Jörg pflegt nur Überschriften und IDs; das Werkzeug ergänzt Titel, Link (eigene Datei oder Backlog) und Status,
+lässt erledigte Bugs, Recherchen und Tests weg und meldet fehlende oder doppelte IDs. Heute erledigt das ein
+Skript im Scratchpad; offen ist, wo die Gliederung steht (eigene Datei oder in der README selbst).
 
 ### VG-2 Englische Bezeichner auf Deutsch
 Verbesserung · Gesamt · klein · von Claude · angelegt 2026-11-07 · aus VG-1 · Reife 3
@@ -212,7 +224,7 @@ Braucht die GitHub CLI (`winget install GitHub.cli`, einmal `gh auth login`).
 Verbesserung · App · klein · von Claude · angelegt 2026-11-03 · Reife 4
 
 ### VA-3 JuliaMono als mitgelieferte Monospace-Schrift, auf die benötigten Zeichen beschnitten
-Verbesserung · App · mittel · von Claude · angelegt 2026-11-04 · Reife 3
+Verbesserung · App · mittel · von Claude · angelegt 2026-11-04 · Details: requirements/VA-3.md · Reife 3
 Heute nimmt die App die Monospace-Schrift des Systems; Zeichen wie ₙ fehlen in Consolas, am Handy und im Browser
 springt eine andere Schrift ein. JuliaMono (SIL Open Font License) hat die mathematischen Zeichen, Griechisch,
 Hoch- und Tiefstellungen und setzt Akzente sauber (passt zu FS-4, FS-5). Für Anzeige, Tooltips und Hilfe; die
@@ -238,6 +250,15 @@ Zu klären: welcher Lua-Interpreter für Dart (Konsole, App, Web), wie Plots in 
 LuaJIT voraus.
 
 ## Erledigt
+
+### Nächste Version
+
+### PG-4 Anforderungen in process/requirements/: eine Datei je Eintrag, Inhaltsverzeichnis nach Fähigkeiten
+Prozess · Gesamt · klein · von Jörg · angelegt 2026-11-08 · Reife 5
+Backlog bleibt der Index, die Datei hält die Analyse, die Spezifikation den Stand; Bugs, Recherchen und Tests in
+eigenen Ordnern als Nachweis (process/workflow.md, „Anforderungen“). doc/requirements.md zurück ins Scratchpad.
+EN: –
+Erledigt 2026-11-08, 9cd1c6e
 
 ### Version 0.3.0
 
@@ -833,6 +854,13 @@ Erledigt 2026-11-03, 6d0345c
 
 ## Abgelehnt
 
+### FA-18 Freie Taste in R2 (Buchstabe d) mit AC und „Eingabebereich löschen“ belegen
+Feature · App · klein · von Jörg · angelegt 2026-11-03
+Variante 1: d = AC, Shift+d = Eingabebereich löschen. Variante 2: d = AC, Shift+d = C (heute Shift+⌫),
+Shift+⌫ = Eingabebereich löschen. AC löscht Stack, Variablen und Tags; eigene Funktionen und Verlauf bleiben,
+die zu löschen gehört ins Burger-Menü. Offen: ob AC eine Rückfrage braucht, solange es kein Undo gibt (FR-4).
+Aufgegangen in FA-25 (CL auf d, Shift AC; 2026-11-08).
+
 ### FA-14 F2–F10 mit eigenen Funktionen belegen
 Feature · App · klein · von Claude · angelegt 2026-11-03 · Menue.md Frage D
 Die Tasten bleiben frei für später; brauchen die Funktionstasten einen direkten Zugriff, ginge Strg+1 … Strg+0.
@@ -868,7 +896,7 @@ nach tief.
 | 2 | die offenen Fragen sind benannt |
 | 3 | die meisten Fragen sind entschieden, der Aufwand lässt sich schätzen |
 | 4 | alle fachlichen Fragen sind entschieden, nur Einzelheiten der Umsetzung offen |
-| 5 | ohne Rückfrage umsetzbar, die Spezifikation steht oder ergibt sich direkt |
+| 5 | ohne Rückfrage umsetzbar, die Spezifikation steht oder ergibt sich direkt; eine Datei unter `requirements/` hat keine offenen Fragen mehr |
 
 Bei einer Recherche (R) heißt Reife 4: die Frage ist klar gestellt, die Untersuchung kann beginnen.
 
@@ -891,6 +919,9 @@ Erledigt 2026-11-01, 47fe04a
 - **Art** und **Bereich:** siehe Kategorien unten.
 - **Aufwand:** klein · mittel · groß
 - **Titel:** ein ganzer Satz, verständlich ohne die Spezifikation.
+- **Details:** wo mehr steht. Neue Analysen kommen nach `process/requirements/ID.md` („Details:
+  requirements/FA-20.md“, process/workflow.md „Anforderungen“); ältere Verweise auf app.md usw. ziehen nach und
+  nach um.
 - **alt:** die frühere Nummer in app.md bzw. api.md, damit ältere Verweise auffindbar bleiben.
 - **Ablauf:** verweist auf ein Muster in [workflow.md](workflow.md), z.B. „Ablauf: Zeitbox 1 h“.
 - **sichtbar:** Ein D-Eintrag, der Hilfetexte ändert, kommt in CHANGELOG.md (F, B, V immer).

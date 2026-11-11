@@ -6,6 +6,20 @@ Wie Jörg und Claude am RPN-Rechner zusammenarbeiten. Die Aufgaben stehen in [ba
 
 - **Spezifikation zuerst:** reference.md (Sprache), api.md (Schnittstelle), app.md (App), dann die Umsetzung.
   Größere Spezifikationen sieht Jörg vorher durch.
+- **Anforderungen:** Braucht ein Eintrag mehr als seine Zeilen im Backlog, bekommt er eine eigene Datei
+  `process/requirements/ID.md` (z.B. `FA-20.md`, Vorlage in [requirements/template.md](requirements/template.md)):
+  Ziel, Verhalten, Entscheidungen mit Datum, offene Fragen, Bezüge, Umsetzung und Tests. Spätestens vor „Bereit“
+  (Reife 5) ist sie da und ihr Abschnitt „Offen“ leer. Der Backlog bleibt der Index, die Spezifikation
+  (reference.md, api.md, app.md) beschreibt den aktuellen Stand; die Datei hält fest, wie es dazu kam.
+  Committet und veröffentlicht.
+  - **Inhaltsverzeichnis:** [requirements/README.md](requirements/README.md) ordnet die Einträge nach den
+    Fähigkeiten des Produkts, jeden genau einmal.
+  - **Bugs, Recherchen und Tests** (B, R, T) dienen dem Nachweis, nicht der Beschreibung des Systems: Ihre Dateien
+    liegen in `requirements/bugs/`, `requirements/research/` und `requirements/tests/`, und sobald sie erledigt
+    oder abgelehnt sind, fallen sie aus dem Inhaltsverzeichnis. Die Datei bleibt erhalten.
+  - **Frage und Ergebnis getrennt:** Die Datei unter `requirements/` beschreibt die Frage bzw. was geprüft wird;
+    die datierten Ergebnisse (Protokolle, Reviews) liegen unter `process/testing/` (siehe „Tests und Reviews“),
+    die Datei verweist darauf. Ein Eintrag kann so mehrere Läufe haben, z.B. Handy und PC.
 - **Fertig** ist eine Aufgabe nach der Definition of Done im Backlog; erst dann kommt sie mit Commit nach
   „Erledigt“.
 - **Vorschläge:** Claude bringt Verbesserungen von sich aus ein (Features, Code, Prozess, Struktur) und trägt sie
@@ -39,21 +53,21 @@ Muster, auf die ein Eintrag im Backlog verweisen kann („Ablauf: Zeitbox“), s
 
 - Protokolle von Tests von Hand kommen nach `process/testing/protocols/`, Ergebnisse von Reviews und Recherchen
   nach `process/testing/reviews/`, beide committet und veröffentlicht (Lernprojekt). Dateiname:
-  `JJJJ-MM-TT_id_thema.md`, z.B. `2026-11-06_ta-1_phone.md`; der Backlog-Eintrag verweist darauf.
+  `JJJJ-MM-TT_id_thema.md`, z.B. `2026-11-06_ta-1_phone.md`; der Backlog-Eintrag verweist darauf, ebenso seine
+  Datei unter `process/requirements/`, wenn es eine gibt.
 - Erzeugte Vorschauen (Prüfseite, App-Symbol) landen in `process/testing/preview/`, nicht committet.
 
 ## Commit und Push
 
 - Committet und gepusht wird nur, wenn Jörg darum bittet.
 - Commit-Nachrichten auf Deutsch, am Ende `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-- `doc/requirements.md` (Jörgs Ideensammlung) wird committet und gepusht, aber nicht veröffentlicht.
 - **Nie committen:** `scratchpad/nextsteps.md`.
 - `origin` ist das Akademie-Repository (privat, mit der ganzen Historie).
 
 ## Veröffentlichen
 
 - Nur über `dart run tool/veroeffentlichen.dart [--web] [--push]` und nur auf Jörgs Wunsch. Der öffentliche
-  Stand (JoergBorck/rpncalc) lässt `scratchpad/`, `spec/` und `doc/requirements.md` weg.
+  Stand (JoergBorck/rpncalc) lässt `scratchpad/` und `spec/` weg.
 - **Gate:** Das Werkzeug bricht ab, solange im Backlog ein Eintrag mit „· Gate“ offen ist oder unter „Erforderlich“ steht.
 - **CHANGELOG.md** entsteht mit `dart run tool/changelog.dart` aus „Erledigt“ (englisch, je Version, aus den Zeilen
   „EN: …“); beim Verschieben nach „Erledigt“ neu erzeugen und mitcommitten. Das Werkzeug veröffentlicht nur, wenn

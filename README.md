@@ -13,8 +13,8 @@ Ein RPN-Rechner für die Konsole mit eigener, über eine Grammatik konfigurierba
 | `app/`          | die Flutter-App für das Smartphone (`doc/app.md`), nutzt `RpnApi` per Pfad |
 | `library/`      | Funktionsbibliotheken in der Sprache des Rechners (Schwingungen, Statistik) |
 | `test/`         | Tests für `dart test`, nutzen die Testfälle aus `lib/src/selftest/` |
-| `process/`      | Arbeitsweise (`workflow.md`), Backlog, Testprotokolle und Reviews unter `testing/` |
-| `doc/`          | Sprachreferenz (`reference.md`) mit EBNF-Diagramm, API-Spezifikation (`api.md`), Architektur, Anforderungen, Demo |
+| `process/`      | Arbeitsweise (`workflow.md`), Backlog, Anforderungen unter `requirements/`, Testprotokolle und Reviews unter `testing/` |
+| `doc/`          | Sprachreferenz (`reference.md`) mit EBNF-Diagramm, API-Spezifikation (`api.md`), Architektur, Demo |
 
 ## Starten und testen
 

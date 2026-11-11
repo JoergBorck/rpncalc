@@ -21,7 +21,7 @@ import 'dart:io';
 
 import 'changelog.dart' show changelog;
 
-const ausschluesse = ["scratchpad", "spec", "doc/requirements.md"]; // requirements.md: Ideensammlung, nur im Akademie-Repository
+const ausschluesse = ["scratchpad", "spec"];
 const backlog = "process/backlog.md";
 const remote = "oeffentlich";
 const adresse = "https://github.com/JoergBorck/rpncalc.git";
