@@ -129,9 +129,8 @@ class TasteWidget extends StatelessWidget {
       elevation: 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(9),
-        onTap: t.reserviert && !alphaAn
-            ? null
-            : (beiDruck ?? () => m.druecke(alphaAn ? _alphaTaste(t, alphaBuchstabe) : t)),
+        // beiDruck gilt auch für leere Plätze: z.B. gibt ein Tipp in den Tastenblock ihm den Rahmen (VA-15)
+        onTap: beiDruck ?? (t.reserviert && !alphaAn ? null : () => m.druecke(alphaAn ? _alphaTaste(t, alphaBuchstabe) : t)),
         child: SizedBox(
           height: hoehe,
           child: Stack(

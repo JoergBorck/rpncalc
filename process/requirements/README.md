@@ -101,6 +101,7 @@ Link zum Backlog.
 - [FA-10](../backlog.md) SHIFT-Taste mit dem Zeichen ⇧, vielleicht nur das Zeichen · Angedacht
 - [FA-18](../backlog.md) Freie Taste in R2 (Buchstabe d) mit AC und „Eingabebereich löschen“ belegen · ✗ abgelehnt
 - [FA-25](../backlog.md) Taste CL (Zeile löschen) auf der freien Taste d, mit Shift AC (Eingabe und Stack mit Tags löschen) · ✓
+- [VA-16](../backlog.md) AC kehrt zur Seite Rechnen zurück und wählt die Eingabe · ✓
 - [FA-21](../backlog.md) ENTER und Return auf der PC-Tastatur (und Alpha ⏎) wirken mehrmals hintereinander · ✓
 - [FA-11](../backlog.md) Verhalten der Enter-Taste einstellbar: nur Leerzeichen oder Leerzeichen und Zeilenumbruch · Angedacht
 - [FA-14](../backlog.md) F2–F10 mit eigenen Funktionen belegen · ✗ abgelehnt
@@ -110,6 +111,7 @@ Link zum Backlog.
 - [FA-3](../backlog.md) Wischen und Mausrad über die Funktionstasten blättern durch ihre Seiten · ✓
 - [FA-23](../backlog.md) Im Hilfe-Modus blättern Mausrad und Wischen die Funktionstasten, ein Klick in den Rahmen zeigt die Hilfe zur Seite · ✓
 - [FA-26](FA-26.md) Variablen auf den Funktionstasten blättern: mehr als zehn, mit Mausrad, Wischen und Pfeilen · Angedacht
+- [VA-15](VA-15.md) Funktionen und Variablen: Liste der Anzeige und Tastenblock als zwei Bereiche, Klick wechselt · ✓
 - [VA-4](../backlog.md) Am PC färbt sich der Block der Funktionstasten leicht orange, solange die Maus darüber steht · ✓
 - [VA-10](../backlog.md) Mausrad schiebt die Funktionstasten sichtbar wie Text, beim Loslassen rasten sie ein · ✓
 - [VA-13](../backlog.md) Mausrad über den Funktionstasten: beim langsamen Drehen rastet es zu schnell ein · ✓
@@ -135,6 +137,7 @@ Link zum Backlog.
 
 - [FA-6](../backlog.md) Menü auf dem Tastenfeld nach scratchpad/Menue.md · Angedacht
 - [FA-16](../backlog.md) Zeilenmodus (zuschaltbar): erst bei ENTER rechnen, frühere Zeilen übernehmen und korrigieren · Angedacht
+- [RA-1](../backlog.md) Welche Tasten wirken auf welcher Seite der Anzeige? · Angedacht
 
 ### App: Layout und Schrift
 

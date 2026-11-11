@@ -21,7 +21,7 @@ mixin _Belegung on ModellKern {
   /// Die Belegung der Seite [seite] (im Kreis gezählt), z.B. für die Nachbarseite beim Schieben (VA-10); nach `'`
   /// und im Bereich Variablen immer die Variablen.
   List<Taste?> funktionstastenAuf(int seite) {
-    if (apostroph || bereich == Bereich.variablen) return _seiten(_variablen);
+    if (variablenAufTasten) return _seiten(_variablen);
     final n = funktionsSeiten, s = (seite % n + n) % n;
     final d = [..._grundSeiten, ..._domaenenSeiten];
     if (s < d.length) return d[s];
@@ -30,7 +30,7 @@ mixin _Belegung on ModellKern {
 
   /// Name der Seite, die die Funktionstasten zeigen.
   String get seitenName {
-    if (apostroph || bereich == Bereich.variablen) return "Variablen";
+    if (variablenAufTasten) return "Variablen";
     final g = _grundSeiten.length, d = _domaenenSeiten.length;
     if (_seite < g) return _grund;
     if (_seite < g + d) return d > 1 ? "$domaene ${_seite - g + 1}/$d" : domaene;
@@ -147,7 +147,20 @@ mixin _Belegung on ModellKern {
   /// Ob Wischen und Mausrad die Seiten der Funktionstasten blättern: nicht, solange die Tasten etwas anderes zeigen
   /// (Variablen nach ' oder im Bereich Variablen, Buchstaben im Alpha-Modus). Im Hilfe-Modus blättern sie auch
   /// (doc/app.md 5.2).
-  bool get funktionenBlaetterbar => !(alpha || apostroph || bereich == Bereich.variablen);
+  bool get funktionenBlaetterbar => !(alpha || variablenAufTasten);
+
+  /// Die Funktionstasten zeigen die Variablen: nach ' und im Bereich Variablen, dort aber nur, wenn es welche gibt;
+  /// sonst bleiben die Funktionen stehen (VA-15).
+  bool get variablenAufTasten => apostroph || (bereich == Bereich.variablen && _variablen.isNotEmpty);
+
+  /// Der Tastenblock gehört zur Liste der Seite Funktionen bzw. Variablen, wenn er etwas aus ihr zeigen kann:
+  /// Variablen bzw. Tags, Funktionen mit Taste (nicht nur interne). Nur dann wird er hinterlegt und lässt sich als
+  /// eigener Bereich wählen (VA-15).
+  bool get tastenblockVerbunden => switch (bereich) {
+        Bereich.variablen => _variablen.isNotEmpty,
+        Bereich.funktionen => zustand.speicher.any((s) => s.art == SpeicherArt.funktion && !s.intern),
+        _ => false,
+      };
 
   /// Die Kennung der Hilfe zur gezeigten Seite der Funktionstasten: eine Bibliothek, die eigenen Funktionen oder
   /// die übrigen Seiten (doc/app.md 5.2).

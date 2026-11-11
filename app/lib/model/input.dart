@@ -87,6 +87,7 @@ mixin _Eingabe on ModellKern {
     zustand = api.eingabe("'C", zeilen: _stackZeilen); // die Zeile ist danach abgeschlossen und erscheint nicht
     verlauf.clear();
     _zurueckschieben();
+    bereich = Bereich.eingabe; // die Anzeige zeigt wieder die Seite Rechnen mit Eingabe und Stack (VA-16)
   }
 
   void _schreibeTaste(Taste t) {

@@ -1,12 +1,15 @@
 /// Aufgabe: die Seiten „Variablen und Tags“ und „Funktionen“ der Anzeige, in Abschnitten: Variablen und Tags mit
 /// ihren Werten; eigene Funktionen und je geladener Bibliothek ihre Funktionen mit Code. Beim Blättern der
-/// Funktionstasten scrollt die Seite Funktionen zum Abschnitt der gezeigten Bibliothek.
+/// Funktionstasten scrollt die Seite Funktionen zum Abschnitt der gezeigten Bibliothek. Hat die Liste den Rahmen
+/// (VA-15), scrollen ▲ ▼ sie zeilenweise, und ◄ ► schieben Code bzw. Werte; die Namen bleiben stehen.
 ///
 /// Abgrenzung: Die Daten kommen aus dem Zustand des Rechners über das Modell; der Rahmen mit dem Wischen
 /// zwischen den Seiten steht in display.dart.
 ///
 /// Siehe auch: doc/app.md Kapitel 2 und 5.3, model/model.dart.
 library;
+
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:rpncalc/rpnapi.dart';
@@ -86,6 +89,7 @@ class ListenSeite extends StatefulWidget {
 class _ListenSeiteState extends State<ListenSeite> {
   final _scroll = ScrollController();
   final _marken = <String, GlobalKey>{};
+  late int _zeilenGesehen = widget.m.listenZeilen; // bis hierhin haben ▲ ▼ gescrollt (VA-15)
 
   @override
   void didUpdateWidget(ListenSeite alt) {
@@ -104,6 +108,14 @@ class _ListenSeiteState extends State<ListenSeite> {
     }
   }
 
+  /// ▲ ▼ in der Liste mit dem Rahmen: um [schritte] Zeilen der Höhe [zeile], bis zu Anfang bzw. Ende (VA-15).
+  /// Ohne Animation wie im Stack: eine laufende würde die Tastenwiederholung jedes Mal neu starten und bremsen.
+  void _scrolle(int schritte, double zeile) {
+    if (!_scroll.hasClients) return;
+    final p = _scroll.position;
+    _scroll.jumpTo((p.pixels + schritte * zeile).clamp(p.minScrollExtent, p.maxScrollExtent));
+  }
+
   @override
   void dispose() {
     _scroll.dispose();
@@ -116,57 +128,103 @@ class _ListenSeiteState extends State<ListenSeite> {
     final klein = Schrift.monospace(11, Farben.anzeigeBlass, gewicht: FontWeight.w600);
     final stil = Schrift.monospace(13, Farben.anzeigeText);
     void zeige(String kennung) => m.zeigeHilfe(AppHilfe.nachschlagen(m.api, kennung));
+    // VA-15: hat diese Liste den Rahmen, bewegen die Pfeile sie
+    final gewaehlt = m.listeGewaehlt && m.bereich == widget.bereich && !m.hilfeModus;
+    final ziffer = TextPainter(text: TextSpan(text: "0", style: stil), textDirection: TextDirection.ltr)..layout();
+    final zeile = ziffer.height + 5; // ein Eintrag: Text, 2 + 2 Abstand und die Linie darunter
+    if (m.listenZeilen != _zeilenGesehen) {
+      final schritte = m.listenZeilen - _zeilenGesehen;
+      _zeilenGesehen = m.listenZeilen;
+      if (gewaehlt) WidgetsBinding.instance.addPostFrameCallback((_) => _scrolle(schritte, zeile));
+    }
+    final versatz = m.bereich == widget.bereich ? m.listenVersatz : 0;
+    // wie weit sich schieben lässt, ermitteln die Zeilen beim Layout; die Pfeile am Rahmen zeigen den letzten Stand
+    // und werden nach dem Layout nachgezogen, wenn er sich geändert hat
+    final vorher = m.listenMaxVersatz;
+    if (gewaehlt) {
+      m.listenMaxVersatz = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && m.listenMaxVersatz != vorher) setState(() {});
+      });
+    }
+    Widget pfeil(IconData icon) => Container(color: Farben.anzeige, child: Icon(icon, size: 18, color: Farben.shift));
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => m.hilfeModus ? zeige(widget.hilfe) : m.waehleBereich(widget.bereich),
-      // alle Einträge gebaut (keine ListView), damit sich zu jedem Abschnitt scrollen lässt
-      child: SingleChildScrollView(
-        controller: _scroll,
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final (i, a) in widget._abschnitte.indexed) ...[
-              if (i > 0) const SizedBox(height: 10),
-              Text(
-                a.titel.toUpperCase(),
-                key: a.ziel == null ? null : _marken.putIfAbsent(a.ziel!, GlobalKey.new),
-                style: klein,
-              ),
-              const SizedBox(height: 4),
-              if (a.eintraege.isEmpty && a.leer.isNotEmpty) Text(a.leer, style: stil.copyWith(color: Farben.anzeigeBlass)),
-              for (final e in a.eintraege)
-                GestureDetector(
-                  // Marke für das Scrollen zu den Funktionen einer weiteren Seite der Funktionstasten
-                  key: a.ziel == null ? null : _marken.putIfAbsent("${a.ziel}:${e.name}", GlobalKey.new),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => m.hilfeModus ? zeige(e.name) : m.waehleBereich(widget.bereich),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFF16231D))),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(e.anzeige, style: e.kursiv ? stil.copyWith(fontStyle: FontStyle.italic, color: Farben.anzeigeBlass) : stil),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            e.inhalt,
-                            style: stil.copyWith(color: Farben.anzeigeBlass),
-                            textAlign: TextAlign.right,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+      child: Stack(children: [
+        // alle Einträge gebaut (keine ListView), damit sich zu jedem Abschnitt scrollen lässt
+        SingleChildScrollView(
+          controller: _scroll,
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, a) in widget._abschnitte.indexed) ...[
+                if (i > 0) const SizedBox(height: 10),
+                Text(
+                  a.titel.toUpperCase(),
+                  key: a.ziel == null ? null : _marken.putIfAbsent(a.ziel!, GlobalKey.new),
+                  style: klein,
+                ),
+                const SizedBox(height: 4),
+                if (a.eintraege.isEmpty && a.leer.isNotEmpty) Text(a.leer, style: stil.copyWith(color: Farben.anzeigeBlass)),
+                for (final e in a.eintraege)
+                  GestureDetector(
+                    // Marke für das Scrollen zu den Funktionen einer weiteren Seite der Funktionstasten
+                    key: a.ziel == null ? null : _marken.putIfAbsent("${a.ziel}:${e.name}", GlobalKey.new),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => m.hilfeModus ? zeige(e.name) : m.waehleBereich(widget.bereich),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFF16231D))),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(e.anzeige, style: e.kursiv ? stil.copyWith(fontStyle: FontStyle.italic, color: Farben.anzeigeBlass) : stil),
+                          const SizedBox(width: 12),
+                          // Code bzw. Werte: so viele Zeichen, wie Platz ist, ab dem Versatz von ◄ ► (VA-15)
+                          Expanded(
+                            child: LayoutBuilder(builder: (context, platz) {
+                              final passt = (platz.maxWidth / ziffer.width).floor();
+                              final ueber = e.inhalt.length - passt;
+                              if (gewaehlt && ueber > m.listenMaxVersatz) m.listenMaxVersatz = ueber;
+                              return Text(
+                                RechnerModell.ausschnitt(e.inhalt, ueber <= 0 ? 0 : math.min(versatz, ueber), passt),
+                                style: stil.copyWith(color: Farben.anzeigeBlass),
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                              );
+                            }),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
+        // der Rahmen der Liste, mit Pfeilen, wohin ◄ ► schieben (doc/app.md 3.3)
+        if (gewaehlt) ...[
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(4, 2, 4, 2),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Farben.shift.withValues(alpha: 0.7), width: 1.5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ),
+          if (versatz > 0) Positioned(left: -3, top: 0, bottom: 0, child: IgnorePointer(child: Center(child: pfeil(Icons.arrow_left)))),
+          if (versatz < vorher)
+            Positioned(right: -3, top: 0, bottom: 0, child: IgnorePointer(child: Center(child: pfeil(Icons.arrow_right)))),
+        ],
+      ]),
     );
   }
 }

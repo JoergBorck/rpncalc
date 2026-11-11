@@ -123,7 +123,8 @@ Unterer Block:
   wirksam; verworfen werden das offene Token, ein vorgemerktes Enter und alle Tasten nach einem Fehler
   (api.md 5.4). Die Zeile kommt nicht in den Verlauf. Ist die aktuelle Zeile leer, löscht CL die Zeile darunter
   im Verlauf, die Liste rückt hoch. **AC** (Shift+CL) löscht die Eingabe (aktuelle Zeile und Verlauf) und den
-  Stack mit allen Tags (`'C`); Variablen und eigene Funktionen bleiben, sie werden über das Menü gelöscht.
+  Stack mit allen Tags (`'C`); Variablen und eigene Funktionen bleiben, sie werden über das Menü gelöscht. AC
+  wählt außerdem die Eingabe: Die Anzeige kehrt zur Seite Rechnen zurück.
 - ENTER liegt wie beim HP links neben der 7.
 - **Rechenfunktion auf `~` und `|`:** Mittig unter dem großen Zeichen steht klein, was die Taste allein tut:
   ± auf `~` (Vorzeichenwechsel), □|.□ auf `|` (Ganzzahl- und Nachkommateil, die Kästen als Platzhalter). Die
@@ -159,7 +160,14 @@ Unterer Block:
 - **Tab** wechselt den Bereich: Eingabe → Stack → Funktionen → Variablen, Shift+Tab rückwärts. Die Anzeige
   wischt zur passenden Seite.
 - **Antippen** in der Anzeige wählt den Bereich ebenso: die Eingabe- oder die Stackspalte, die Seite Variablen
-  oder Funktionen. Die Funktionstasten wählen keinen Bereich. Im Hilfe-Modus zeigt ein Tipp statt dessen die Hilfe.
+  oder Funktionen. Im Hilfe-Modus zeigt ein Tipp statt dessen die Hilfe.
+- **Liste und Tastenblock (VA-15):** Auf den Seiten Funktionen und Variablen gibt es zwei Bereiche, die Liste in
+  der Anzeige und den Block der Funktionstasten; den orangen Rahmen hat immer nur einer. TAB und ein Tipp in die
+  Liste wählen die Liste; der Block ist dann leicht orange hinterlegt, sofern er etwas aus ihr zeigen kann:
+  Funktionen mit Taste (interne allein zählen nicht) bzw. Variablen und Tags. Ein Tipp in den hinterlegten Block
+  gibt ihm den Rahmen, auch auf eine Taste: Sie gibt dabei nichts ein, weil die Eingabe auf diesen Seiten nicht zu
+  sehen ist. Ist der Block nicht hinterlegt, ist er kein eigener Bereich, und seine Tasten geben ein wie in Eingabe
+  und Stack; dort wählen die Funktionstasten nie einen Bereich.
 - **Eingabe:** ▲ und ▼ blättern im Verlauf. ◄ und ► schieben lange Zeilen seitlich, jede für sich um ein
   Zeichen bis zu ihrem Anfang bzw. Ende (einen Cursor in der Zeile gibt es erst mit dem Undo, Kapitel 4).
   Die aktuelle Zeile zeigt zuerst ihr Ende.
@@ -175,9 +183,14 @@ Unterer Block:
   Doppeltipp bleiben.
 - Der gewählte Bereich hat einen orangen Rahmen; kleine orange Pfeile links bzw. rechts am Rahmen zeigen, dass
   sich mit ◄ bzw. ► etwas schieben lässt. Jede Eingabe stellt Blättern und Schieben zurück.
-- **Funktionen:** ▲ und ▼ blättern zwischen den Seiten der Funktionstasten wie das Mausrad (▼ nächste Seite, an
-  der ersten bzw. letzten hält es an, die Tasten schieben sich senkrecht); ◄ und ► ebenso, im Kreis und waagrecht
-  wie das Wischen. Die Reihenfolge: zuerst die Grundfunktionen (sie
+- **Liste der Funktionen bzw. Variablen** (hat den Rahmen): ▲ und ▼ scrollen sie zeilenweise. ◄ und ► schieben
+  den Code bzw. die Werte aller Zeilen um ein Zeichen, bis die längste Zeile ganz zu sehen ist; die Namen bleiben
+  stehen, abgeschnittene Enden zeigen „…“. Kleine orange Pfeile links bzw. rechts am Rahmen zeigen, dass sich mit
+  ◄ bzw. ► etwas schieben lässt.
+- **Funktionen** (der Tastenblock hat den Rahmen): ▲ und ▼ blättern zwischen den Seiten der Funktionstasten wie
+  das Mausrad (▼ nächste Seite, an der ersten bzw. letzten hält es an, die Tasten schieben sich senkrecht); ◄ und
+  ► ebenso, im Kreis und waagrecht wie das Wischen. Die Liste springt dabei zum Abschnitt der gezeigten
+  Bibliothek. Die Reihenfolge: zuerst die Grundfunktionen (sie
   sind immer dabei), dann die gewählte Domäne, zuletzt die eigenen Funktionen. Reichen 10 Tasten nicht, gibt es
   weitere Seiten. Wählt man im Menü eine Domäne, zeigen die Tasten ihre erste Seite. Ohne eigene Funktionen gibt
   es keine (leere) Seite „Eigene“. Unten am orangen Rahmen steht der Name der Seite (z.B. Grundfunktionen, schwingungen 2/3,
@@ -199,7 +212,8 @@ Unterer Block:
 - **Maus über den Funktionstasten:** Am PC wird der Hintergrund des Blocks ganz leicht orange, solange die Maus
   darüber steht und das Mausrad dort blättern würde, auch ohne gewählten Bereich. Die Tasten selbst behalten
   ihre Farbe. Am Handy gibt es das nicht, dort zeigt der kurze Rahmen beim Wischen, dass geblättert wird.
-- **Variablen:** Die Funktionstasten zeigen die Variablen und Tags.
+- **Variablen:** Die Funktionstasten zeigen die Variablen und Tags, sofern es welche gibt; sonst bleiben die
+  Funktionen stehen. Hat der Tastenblock den Rahmen, tun die Pfeile noch nichts (Blättern mit FA-26).
 
 - **Beschriftung:** Jede Taste zeigt, was ein Druck bewirkt, nicht den aktuellen Zustand. TAB zeigt mit Shift
   „⇤ TAB“, die Maximieren-Taste □ bzw. ◫ (3.5).

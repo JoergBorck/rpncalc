@@ -99,8 +99,17 @@ mixin _Ausschnitt on ModellKern {
   /// Im Bedienmodus Rechnen blättern ▲ ▼ und schieben ◄ ► im gewählten Bereich.
   void _pfeilRechnen(AxisDirection richtung) {
     final seitlich = switch (richtung) { AxisDirection.left => -1, AxisDirection.right => 1, _ => 0 };
+    // die Liste der Seite Funktionen bzw. Variablen hat den Rahmen: ▲ ▼ scrollen sie, ◄ ► schieben den Code (VA-15)
+    if (listeGewaehlt) {
+      if (seitlich != 0) {
+        listenVersatz = (listenVersatz + seitlich).clamp(0, listenMaxVersatz);
+      } else {
+        listenZeilen += richtung == AxisDirection.down ? 1 : -1;
+      }
+      return notifyListeners();
+    }
     switch (bereich) {
-      case Bereich.variablen:
+      case Bereich.variablen: // Tastenblock: das Blättern der Variablen kommt mit FA-26
         break;
       case Bereich.eingabe: // ▲ zeigt ältere Zeilen; kein Cursor in der Zeile, solange es kein Undo gibt
         final sichtbar = (platzEingabe.length - 1).clamp(1, 99);
@@ -117,7 +126,7 @@ mixin _Ausschnitt on ModellKern {
         if (seitlich == 0) _stackGeschoben.clear(); // nach dem Blättern stehen andere Werte in den Zeilen
         if (seitlich != 0) _schieben(seitlich);
       case Bereich.funktionen:
-        // ◄ ► im Kreis und waagrecht wie das Wischen, ▲ ▼ begrenzt und senkrecht wie das Mausrad (VA-14)
+        // Tastenblock: ◄ ► im Kreis und waagrecht wie das Wischen, ▲ ▼ begrenzt und senkrecht wie das Mausrad (VA-14)
         funktionenSenkrecht = seitlich == 0;
         _blaettere(seitlich != 0 ? seitlich : (richtung == AxisDirection.down ? 1 : -1), begrenzt: seitlich == 0);
     }

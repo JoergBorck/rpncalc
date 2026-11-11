@@ -68,12 +68,24 @@ class RechnerModell extends ModellKern with _Eingabe, _Belegung, _HilfeModus, _A
     return s.join();
   }
 
-  /// Ein Tipp in die Anzeige wählt den Bereich (doc/app.md 3.3); die Funktionstasten wählen keinen.
+  /// Ein Tipp in die Anzeige wählt den Bereich (doc/app.md 3.3); auf den Seiten Funktionen und Variablen gibt er
+  /// der Liste den Rahmen zurück (VA-15).
   void waehleBereich(Bereich b) {
-    if (bereich == b) return;
+    if (bereich == b && !tastenblockGewaehlt) return;
     bereich = b;
     notifyListeners();
   }
+
+  /// Ein Tipp in den Block der Funktionstasten, solange die Liste den Rahmen hat: gibt ihn dem Block (VA-15).
+  void waehleTastenblock() {
+    if (!listeGewaehlt || !tastenblockVerbunden) return;
+    tastenblockGewaehlt = true;
+    notifyListeners();
+  }
+
+  /// Der Block der Funktionstasten ist leicht orange hinterlegt, weil er zur Liste mit dem Rahmen gehört; nur, wenn
+  /// er etwas aus ihr zeigen kann (tastenblockVerbunden).
+  bool get tastenblockHinterlegt => listeGewaehlt && !hilfeModus && tastenblockVerbunden;
 
   /// Tipp in Eingabe oder Stack: wählt den Bereich sofort; ein zweiter Tipp kurz danach (Doppelklick) wirkt wie
   /// die Taste □ / ◫ (doc/app.md 3.5). Selbst erkannt, damit der erste Tipp nicht auf den zweiten wartet.
@@ -115,7 +127,31 @@ abstract class ModellKern extends ChangeNotifier {
   /// Shift für alles außer Buchstaben: im Alpha-Modus wirkt Shift nur auf Buchstaben, alle anderen Tasten
   /// behalten ihre normale Belegung (sonst würde ⌫ zu C, MENÜ zu HILFE, TAB rückwärts).
   bool get shiftWirkt => shift && !alpha;
-  Bereich bereich = Bereich.eingabe;
+  /// Der gewählte Bereich; jeder Wechsel gibt auf den Seiten Funktionen und Variablen zuerst der Liste den
+  /// Rahmen und stellt ihr seitliches Schieben zurück (VA-15).
+  Bereich get bereich => _bereich;
+  set bereich(Bereich b) {
+    if (b != _bereich) listenVersatz = 0;
+    _bereich = b;
+    tastenblockGewaehlt = false;
+  }
+
+  Bereich _bereich = Bereich.eingabe;
+
+  /// Auf den Seiten Funktionen und Variablen: der Tastenblock hat den Rahmen statt der Liste (doc/app.md 3.3).
+  bool tastenblockGewaehlt = false;
+
+  /// Die Liste der Seite Funktionen bzw. Variablen hat den Rahmen; die Pfeile bewegen sie.
+  bool get listeGewaehlt => (bereich == Bereich.funktionen || bereich == Bereich.variablen) && !tastenblockGewaehlt;
+
+  /// So viele Zeilen haben ▲ ▼ die Liste insgesamt gescrollt (▼ positiv); die Liste scrollt um die Änderung.
+  int listenZeilen = 0;
+
+  /// So viele Zeichen ist der Code bzw. sind die Werte der Liste nach links geschoben (◄ ►).
+  int listenVersatz = 0;
+
+  /// So weit lässt sich die Liste schieben, bis ihre längste Zeile ganz zu sehen ist; setzt die Liste.
+  int listenMaxVersatz = 0;
   bool maximiert = false;   // Eingabe bzw. Stack haben die ganze Breite (doc/app.md 3.5)
   int stackVersatz = 0;     // erste angezeigte Stack-Position
   int verlaufVersatz = 0;   // so viele Zeilen ist der Verlauf zurückgeblättert

@@ -196,6 +196,11 @@ Doku · Gesamt · groß · von Jörg · angelegt 2026-11-04 · abgespalten aus D
 Die Tooltips sind schon fast ein Tutorial; die Hilfeseiten sollen eher anleiten, wie man mit dem Rechner
 arbeitet. Die kurzen Übersichten sind noch zu knapp und wenig beschreibend. Offen: Konzept und Aufbau.
 
+### RA-1 Welche Tasten wirken auf welcher Seite der Anzeige?
+Recherche · App · mittel · von Jörg · angelegt 2026-11-11 · aus VA-15 · Reife 1
+Auf den Seiten Funktionen und Variablen ist die Eingabe nicht zu sehen. Für jede Seite klären, was Ziffern,
+Operatoren, Funktionstasten, ENTER, ⌫, CL und die Präfixe dort tun (eingeben, umschalten zur Seite Rechnen, nichts).
+
 ### FS-1 Einheiten in [ ]
 Feature · Sprache · groß · von Jörg · angelegt 2026-11-03 · die Taste [ ] ist dafür reserviert · Reife 0
 
@@ -252,6 +257,26 @@ LuaJIT voraus.
 ## Erledigt
 
 ### Nächste Version
+
+### VA-15 Funktionen und Variablen: Liste der Anzeige und Tastenblock als zwei Bereiche, Klick wechselt
+Verbesserung · App · mittel · von Jörg · angelegt 2026-11-11 · ergänzt VA-14 · Details: requirements/VA-15.md · Reife 5
+Den Rahmen hat entweder die Liste (Pfeile scrollen und schieben den Code) oder der Tastenblock (Pfeile blättern
+die Seiten); ein Klick wechselt, TAB landet auf der Liste und hinterlegt den Block leicht orange.
+EN: Functions and variables pages: the list and the function keys are separate areas; arrows scroll the list and shift long code
+Erledigt 2026-11-11, bdafc29
+
+### VA-16 AC kehrt zur Seite Rechnen zurück und wählt die Eingabe
+Verbesserung · App · klein · von Jörg · angelegt 2026-11-11 · zu FA-25 · Reife 5
+Nach AC zeigte die Anzeige weiter die Seite, auf der man war (z.B. Funktionen).
+EN: AC also returns the display to the calculator page with input and stack
+Erledigt 2026-11-11, 168289c
+
+### BA-14 Die Pfeile auf dem Cursorkreuz stehen schräg wie kursiv
+Bug · App · klein · von Jörg · angelegt 2026-11-11 · Reife 5
+Die Icons heben Drehung und Stauchung des Kreuzes in der falschen Reihenfolge auf; es bleibt eine Scherung.
+Behoben in keypad/cursor_cross.dart: erst zurückdrehen, dann strecken.
+EN: The arrows on the cursor cross no longer look slanted
+Erledigt 2026-11-11, 53330b5
 
 ### PG-4 Anforderungen in process/requirements/: eine Datei je Eintrag, Inhaltsverzeichnis nach Fähigkeiten
 Prozess · Gesamt · klein · von Jörg · angelegt 2026-11-08 · Reife 5

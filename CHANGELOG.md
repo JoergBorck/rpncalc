@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Functions and variables pages: the list and the function keys are separate areas; arrows scroll the list and shift long code
+- AC also returns the display to the calculator page with input and stack
+- The arrows on the cursor cross no longer look slanted
+
 ## 0.3.0
 
 - In the functions area, the up and down arrow keys page the function keys like the mouse wheel

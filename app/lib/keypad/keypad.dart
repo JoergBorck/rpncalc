@@ -62,13 +62,18 @@ class Tastenfeld extends StatelessWidget {
     // die Plätze der zehn Funktionstasten mit ihren Buchstaben für Alpha, nach Platz 0–9
     final plaetze = [for (final r in obereTasten) ...r.where((t) => t.funktion != null)]
       ..sort((a, b) => a.funktion!.compareTo(b.funktion!));
+    // hat die Liste der Seite Funktionen bzw. Variablen den Rahmen, gibt ein Tipp auf eine Taste ihn dem Block und
+    // gibt nichts ein (VA-15); beim Schreiben von Buchstaben und Namen (Alpha, ') bleiben es Tasten
+    final wechselt = m.tastenblockHinterlegt && !m.alpha && !m.apostroph;
+    final beiDruck = wechselt ? m.waehleTastenblock : null;
     Widget funktionsTaste(int platz, Taste? belegt) {
       final t = plaetze[platz];
       if (belegt == null) {
-        return TasteWidget(Taste("", reserviert: true, buchstabe: t.buchstabe), m, hoehe: obenHoehe, funktion: true);
+        return TasteWidget(Taste("", reserviert: true, buchstabe: t.buchstabe), m,
+            hoehe: obenHoehe, funktion: true, beiDruck: beiDruck);
       }
       // die Belegung kommt aus der Domäne, der Buchstabe bleibt der des Platzes
-      return TasteWidget(belegt, m, hoehe: obenHoehe, funktion: true, buchstabe: t.buchstabe);
+      return TasteWidget(belegt, m, hoehe: obenHoehe, funktion: true, buchstabe: t.buchstabe, beiDruck: beiDruck);
     }
 
     Widget oben(Taste t) {
@@ -80,16 +85,15 @@ class Tastenfeld extends StatelessWidget {
       return const SizedBox(height: obenHoehe); // die Funktionstasten zeichnet der FunktionsBlock darüber (VA-10)
     }
 
-    // Rahmen um die zehn Funktionstasten (R3 und R4, Spalten 2 bis 6), wenn sie der gewählte Bereich sind
+    // Rahmen um die zehn Funktionstasten (R3 und R4, Spalten 2 bis 6), wenn der Tastenblock den Rahmen hat (VA-15)
     // nach Wischen oder Mausrad auch kurz ohne gewählten Bereich (doc/app.md 3.3)
     // im Hilfe-Modus immer: ein Klick in den Rahmen zeigt die Hilfe zur Seite (doc/app.md 5.2)
-    final funktionenGewaehlt =
-        m.bereich == Bereich.funktionen || m.bereich == Bereich.variablen || m.funktionenHinweis || m.hilfeModus;
+    final funktionenGewaehlt = m.tastenblockGewaehlt || m.funktionenHinweis || m.hilfeModus;
     List<Widget> rahmen(double breite) {
       final taste = (breite - 5 * (obenAbstand - 1)) / 6;
       final links = taste + obenAbstand - 1 - 4, oben = randOben + 2 * (obenHoehe + obenAbstand) - 4;
       final hoch = 2 * obenHoehe + obenAbstand + 8, weit = 5 * taste + 4 * (obenAbstand - 1) + 8;
-      final variablen = m.bereich == Bereich.variablen;
+      final variablen = m.variablenAufTasten;
       Widget pfeil(IconData icon) => Container(color: Farben.gehaeuse, child: Icon(icon, size: 18, color: Farben.shift));
       return [
         if (funktionenGewaehlt) ...[
@@ -139,9 +143,12 @@ class Tastenfeld extends StatelessWidget {
         builder: (context, platz) => Stack(
           clipBehavior: Clip.none,
           children: [
-            if (m.mausUeberFunktionen && m.funktionenBlaetterbar) _mausHintergrund(platz.maxWidth),
+            // leicht orange: die Maus steht darüber (VA-4), oder der Block gehört zur Liste mit dem Rahmen (VA-15)
+            if ((m.mausUeberFunktionen && m.funktionenBlaetterbar) || m.tastenblockHinterlegt) _mausHintergrund(platz.maxWidth),
             // unter den Tasten: ein Klick in die Lücken und auf den Rahmen zeigt im Hilfe-Modus die Hilfe zur Seite
             if (m.hilfeModus) _rahmenFlaeche(platz.maxWidth, m.hilfeZurSeite),
+            // hat die Liste den Rahmen, gibt ein Klick in die Lücken ihn dem Tastenblock (VA-15)
+            if (wechselt) _rahmenFlaeche(platz.maxWidth, m.waehleTastenblock),
             _bloecke(m, reihe, oben),
             _funktionsBlock(m, platz.maxWidth, funktionsTaste),
             ...rahmen(platz.maxWidth),
@@ -185,7 +192,8 @@ class Tastenfeld extends StatelessWidget {
     );
   }
 
-  /// Leicht oranger Hintergrund hinter den zehn Funktionstasten, solange die Maus darüber steht (doc/app.md 3.3).
+  /// Leicht oranger Hintergrund hinter den zehn Funktionstasten, solange die Maus darüber steht oder der Block zur
+  /// Liste mit dem Rahmen gehört (doc/app.md 3.3).
   Widget _mausHintergrund(double breite) {
     final taste = (breite - 5 * (obenAbstand - 1)) / 6;
     return Positioned(

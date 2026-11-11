@@ -655,10 +655,12 @@ void main() {
     m.druecke(cl);
     expect([for (final v in m.verlauf) v.text], ["b"], reason: "leere Zeile: die darunter wird gelöscht");
     m.zustand = m.api.eingabe("1 2 3 2:'|t");
+    m.waehleBereich(Bereich.funktionen);
     m.druecke(const Taste("SHIFT", aktion: Aktion.shift));
     m.druecke(cl);
     expect([m.verlauf, m.zustand.tiefe, m.zustand.speicher.map((s) => s.name)], [isEmpty, 0, ["v"]],
         reason: "AC: Verlauf, Stack und Tags weg, die Variable bleibt");
+    expect(m.bereich, Bereich.eingabe, reason: "AC kehrt zur Seite Rechnen zurück (VA-16)");
     tippe(["7", "8"]);
     m.tastaturEsc();
     expect([m.zeile, m.zustand.tiefe], ["", 0], reason: "Esc wie CL");
@@ -714,6 +716,8 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     await tester.tap(find.text("TAB"));
     await tester.tap(find.text("TAB"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey("funktionsblock"))); // gibt dem Tastenblock den Rahmen (VA-15)
     await tester.pumpAndSettle();
     int imTastenfeld(IconData i) => find.descendant(of: find.byType(Tastenfeld), matching: find.byIcon(i)).evaluate().length;
     expect([for (final i in [Icons.arrow_drop_up, Icons.arrow_drop_down, Icons.arrow_left, Icons.arrow_right]) imTastenfeld(i)],

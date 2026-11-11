@@ -45,11 +45,13 @@ class Cursorkreuz extends StatelessWidget {
         customBorder: RoundedRectangleBorder(borderRadius: rund),
         onTap: () => modell.pfeil(r),
         child: Center(
+          // hebt die Drehung und Stauchung des Kreuzes genau auf: in umgekehrter Reihenfolge, sonst bleibt eine
+          // Scherung und die Pfeile stehen schräg wie kursiv (BA-14)
           child: Transform(
             alignment: Alignment.center,
             transform: Matrix4.identity()
-              ..scaleByDouble(1, 1 / 0.78, 1, 1)
-              ..rotateZ(-math.pi / 4),
+              ..rotateZ(-math.pi / 4)
+              ..scaleByDouble(1, 1 / 0.78, 1, 1),
             child: Icon(zeichen, color: Farben.tasteText, size: 26),
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rpncalc/rpnapi.dart';
 import 'package:rpncalc_app/colors.dart';
 import 'package:rpncalc_app/main.dart';
+import 'package:rpncalc_app/display/display.dart';
 import 'package:rpncalc_app/model/model.dart';
 import 'package:rpncalc_app/keys.dart';
 
@@ -35,6 +36,7 @@ void main() {
     m.waehleDomaene("schwingungen");
     expect(m.seitenName, "schwingungen 1/3");
     m.bereich = Bereich.funktionen;
+    m.waehleTastenblock();
     m.pfeil(AxisDirection.right);
     expect(m.seitenName, "schwingungen 2/3");
     m.pfeil(AxisDirection.right);
@@ -62,6 +64,7 @@ void main() {
     m.waehleDomaene("schwingungen");
     expect(m.seitenBibliothek, "schwingungen");
     m.bereich = Bereich.funktionen;
+    m.waehleTastenblock();
     m.pfeil(AxisDirection.left);
     expect([m.seitenName, m.seitenBibliothek], ["Grundfunktionen", null]);
     m.waehleDomaene("Programm");
@@ -88,6 +91,8 @@ void main() {
         reason: "omega und Co. stehen nicht mehr unter Eigene");
     expect(tester.getTopLeft(find.text("BIBLIOTHEK SCHWINGUNGEN")).dy, closeTo(oben, 5),
         reason: "die Tasten zeigen schwingungen 1/3: die Liste scrollt zu ihrem Abschnitt");
+    await tester.tap(find.byKey(const ValueKey("funktionsblock"))); // gibt dem Tastenblock den Rahmen (VA-15)
+    await tester.pumpAndSettle();
     // Seite 2/3: ihre erste Funktion steht oben, damit die Funktionen der Tasten zu sehen sind
     final zweite = RpnApi().bibliotheksFunktionen("schwingungen", ohneIntern: true)[10]; // wie auf den Tasten
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
@@ -134,6 +139,7 @@ void main() {
   test('Bereich Funktionen: ▲ ▼ blättern begrenzt und senkrecht wie das Mausrad, ◄ ► im Kreis (VA-14)', () {
     m.waehleDomaene("schwingungen");
     m.waehleBereich(Bereich.funktionen);
+    m.waehleTastenblock();
     m.funktionsSeite = 0;
     m.pfeil(AxisDirection.up);
     expect([m.seitenName, m.funktionenSenkrecht], ["Grundfunktionen", true], reason: "▲ hält an der ersten Seite");
@@ -159,12 +165,98 @@ void main() {
     await tester.tap(find.text("TAB"));
     await tester.tap(find.text("TAB"));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey("funktionsblock"))); // gibt dem Tastenblock den Rahmen (VA-15)
+    await tester.pumpAndSettle();
     expect(find.text("schwingungen 1/3"), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump(const Duration(milliseconds: 30));
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
     expect(find.text("schwingungen 3/3"), findsOneWidget, reason: "zwei Drücke, zwei Seiten");
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  test('Liste und Tastenblock: TAB und Tipp in die Liste wählen die Liste, die Pfeile bewegen sie (VA-15)', () {
+    m.waehleDomaene("schwingungen");
+    m.waehleBereich(Bereich.funktionen);
+    expect([m.listeGewaehlt, m.tastenblockGewaehlt], [true, false], reason: "zuerst hat die Liste den Rahmen");
+    m.pfeil(AxisDirection.down);
+    m.pfeil(AxisDirection.down);
+    expect([m.listenZeilen, m.seitenName], [2, "schwingungen 1/3"], reason: "▼ scrollt die Liste, die Tasten bleiben");
+    m.pfeil(AxisDirection.right);
+    expect(m.listenVersatz, 0, reason: "nichts zu schieben, solange alles passt");
+    m.listenMaxVersatz = 3; // setzt sonst die Liste nach ihrer Breite
+    for (var i = 0; i < 5; i++) {
+      m.pfeil(AxisDirection.right);
+    }
+    m.pfeil(AxisDirection.left);
+    expect(m.listenVersatz, 2, reason: "► bis die längste Zeile ganz zu sehen ist, ◄ zurück");
+    m.waehleTastenblock();
+    expect([m.listeGewaehlt, m.tastenblockGewaehlt, m.listenVersatz], [false, true, 2]);
+    m.pfeil(AxisDirection.right);
+    expect([m.seitenName, m.listenVersatz], ["schwingungen 2/3", 2], reason: "der Block blättert wie bisher (VA-14)");
+    m.waehleBereich(Bereich.funktionen);
+    expect(m.listeGewaehlt, isTrue, reason: "ein Tipp in die Liste gibt ihr den Rahmen zurück");
+    m.waehleTastenblock();
+    m.tastaturTab();
+    expect([m.bereich, m.listeGewaehlt, m.listenVersatz], [Bereich.variablen, true, 0],
+        reason: "TAB landet auf der Liste der nächsten Seite, das Schieben beginnt von vorn");
+    m.waehleBereich(Bereich.eingabe);
+    m.waehleTastenblock();
+    expect(m.tastenblockGewaehlt, isFalse, reason: "in Eingabe und Stack gibt es keinen Tastenblock als Bereich");
+  });
+
+  test('der Tastenblock ist leicht orange hinterlegt, wenn die Liste mit dem Rahmen etwas enthält (VA-15)', () {
+    m.waehleBereich(Bereich.funktionen);
+    expect(m.tastenblockHinterlegt, isFalse, reason: "keine eigenen Funktionen, keine Bibliothek");
+    m.zustand = m.api.eingabe("{1+}':hilf rpnintern");
+    m.waehleTastenblock();
+    expect([m.tastenblockHinterlegt, m.tastenblockGewaehlt], [false, false],
+        reason: "nur eine interne Funktion: sie hat keine Taste, der Block lässt sich nicht wählen");
+    m.waehleDomaene("schwingungen");
+    expect(m.tastenblockHinterlegt, isTrue);
+    m.waehleTastenblock();
+    expect(m.tastenblockHinterlegt, isFalse, reason: "dann hat der Block den Rahmen");
+    m.waehleBereich(Bereich.variablen);
+    expect(m.tastenblockHinterlegt, isFalse, reason: "noch keine Variablen");
+    expect(m.seitenName, isNot("Variablen"), reason: "ohne Variablen bleiben die Funktionen auf den Tasten");
+    m.zustand = m.api.eingabe("5'!a");
+    expect([m.tastenblockHinterlegt, m.seitenName], [true, "Variablen"]);
+  });
+
+  testWidgets('Tipp auf eine Funktionstaste wählt den Block und gibt nichts ein; ► schiebt den Code (VA-15)',
+      (tester) async {
+    tester.view.physicalSize = const Size(400 * 3, 860 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    await tester.tap(find.text("MENÜ"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("schwingungen"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("TAB"));
+    await tester.tap(find.text("TAB"));
+    await tester.pumpAndSettle();
+    final modell = tester.widget<Anzeige>(find.byType(Anzeige)).modell;
+    expect(modell.listeGewaehlt, isTrue);
+    expect(find.text("schwingungen 1/3"), findsNothing, reason: "der Block hat keinen Rahmen, also keinen Namen");
+    // osz hat den längsten Code: ► schiebt ihn, links steht dann „…“
+    String osz() => tester.widget<Text>(find.descendant(of: find.ancestor(of: find.text("osz"), matching: find.byType(Row)),
+        matching: find.byType(Text)).last).data!;
+    expect(osz().startsWith("{"), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect([osz().startsWith("…"), modell.listenVersatz], [true, 1]);
+    expect(find.text("osz"), findsOneWidget, reason: "der Name bleibt stehen");
+    final omega = find.descendant(of: find.byKey(const ValueKey("funktionsblock")), matching: find.text("omega"));
+    await tester.tap(omega);
+    await tester.pumpAndSettle();
+    expect([modell.tastenblockGewaehlt, modell.zustand.offen, modell.zeile], [true, "", ""],
+        reason: "der Tipp wählt nur den Block");
+    expect(find.text("schwingungen 1/3"), findsOneWidget, reason: "jetzt mit Rahmen und Namen");
+    await tester.tap(omega);
+    await tester.pumpAndSettle();
+    expect(modell.zeile, startsWith("omega"), reason: "hat der Block den Rahmen, gibt die Taste ein");
     await tester.pump(const Duration(seconds: 2));
   });
 }

@@ -110,16 +110,23 @@ const Map<String, Hilfe> eintraege = {
   ], "Die Werte; x ist hinterlegt, darunter y, z, t, ≡₄ … Ein offenes Token steht grau mit >: darüber. "
       "Siehe [[#stack]]. Weiter: [[app:funktionen]]."),
   "app:funktionen": Hilfe("app:funktionen", "Anzeige: Funktionen", [
-    Verwendung("▲ ▼", "wechseln die Seite der Funktionstasten: Domäne, eigene Funktionen; wie das Mausrad"),
-    Verwendung("◄ ►", "ebenso, im Kreis"),
-    Verwendung("Wischen", "über die Funktionstasten blättert ebenso, am PC auch das Mausrad"),
+    Verwendung("▲ ▼", "Liste: scrollen"),
+    Verwendung("▲ ▼", "Tastenblock: wechseln die Seite der Funktionstasten, wie das Mausrad"),
+    Verwendung("◄ ►", "Liste: verschieben den Code, die Namen bleiben stehen"),
+    Verwendung("◄ ►", "Tastenblock: wechseln die Seite der Funktionstasten, im Kreis"),
+    Verwendung("Tipp", "in die Liste bzw. in den Tastenblock gibt ihm den Rahmen; eine Taste gibt dabei nichts ein"),
+    Verwendung("Wischen", "über die Funktionstasten blättert ihre Seiten, am PC auch das Mausrad"),
   ], "Die Seite listet die eigenen Funktionen und je geladener Bibliothek deren Funktionen, jeweils mit ihrem Code; "
-      "blättern die Tasten auf eine Bibliothek, springt sie zu deren Abschnitt. Die Domäne wählt MENÜ. "
+      "blättern die Tasten auf eine Bibliothek, springt sie zu deren Abschnitt. Den orangen Rahmen hat entweder "
+      "die Liste oder der Tastenblock; TAB wählt die Liste. Die Domäne wählt MENÜ. "
       "Siehe [[#funktionen]]. "
       "Weiter: [[app:variablen]]."),
   "app:variablen": Hilfe("app:variablen", "Anzeige: Variablen", [
-    Verwendung("Funktionstasten", "zeigen die Variablen und Tags, ein Tipp liest sie"),
-  ], "Die Seite listet Variablen, Konstanten und Tags mit ihrem Inhalt. Siehe [[#variablen]], [[#tags]]. "
+    Verwendung("Funktionstasten", "zeigen die Variablen und Tags; hat der Tastenblock den Rahmen, liest ein Tipp sie"),
+    Verwendung("▲ ▼", "Liste: scrollen"),
+    Verwendung("◄ ►", "Liste: verschieben die Werte, die Namen bleiben stehen"),
+  ], "Die Seite listet Variablen, Konstanten und Tags mit ihrem Inhalt. Den orangen Rahmen hat entweder die Liste "
+      "oder der Tastenblock, ein Tipp wechselt. Siehe [[#variablen]], [[#tags]]. "
       "Weiter: [[app:eingabe]]."),
 };
 
