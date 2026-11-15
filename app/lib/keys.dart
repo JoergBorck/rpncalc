@@ -2,7 +2,8 @@
 library;
 
 /// Was eine Taste tut, außer Text zu schreiben.
-enum Aktion { schreiben, shift, alpha, tab, menue, loeschen, zeileLoeschen, apostroph, tilde, strich, enter, funktion, maximieren }
+enum Aktion { schreiben, shift, alpha, tab, menue, loeschen, zeileLoeschen, apostroph, tilde, strich, enter, funktion, maximieren,
+  menueEintrag } // menueEintrag: ein Schalter im Bereich Bibliotheken des Menüs (doc/app.md 3.6)
 
 /// Eine Taste mit ihren Beschriftungen. Ohne eigene Eingabe schreibt sie ihre Beschriftung.
 /// [tilde], [strich] und [beide] sind die Beschriftungen nach den Präfixen `~`, `|` und `~|`;
@@ -95,7 +96,8 @@ const List<List<Taste>> untereTasten = [
   ],
 ];
 
-/// Domänen für die Funktionstasten F1–F10; null ist eine freie Taste.
+/// Eingebaute Seiten der Funktionstasten F1–F10: Grundfunktionen (immer) und Programm (im Menü einschaltbar,
+/// doc/app.md 3.4); null ist eine freie Taste.
 const Map<String, List<Taste?>> domaenen = {
   "Grundfunktionen": [
     Taste.fn("π", eingabe: "pi", shift: "e"),

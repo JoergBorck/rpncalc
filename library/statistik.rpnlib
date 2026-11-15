@@ -1,5 +1,5 @@
 {
-{{"version":{"name":"statistik","bibliothek":"1.1.0","rechner":"0.1.0","beschreibung":"Statistik für Wertepaare (x, y): Mittelwerte, Standardabweichungen, Korrelation und Ausgleichsgerade."}}}rpnjson
+{{"version":{"name":"statistik","bibliothek":"1.1.0","rechner":"0.1.0","beschreibung":"Statistik für Wertepaare (x, y): Mittelwerte, Standardabweichungen, Korrelation und Ausgleichsgerade.","taste":"Statistik","symbol":[{"d":"M8.5 2.5 H2.5 L5.6 6.5 L2.5 10.5 H8.5 M4 20 C8.6 20 10.4 6 14.2 6 C18 6 19.6 20 23 20"},{"d":"M1.5 21.3 H23","breite":1}]}}}rpnjson
 {0 0 0 0 0 0 6:'!ss}':sclr
 {'!tx'!ty'tx'ty*_'ty²_'ty_'tx²_'tx_1_0:6:'+ss_6:D'~tx'~ty_0:'ss}':sadd
 {~::{sadd_D}times_0:'ss}':sall

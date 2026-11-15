@@ -42,7 +42,7 @@ abstract final class AppHilfe {
   static List<Hilfe> nachschlagen(RpnApi api, String kennung) {
     if (kennung == "app:bibliotheken") return [bibliothekenSeite(api)];
     final eigene = eintraege[kennung];
-    final vomRechner = kennung.startsWith("app:") ? null : api.hilfe(kennung);
+    final vomRechner = kennung.startsWith("app:") || kennung.startsWith("menue:") ? null : api.hilfe(kennung);
     return [?eigene, if (kennung == "#") eintraege["app:start"]!, ?vomRechner];
   }
 

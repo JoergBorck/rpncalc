@@ -7,6 +7,11 @@ Oben das Konkrete, in der Mitte das Diffuse, am Ende das Log. Regeln am Ende der
 
 ## Bereit
 
+### DG-7 Tastentabelle: jede Taste mit Funktion und Beschriftung je Präfix und Modus
+Doku · Gesamt · mittel · von Jörg · angelegt 2026-11-13 · Details: requirements/DG-7.md · Reife 5
+Aus keys.dart erzeugt nach doc/keys.md und als Hilfeseite, breit mit seitlichem Scrollen; Geplantes aus
+doc/keys_planned.txt (`Taste.Variante.Spalte = Text`), mit Prüfung auf Kollisionen. Ohne Menü.
+
 ## Erforderlich
 
 ## Geplant
@@ -69,6 +74,11 @@ Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.m
 ### RR-2 Verwerfen nach einem Fehler: braucht es neben Return eine eigene Taste?
 Recherche · Rechner · klein · von Claude · angelegt 2026-11-03 · alt: api.md 8 · Reife 4
 
+### RG-5 Menü-Modell im Kern: Beschreibung der Einträge für App und Konsole, mehrere Rechner nebeneinander
+Recherche · Gesamt · mittel · von Claude · angelegt 2026-11-15 · Details: requirements/research/RG-5.md · Reife 4
+Entwurf der Datenstruktur für Menüeinträge im Kern, geprüft an Modi, Bibliotheken und Code; dazu, ob zwei RpnApi
+unabhängig sind (Scratchpad). Vor FA-6 und FK-2, wie RG-1; für FA-30 vorgezogen, zunächst nur Bibliotheken.
+
 ### FA-26 Variablen auf den Funktionstasten blättern: mehr als zehn, mit Mausrad, Wischen und Pfeilen
 Feature · App · klein · von Jörg · angelegt 2026-11-08 · aus FA-20 · Details: requirements/FA-26.md · Reife 3
 Heute zeigen die Funktionstasten nur die ersten zehn Variablen, und nichts blättert dort.
@@ -78,9 +88,12 @@ Feature · App · groß · von Jörg · angelegt 2026-11-03 · alt: app.md 4 · 
 Links R2–R5, Mitte Cursorkreuz und R1 als 2×3, rechts R6–R9. Zoom nach der Höhe, Tasten werden breiter.
 Umschalten mit der freien Taste unter dem Kreuz; im Fenster nur das Layout, am Handy die Lage festlegen.
 
-### FA-6 Menü auf dem Tastenfeld nach scratchpad/Menue.md
-Feature · App · groß · von Jörg · angelegt 2026-11-03 · Details: scratchpad/Menue.md · Reife 3
-Offen: Frage A (`~` als Präfix oder als Taste für die Ansicht).
+### FA-6 Menü auf dem Tastenfeld: Hauptmenü auf 1–9, Einträge auf den Funktionstasten, Aktionen auf den Rechentasten
+Feature · App · groß · von Jörg · angelegt 2026-11-03 · Details: requirements/FA-6.md · Reife 3
+Ersetzt das Menü der Domänen; die Auswahl allein ändert nichts, erst ÷ × − + ENTER. Menübäume als Daten, damit
+später das Dokumenten-System (eigener Einstieg in R2, von oben nach unten) ohne Umbau dazukommt.
+Connect (FA-28) auf `.`. Offen u.a.: Taste für die Ansicht (TAB oder `:`), erster Umfang. Belegung als Tabelle
+nach dem Konzept von DG-7.
 
 ### FA-15 Punkte über Buchstaben im Alpha-Modus: Shift+: setzt ¨ (ä ö ü ẍ), Shift+. setzt ˙ (ẋ)
 Feature · App · mittel · von Jörg · angelegt 2026-11-03 · gehört zu FA-9, braucht FS-4 · Reife 3
@@ -110,6 +123,41 @@ Ablage: Windows mit dart:io unter %APPDATA%, Browser im localStorage, Handy im p
 path_provider. Das ist ein Plugin: beim Bauen unter Windows braucht es symbolische Links, also einmal den
 Entwicklermodus auf dem Rechner, auf dem gebaut wird (nicht bei den Nutzern). Offen: eine gemeinsame
 Speicherschicht mit den Sitzungen (FA-8), siehe RG-2.
+
+### DG-8 Funktionsübersicht: jedes Token mit Stackwirkung, Argumenten und Varianten
+Doku · Gesamt · mittel · von Jörg · angelegt 2026-11-13 · Gegenstück zu DG-7 · Details: requirements/DG-8.md · Reife 5
+Alle Tokens (Operatoren, Stackbefehle, Funktionen, Befehle), jedes genau einmal, gegliedert wie reference.md,
+erzeugt aus der Hilfe nach doc/functions.md und als Hilfeseite, Geplantes aus einer parallelen Liste.
+
+### FR-7 loop mit Argumenten als Zählschleife (bis:von:step) statt times, dazu break und next
+Feature · Rechner · mittel · von Jörg · angelegt 2026-11-13 · Details: requirements/FR-7.md · Reife 5
+Ohne Argumente wie bisher, mit Argumenten `100:{…}loop` statt `100:{…}times`, Index mit `~:`; break verlässt,
+next überspringt; times bleibt vorerst als zweiter Name.
+
+### FG-1 Offene Argumente: in der App sichtbar, ein Befehl legt sie zurück auf den Stack
+Feature · Gesamt · klein · von Jörg · angelegt 2026-11-13 · Details: requirements/FG-1.md · Reife 4
+Heute warten mit `:` übergebene Argumente unsichtbar und überleben CL. `rpnargs` legt sie zurück auf den Stack,
+Anzeige über dem Stack, CL verwirft die Argumente der Zeile. Offen: Reihenfolge.
+
+### FA-29 Ohne Eingabezeile: die aktuelle Eingabe steht klein über dem Stack
+Feature · App · klein · von Jörg · angelegt 2026-11-15 · gehört zu FA-6 (Seiten der Anzeige) · Reife 3
+Ist die Eingabezeile unter Ansicht abgewählt, zeigt die Stackseite die aktuelle Eingabe klein über dem Stack, wie
+das offene Token (und wie bei FG-1 die offenen Argumente). Offen: wie lange Eingaben umbrechen bzw. gekürzt werden.
+
+### FR-9 Einstellungen des Rechners als ein Objekt im Zustand, mit einem einzigen Setter
+Feature · Rechner · mittel · von Claude · angelegt 2026-11-15 · Details: requirements/FR-9.md · Reife 3
+Winkel, Format (FR-3), Grenzen (VR-2), Sprache; Socket `{"einstellen":…}`, im Skript als rpnjson-Zeile. Offen:
+Winkel später vielleicht bei den Einheiten. Sprache global, nicht im Skript.
+
+### FR-10 Herkunft der Funktionen: Bibliotheken entladen, verfügbar und geladen, gezielt löschen
+Feature · Rechner · mittel · von Claude · angelegt 2026-11-15 · Details: requirements/FR-10.md · Reife 3
+Herkunft aus dem version-Eintrag der Bibliothek, ohne neue Syntax. Offen: Kennung statt Name für eine spätere
+Hierarchie, Abhängigkeiten beim Entladen.
+
+### FK-2 Konsolenmenü zum Benutzen statt zum Testen überarbeiten
+Feature · Konsole · mittel · von Jörg · angelegt 2026-11-07 · Details: requirements/FK-2.md · Reife 3
+Wie die PC-Tastatur-Bedienung des App-Menüs (FA-6), als Text: dieselben Nummern und Aktionstasten, mit `\m` aus
+der Eingabe erreichbar, Einträge aus dem Kern (RG-5), Sprache einstellbar.
 
 ### RG-4 Logging, um Laufzeitfehler zu finden
 Recherche · Gesamt · mittel · von Jörg · angelegt 2026-11-07 · aus RG-3 · Reife 2
@@ -156,14 +204,20 @@ auf dem Code-Stapel, die Anzeige zählt „Code 1, 2, 3“ hoch. Vielleicht gewo
 oder später im Zeilenmodus (FA-16) auswählen, einem Namen geben oder ausführen. Offen: anzeigen, auswählen,
 ausführen, verwerfen, und ob ein Fehler den Block liegen lassen soll.
 
-### FK-2 Konsolenmenü zum Benutzen statt zum Testen überarbeiten
-Feature · Konsole · mittel · von Jörg · angelegt 2026-11-07 · Reife 2
-Das Menü (console/menu.dart, bin/rpncalc.dart) ist zum Ausprobieren entstanden: Nummern eintippen, Meldungen wie
-„… wurde ausgewählt!“, ein Untermenü „Test“ mit Beispiel-Einträgen und Selbsttests, die Eingabearten als eigene
-Einträge, der Server als Menüpunkt. Ziel: ein Menü, mit dem man die Konsole wirklich benutzt. Offene Fragen:
-welche Einträge (Sitzung, Bibliotheken, Einstellungen, Hilfe; Selbsttests nur noch als Startparameter?), ob es
-aus der laufenden Eingabe erreichbar ist (z.B. mit einem `\`-Befehl), Bedienung (Pfeiltasten, Esc, Kürzel),
-Nähe zum Menü der App (FA-6, scratchpad/Menue.md), Hilfe zu den Einträgen.
+### DG-9 Argumente und Stackwirkung in der Hilfe vervollständigen
+Doku · Rechner · mittel · von Jörg · angelegt 2026-11-13 · aus DG-8, braucht DG-8 · Reife 2
+In hilfe.de.rpnlib haben erst 16 Verwendungen Argumente; das Werkzeug von DG-8 liefert die Liste der Lücken
+(Argumente mit Standardwert, Stackwirkung), daraus wird der Umfang klar.
+
+### FR-8 Weitere Verzweigungen: ifsgn (drei Fälle nach dem Vorzeichen) und try (Fehler abfangen)
+Feature · Rechner · mittel · von Jörg · angelegt 2026-11-13 · aus der Idee „if mit Argumenten“ · Reife 2
+Eigene Namen statt `n:if`, damit die Zahl der Blöcke nicht vom Argument abhängt. Offen bei `try`: was gefangen
+wird, ob der Fehlercode auf den Stack kommt, was mit dem halb veränderten Stack geschieht (FR-4).
+
+### FA-31 Hamburger-Menü, zuerst Hilfe → Info mit Version und Lizenz
+Feature · App · klein · von Jörg · angelegt 2026-11-15 · nach FA-30 · Reife 2
+Zweiter Bereich auf dem Gerüst von FA-30 (Taste 7), damit Version und Lizenz in der App sichtbar sind. Gliederung
+nach FA-6: Datei, Bearbeiten, Ansicht, Ausführen, Hilfe; zuerst nur Hilfe → Info.
 
 ### FA-8 Sitzungen: letzter Stand automatisch, benannte Sitzungen mit Verlauf
 Feature · App · groß · von Jörg · angelegt 2026-11-03 · alt: app.md 3, api.md 9 · Details: Menue.md 4.3 · Reife 1
@@ -254,9 +308,31 @@ Feature · Sprache · groß · von Jörg · angelegt 2026-11-06 · Machbarkeit o
 Zu klären: welcher Lua-Interpreter für Dart (Konsole, App, Web), wie Plots in der App erscheinen; SciLua setzt
 LuaJIT voraus.
 
+### FA-27 Dokumenten-System: Ordner, Dokumente, Probleme, Seiten (z.B. mit Graph) mit eigenem Menübaum ab R2
+Feature · App · groß · von Jörg · angelegt 2026-11-14 · Details: requirements/FA-6.md (Abschnitt „Später“) · Reife 1
+Eigener Einstieg in R2 (`'` … ⌫), der Menübaum läuft von oben nach unten: R2 neue Seite, Funktionsblock
+Minibilder der Seiten, R5 Auswahlfelder, Ziffernblock Kontextmenü der Seite, ENTER wechselt in die Seite. FA-6
+wird so gebaut, dass das ohne Umbau dazukommt. Scratchpad (MENÜ 0) mit eigenem, persistentem Zustand; Übernehmen
+von und zur aktuellen Seite über das Doc-Menü.
+
+### FA-28 Connect: Clients anbinden (VS Code, mehrere Benutzer, Chat, Sensordaten, Big Screen)
+Feature · Gesamt · groß · von Jörg · angelegt 2026-11-14 · im Hauptmenü auf `.` (FA-6) · Reife 0
+Anwendungsfälle: VS Code als Entwicklungsumgebung; mehrere Benutzer am selben Dokument (Rechenkern im Server,
+die App wird Client); Chat in diesem Modus; Eingabe von Sensordaten; Big-Screen-Client im Vollbild (z.B. für
+Vorlesungen). Grundlage könnte der Socket-Server der Konsole sein.
+
 ## Erledigt
 
-### Nächste Version
+### Version 0.4.0
+
+### FA-30 Menü-Grundgerüst mit dem Bereich Bibliotheken: Ziffernblock, Funktionstasten, Menüseite
+Feature · App · mittel · von Jörg · angelegt 2026-11-15 · erster Schritt von FA-6 · Details: requirements/FA-30.md · Reife 5
+MENÜ öffnet das Menü auf dem Tastenfeld statt des Auswahlfensters; nur Bibliotheken (4), alle anderen Tasten leer.
+Bibliotheken als Schalter auf F1–F10 (Symbol, Tastenname oder Name; Zustand über die Rahmen), Voreinstellung die
+geladenen, ENTER lädt bzw. entlädt (einfacher Teil von FR-10). Menüseite in der Anzeige nach der Prüfseite.
+Test von Hand: process/testing/protocols/2026-11-15_fa-30_pc.md und 2026-11-15_fa-30_phone.md.
+EN: MENU opens a menu on the keypad; libraries are switched on and off with F1–F10 and loaded with OK
+Erledigt 2026-11-15, e365ddc
 
 ### VA-15 Funktionen und Variablen: Liste der Anzeige und Tastenblock als zwei Bereiche, Klick wechselt
 Verbesserung · App · mittel · von Jörg · angelegt 2026-11-11 · ergänzt VA-14 · Details: requirements/VA-15.md · Reife 5

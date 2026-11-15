@@ -1,9 +1,11 @@
 /// Aufgabe: der Rahmen der Anzeige. [Anzeige] zeigt oben die Statuszeile, darunter die drei Seiten zum Wischen
 /// (Rechnen, Variablen und Tags, Funktionen) und unten Seitenname und Seitenpunkte; im Hilfe-Modus liegt der
-/// Hilfeschirm über den Seiten. Wählt das Modell einen Bereich, blättert die Anzeige zur passenden Seite.
+/// Hilfeschirm über den Seiten, im Menü die Menüseite (dann steht unten „Menü“, ohne Punkte, und wischen geht nicht). Wählt das Modell einen Bereich, blättert die Anzeige zur
+/// passenden Seite.
 ///
 /// Abgrenzung: Die Seiten selbst stehen in calc_page.dart und list_page.dart, die Statuszeile in
-/// status_line.dart, der Hilfeschirm in help_screen.dart. Was angezeigt wird, entscheidet das Modell.
+/// status_line.dart, der Hilfeschirm in help_screen.dart, die Menüseite in menu_page.dart. Was angezeigt wird,
+/// entscheidet das Modell.
 ///
 /// Siehe auch: doc/app.md Kapitel 2, model/model.dart.
 library;
@@ -16,6 +18,7 @@ import '../tooltip.dart';
 import 'calc_page.dart';
 import 'help_screen.dart';
 import 'list_page.dart';
+import 'menu_page.dart';
 import 'status_line.dart';
 
 /// Die Anzeige: Statuszeile und drei Seiten zum Wischen (Rechnen, Variablen und Tags, Funktionen),
@@ -70,9 +73,12 @@ class _AnzeigeState extends State<Anzeige> {
               children: [
                 PageView(
                   controller: _seiten,
+                  physics: m.menueOffen ? const NeverScrollableScrollPhysics() : null,
                   onPageChanged: (i) => setState(() => _seite = i),
                   children: [RechnenSeite(m), ListenSeite.variablen(m), ListenSeite.funktionen(m)],
                 ),
+                // im Menü liegt die Menüseite über den Seiten, darüber gegebenenfalls die Hilfe (doc/app.md 3.6)
+                if (m.menueOffen) Positioned.fill(child: MenueSeite(m)),
                 if (m.hilfeSeite != null) Positioned.fill(child: Hilfeschirm(m, m.hilfeSeite!)),
               ],
             ),
@@ -81,9 +87,12 @@ class _AnzeigeState extends State<Anzeige> {
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
             child: Row(
               children: [
-                tipp(_seitenTipp, Text(_namen[_seite], style: Schrift.monospace(10, Farben.anzeigeBlass))),
+                if (m.menueOffen)
+                  Text("Menü", style: Schrift.monospace(10, Farben.anzeigeBlass))
+                else
+                  tipp(_seitenTipp, Text(_namen[_seite], style: Schrift.monospace(10, Farben.anzeigeBlass))),
                 const Spacer(),
-                tipp(
+                if (!m.menueOffen) tipp(
                   _seitenTipp,
                   Row(
                     children: [

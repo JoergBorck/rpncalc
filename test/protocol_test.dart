@@ -50,6 +50,10 @@ void main() {
       final z = antwort(Nachricht.ladeBibliothek("statistik"))["zustand"] as Map;
       expect([for (final s in z["speicher"] as List) s["name"]], contains("mean"));
       expect(antwort(Nachricht.ladeBibliothek("gibtsnicht")).keys, ["protokollfehler"]);
+      final ohne = antwort(Nachricht.entladeBibliothek("statistik"))["zustand"] as Map;
+      expect([for (final s in ohne["speicher"] as List) s["name"]], isNot(contains("mean")));
+      expect(antwort(Nachricht.entladeBibliothek("statistik")).keys, ["protokollfehler"], reason: "nicht geladen");
+      expect(antwort(Nachricht.entladeBibliothek("gibtsnicht")).keys, ["protokollfehler"]);
     });
 
     test('Rechenfehler stehen im Zustand, nicht im Protokoll', () {

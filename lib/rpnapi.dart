@@ -23,6 +23,7 @@ import 'src/help/help.dart';
 import 'src/version.dart';
 
 export 'src/api/builtin_help.dart' show Hilfetexte;
+export 'src/api/libraries.dart' show BibliotheksInfo, SymbolPfad;
 export 'src/api/state.dart' show Fehler, Speicher, SpeicherArt, StackZeile, Zustand;
 export 'src/engine/calculator.dart' show AngleMode;
 export 'src/engine/session.dart' show Export;
@@ -110,6 +111,10 @@ class RpnApi {
   /// (eigene Funktion oder andere Bibliothek), wird sie gar nicht geladen (doc/reference.md 10.6).
   String? ladeBibliothek(String name) => _bibliotheken.laden(name);
 
+  /// Entlädt eine Bibliothek: ihre Funktionen, ihre Hilfen und ihre Versionsangabe; Variablen, die sie angelegt
+  /// hat, bleiben. Liefert null oder den Fehler, z.B. wenn sie nicht geladen ist (doc/api.md 9.1).
+  String? entladeBibliothek(String name) => _bibliotheken.entladen(name);
+
   /// Die Namen der Funktionen einer Bibliothek in der Reihenfolge der Datei; mit [ohneIntern] ohne die internen
   /// (rpnintern), z.B. für die Funktionstasten.
   List<String> bibliotheksFunktionen(String name, {bool ohneIntern = false}) =>
@@ -118,9 +123,10 @@ class RpnApi {
   /// Die Versionsangabe einer geladenen Bibliothek oder null.
   Map<String, Object?>? bibliotheksVersion(String name) => _bibliotheken.version(name);
 
-  /// Kurzinfo zu einer Bibliothek, auch wenn sie nicht geladen ist, z.B. für einen Tooltip: der Satz aus
-  /// `beschreibung` im version-Eintrag (leer, wenn es keinen gibt), die Version und die Zahl der Funktionen.
-  ({String beschreibung, String version, int funktionen})? bibliotheksInfo(String name) => _bibliotheken.info(name);
+  /// Kurzinfo zu einer Bibliothek, auch wenn sie nicht geladen ist, z.B. für einen Tooltip oder das Menü: der
+  /// Satz aus `beschreibung` im version-Eintrag (leer, wenn es keinen gibt), die Version, die Zahl der
+  /// Funktionen, der Tastenname und das Symbol (doc/api.md 9.1).
+  BibliotheksInfo? bibliotheksInfo(String name) => _bibliotheken.info(name);
 
   /// Funktionen aus geladenen Bibliotheken (mit version-Eintrag); „Funktionen speichern“ lässt sie aus.
   Set<String> get geladeneBibliotheksFunktionen => _bibliotheken.geladeneFunktionen;

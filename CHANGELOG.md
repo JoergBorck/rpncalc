@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
+- MENU opens a menu on the keypad; libraries are switched on and off with F1–F10 and loaded with OK
 - Functions and variables pages: the list and the function keys are separate areas; arrows scroll the list and shift long code
 - AC also returns the display to the calculator page with input and stack
 - The arrows on the cursor cross no longer look slanted

@@ -708,6 +708,20 @@ Versionsangabe mit dem Namen, dann die Funktionen, zuletzt die Hilfetexte, beide
 
 - **Versionsprüfung zuerst:** Passt die Version nicht, bricht `X` sofort ab, und von der Bibliothek wird nichts
   angelegt.
+- **Beschreibung, Tastenname und Symbol** (freiwillig, im version-Eintrag): `beschreibung` ist ein Satz, wofür
+  die Bibliothek gedacht ist; `taste` ein kurzer Name für ihre Taste im Menü der App (bis etwa 8 Zeichen);
+  `symbol` ihr Symbol als Pfaddaten eines SVG im Raster 24 × 24, entweder ein Text (ein Pfad) oder eine Liste von
+  Pfaden `{"d":"M2 12 H22","breite":1,"fuellen":false}` (`breite` ist die Strichstärke, Vorgabe 1.5; `fuellen`
+  Vorgabe false). Gezeichnet wird in der Farbe der Schrift. Nur Pfaddaten, keine ganze SVG-Datei: Erlaubt sind
+  die Befehle der Pfaddaten, Zahlen, Leerzeichen und Kommas; ein Symbol mit anderen Zeichen wird übergangen und
+  als Hinweis gemeldet. Eine Bibliothek mit Symbol sollte auch einen Tastennamen angeben, die Konsole zeigt
+  keine Symbole.
+
+  ```
+  {"version":{"name":"statistik","bibliothek":"1.2.0","rechner":"0.1.0","beschreibung":"Statistik für …",
+    "taste":"Statistik","symbol":[{"d":"M8.5 2.5 H2.5 L5.6 6.5 L2.5 10.5 H8.5 M4 20 C8.6 20 10.4 6 14.2 6 C18 6 19.6 20 23 20"},
+    {"d":"M1.5 21.3 H23","breite":1}]}}
+  ```
 - **Version des Rechners:** `RpnApi.version` (MAJOR.MINOR.PATCH, wie in `pubspec.yaml`). Die Oberfläche teilt
   dem Rechner mit `appVersion` ihre eigene Version mit; die Konsole und der Client tun das nicht, bei ihnen wird
   die Angabe `app` übergangen.
@@ -730,7 +744,8 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
 | `List<String> bibliotheksFunktionen(String name, {bool ohneIntern = false})` | die Namen ihrer Funktionen in der Reihenfolge der Datei; mit `ohneIntern` ohne die internen, z.B. für die Funktionstasten |
 | `String? herkunft(String name)` | die Bibliothek, aus der eine geladene Funktion stammt, oder `null` bei eigenen Funktionen |
 | `Map<String, Object?>? bibliotheksVersion(String name)` | die Versionsangabe einer geladenen Bibliothek |
-| `({String beschreibung, String version, int funktionen})? bibliotheksInfo(String name)` | Kurzinfo, auch ohne die Bibliothek zu laden: der Satz aus `beschreibung`, die Version, die Zahl der Funktionen; für Menüs und Tooltips |
+| `String? entladeBibliothek(String name)` | entfernt die Funktionen dieser Herkunft, die Hilfen, die die Bibliothek mitbringt, und ihre Versionsangabe; Variablen, die die Bibliothek angelegt hat, bleiben. Liefert `null` oder einen Fehler, z.B. wenn sie nicht geladen ist |
+| `BibliotheksInfo? bibliotheksInfo(String name)` | Kurzinfo, auch ohne die Bibliothek zu laden: `beschreibung`, `version`, die Zahl der `funktionen`, `taste` (oder `null`) und `symbol` (Liste der Pfade, leer ohne Symbol); für Menüs und Tooltips |
 | `List<String> hinweise()` | Hinweise seit dem letzten Abruf, z.B. unbekannte Schlüssel in `rpnjson`; danach leer |
 | `Export exportiereBibliothek(String name, {String version, Set<String> ohne})` | die eigenen Funktionen als Bibliothek im obigen Aufbau, mit Versionsangabe und eigener Hilfe |
 
@@ -738,8 +753,10 @@ gespeicherte Datei. Sie merkt sich, welche das sind, und meldet sie beim nächst
   (`geladeneBibliotheksFunktionen`, je Funktion `herkunft(name)`, z.B. für eine nach Bibliotheken geordnete
   Liste). Solche Funktionen sind geschützt (reference.md 10.6), und „Funktionen
   speichern“ lässt sie aus (Kapitel 7).
-- **Protokoll** (6.1): `{"bibliotheken":true}` → `{"bibliotheken":[…]}`; `{"ladeBibliothek":"statistik"}` →
-  `{"zustand":{…}}` (ein Fehler steht im Zustand wie bei `importieren`).
+- **Entladen:** Ruft eigener Code danach eine entladene Funktion auf, ist das ein Fehler wie bei jeder
+  unbekannten Funktion. Abhängigkeiten zwischen Bibliotheken und alles Weitere regelt Backlog FR-10.
+- **Protokoll** (6.1): `{"bibliotheken":true}` → `{"bibliotheken":[…]}`; `{"ladeBibliothek":"statistik"}` und
+  `{"entladeBibliothek":"statistik"}` → `{"zustand":{…}}` (ein Fehler steht im Zustand wie bei `importieren`).
 - **Konsole:** Das Menü „Bibliotheken“ zeigt die mitgelieferten über die API und dazu die selbst gespeicherten
   `.rpnlib`-Dateien von der Festplatte (Suche wie in Kapitel 7). Dateien im Verzeichnis `library/` überspringt die
   Suche, die kommen aus dem Rechner.

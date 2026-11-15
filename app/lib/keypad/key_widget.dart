@@ -29,6 +29,7 @@ class TasteWidget extends StatelessWidget {
   final Color? anFarbe;
   final String? buchstabe;
   final VoidCallback? beiDruck;
+  final Color? rahmen;  // Rand der Taste, z.B. orange für MENÜ im Menü (doc/app.md 3.6)
 
   const TasteWidget(
     this.taste,
@@ -42,6 +43,7 @@ class TasteWidget extends StatelessWidget {
     this.anFarbe,
     this.buchstabe,
     this.beiDruck,
+    this.rahmen,
     super.key,
   });
 
@@ -118,7 +120,9 @@ class TasteWidget extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(9),
         // nach ~ bzw. | ein dünner Rand in der Farbe des Präfixes auf den Tasten, auf die er wirkt (doc/app.md 3.2)
-        side: aktiv
+        side: rahmen != null
+            ? BorderSide(color: rahmen!, width: 2)
+            : aktiv
             ? const BorderSide(color: Farben.tasteText, width: 2)
             : farbe == null && art == Beschriftungsart.tilde
                 ? const BorderSide(color: Farben.tilde, width: 1)
@@ -135,8 +139,10 @@ class TasteWidget extends StatelessWidget {
           height: hoehe,
           child: Stack(
             children: [
-              // im Hilfe-Modus ohne Shift-Hinweis: MENÜ, ALPHA und ⌫ tragen dort ihre Aufgabe (doc/app.md 5.2)
-              if (zeigeKlein && t.shift != null && !(m.shift) && !m.hilfeModus)
+              // im Hilfe-Modus ohne Shift-Hinweis: MENÜ, ALPHA und ⌫ tragen dort ihre Aufgabe (doc/app.md 5.2);
+              // im Menü ist ENTER OK, ohne _ (3.6)
+              if (zeigeKlein && t.shift != null && !(m.shift) && !m.hilfeModus &&
+                  !(m.menueOffen && t.aktion == Aktion.enter))
                 Positioned(
                   left: 6,
                   top: t.aktion == Aktion.tab ? -3 : 3,

@@ -27,6 +27,10 @@ abstract final class Farben {
   static const zifferText = Color(0xFF111318);
   static const zifferGedimmt = Color(0xFF6E737D);
   static const reserviert = Color(0xFF20232A);
+  static const zifferLeer = Color(0xFF4A4E57);   // im Menü: Ziffern ohne Bedeutung (doc/app.md 3.6)
+  static const rahmenWeiss = Color(0xFFE8EBF0);  // Menü: Bibliothek geladen und bleibt
+  static const rahmenGruen = Color(0xFF3FA34D);  // Menü: Bibliothek wird geladen; dunkler als Alpha, damit es sich von Weiß abhebt
+  static const rahmenRot = Color(0xFFFF5C5C);    // Menü: Bibliothek wird entladen, dazu der schräge Strich
   static const tasteText = Color(0xFFEEF0F5);
   static const gedimmt = Color(0xFF6A7080);
   static const kante = Color(0xFF0B0C0F);

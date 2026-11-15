@@ -191,8 +191,8 @@ Unterer Block:
   das Mausrad (▼ nächste Seite, an der ersten bzw. letzten hält es an, die Tasten schieben sich senkrecht); ◄ und
   ► ebenso, im Kreis und waagrecht wie das Wischen. Die Liste springt dabei zum Abschnitt der gezeigten
   Bibliothek. Die Reihenfolge: zuerst die Grundfunktionen (sie
-  sind immer dabei), dann die gewählte Domäne, zuletzt die eigenen Funktionen. Reichen 10 Tasten nicht, gibt es
-  weitere Seiten. Wählt man im Menü eine Domäne, zeigen die Tasten ihre erste Seite. Ohne eigene Funktionen gibt
+  sind immer dabei), dann die im Menü eingeschalteten Bibliotheken und Programm (3.6), zuletzt die eigenen
+  Funktionen. Reichen 10 Tasten nicht, gibt es weitere Seiten. Ohne eigene Funktionen gibt
   es keine (leere) Seite „Eigene“. Unten am orangen Rahmen steht der Name der Seite (z.B. Grundfunktionen, schwingungen 2/3,
   Eigene), bei den Variablen „Variablen“; der Rahmen hat dort eine Lücke, der Name keinen eigenen Hintergrund.
 - **Wischen und Mausrad:** Die Funktionstasten lassen sich sichtbar verschieben; die nächste Seite schiebt sich
@@ -228,14 +228,13 @@ Unterer Block:
 - **Regel für künftige Belegungen:** Auf `~` ⇧ liegt immer die Umkehrung der Shift-Funktion. Eine Shift-Funktion
   darf also keine weitere eigene Variante mit `~` brauchen, und ihre Varianten mit `|` sind von der Taste aus nicht
   erreichbar.
-- F1–F10 sind je nach **Domäne** belegt, z.B. Grundfunktionen, Statistik, Schwingungen, Programm. Die Domäne
-  wird im Menü gewählt.
-- **Bibliotheken als Domänen:** Das Menü zeigt nach den eingebauten Domänen alle Bibliotheken des Rechners
-  ([api.md](api.md) 9.1), mit ihrem Namen als Titel. Wählt man eine, wird sie einmal geladen; die
-  Funktionstasten zeigen ihre Funktionen in der Reihenfolge der Datei, bei mehr als zehn auf mehreren Seiten,
-  die ◄ ► im Bereich Funktionen durchblättern. Die Tasten tragen den Funktionsnamen (`mean`, `omega`); schönere
-  Beschriftungen (ω) kommen mit den Hilfetexten der Bibliotheken. Interne Funktionen (`rpnintern`, reference.md
-  10.2) bekommen keine Taste, ebenso auf der Seite „Eigene“.
+- **Seiten der Funktionstasten:** F1–F10 zeigen nacheinander die Grundfunktionen (immer), die Seiten der im Menü
+  eingeschalteten Einträge in der Reihenfolge des Menüs (3.6): die Bibliotheken und Programm (X, if, ifel, loop,
+  times), zuletzt die eigenen Funktionen. Beim Start ist keine Bibliothek geladen und Programm aus.
+- **Seiten einer Bibliothek:** ihre Funktionen in der Reihenfolge der Datei, bei mehr als zehn auf mehreren
+  Seiten, die ◄ ► im Bereich Funktionen durchblättern. Die Tasten tragen den Funktionsnamen (`mean`, `omega`);
+  schönere Beschriftungen (ω) kommen mit den Hilfetexten der Bibliotheken. Interne Funktionen (`rpnintern`,
+  reference.md 10.2) bekommen keine Taste, ebenso auf der Seite „Eigene“.
 - Grundfunktionen: π / e, rnd / seed, round, dms, DEG; sin, cos, tan (Shift: sinh, cosh, tanh;
   `~`: asin, acos, atan), ln (Shift: log, `~`: eˣ), RAD / GRD.
 
@@ -264,6 +263,69 @@ Verhalten:
 - **Maximiert gilt allgemein:** Wechselt man mit Tab zwischen Eingabe und Stack, bleibt die Anzeige maximiert und
   zeigt den neu gewählten Bereich in ganzer Breite.
 - **Animation:** Beim Umschalten gleiten die Spalten in etwa 250 ms auf ihre neue Breite.
+
+### 3.6 Menü
+
+MENÜ öffnet das Menü auf dem Tastenfeld. Das Gesamtkonzept steht in Backlog FA-6 (process/requirements/FA-6.md);
+bisher gibt es einen Bereich, die Bibliotheken (FA-30).
+
+- **Öffnen und Abbrechen:** MENÜ öffnet das Hauptmenü. Ein weiterer Druck auf MENÜ schließt das Menü, ohne etwas
+  zu ändern (am PC Esc). Shift+MENÜ bleibt die Hilfe (5.2), auch im Menü; MENÜ trägt dafür klein „HILFE“.
+- **OK:** Im Menü heißt ENTER „OK“, ohne das kleine _ für Shift, und übernimmt bzw. schließt. Im Bereich
+  Bibliotheken liegt ein dünner oranger Rahmen etwas außerhalb um OK, solange OK etwas ändern würde; ist alles
+  wieder wie beim Öffnen, verschwindet er. Im Hauptmenü hat OK keinen Rahmen. Die Hilfe zu OK im Menü ist
+  `menue:ok`.
+- **Leere Tasten:** Im Menü wirken nur MENÜ, SHIFT (für die Hilfe), OK und die Tasten des offenen Bereichs.
+  Alle anderen Tasten sind leer, ohne Beschriftung, und tun nichts, auch Cursorkreuz, TAB und ALPHA.
+- **Wo man ist:** MENÜ und die gewählten Tasten des Pfads sind orange umrandet (MENÜ › 4 › statistik). Um den
+  Block, in dem gerade gewählt wird, liegt ein oranger Rahmen mit seinem Namen: im Hauptmenü um den Ziffernblock
+  (1–9, ê, 0, ., „Hauptmenü“), im Bereich Bibliotheken um die Funktionstasten („Bibliotheken“).
+- **Hauptmenü:** Die Bereiche liegen auf dem Ziffernblock (FA-6); belegt ist bisher nur 4, Bibliotheken. Die
+  Taste füllt ein Symbol (ein Portikus mit einem Buch, app/assets/icons/bibliothek.svg), die Ziffer steht groß
+  oben links darüber. OK schließt hier das Menü, es gibt nichts zu übernehmen.
+- **Bereich Bibliotheken (4):** Die Funktionstasten zeigen die Bibliotheken des Rechners ([api.md](api.md) 9.1),
+  mitgelieferte nach Namen, dann hinzugefügte nach Namen, zuletzt Programm; bei mehr als zehn auf mehreren
+  Seiten wie in 3.3. Die Grundfunktionen stehen nicht darin, sie sind immer da. Der Ziffernblock zeigt weiter das
+  Hauptmenü; seine Tasten außer 4 tun nichts.
+  - **Beschriftung:** das Symbol der Bibliothek, sonst ihr Tastenname, sonst ihr Name, gekürzt, wenn er nicht
+    passt (`symbol`, `taste`, api.md 9.1).
+  - **Schalter:** Ein Druck schaltet die Bibliothek ein bzw. aus und wählt sie; geladen bzw. entladen wird erst
+    mit OK. Beim Öffnen sind die geladenen eingeschaltet, Programm nur, wenn es eingeschaltet ist.
+  - **Rahmen:** Er zeigt, was OK bewirken wird, nicht nur über die Farbe:
+
+    | Rahmen | Bedeutung |
+    |---|---|
+    | orange, breiter als die anderen | gewählt (zuletzt gedrückt) und geladen bzw. wird geladen |
+    | grün | wird geladen, nicht gewählt |
+    | rot, dazu ein schräger roter Strich über der Taste | wird entladen, auch wenn gewählt |
+    | weiß | geladen und bleibt, nicht gewählt |
+    | keiner | nicht geladen und bleibt so, auch wenn gewählt |
+  - **OK** lädt die eingeschalteten und entlädt die ausgeschalteten Bibliotheken (`entladeBibliothek`), dann
+    schließt sich das Menü. Lässt sich eine Bibliothek nicht laden (z.B. weil einer ihrer Namen schon vergeben
+    ist), bleibt sie aus, und eine Meldung nennt den Fehler; die übrigen werden trotzdem übernommen.
+  - **Danach** zeigen die Funktionstasten die erste Seite der ersten neu eingeschalteten Bibliothek (bzw. von
+    Programm), sonst die vorher gezeigte Seite, wenn es sie noch gibt, sonst die Grundfunktionen.
+- **Menüseite der Anzeige:** Solange das Menü offen ist, liegt die Menüseite über den Seiten der Anzeige, wie der
+  Hilfeschirm; danach ist die vorige Seite wieder zu sehen. Unter der Anzeige steht „Menü“ statt des Seitennamens,
+  ohne Seitenpunkte; wischen geht nicht. Unten bleibt Platz für das Cursorkreuz, das in die Anzeige ragt.
+  - **Kopf:** der Pfad (MENÜ › Bibliotheken › statistik), im Bereich Bibliotheken rechts die Zahl der geladenen.
+    Darunter der Hinweis „Bereich wählen · MENÜ bricht ab · OK übernimmt“, im Bereich Bibliotheken „Taste
+    schaltet um · MENÜ bricht ab · OK übernimmt“.
+  - **Hauptmenü:** der Ziffernblock als Karte 3 × 3, je belegtem Bereich das Symbol und darunter der Name; die
+    übrigen Felder sind leer.
+  - **Bereich Bibliotheken:** die Liste mit Name, Version und Wirkung in Worten (geladen, wird geladen, wird
+    entladen, nicht geladen), in den Farben der Rahmen; die gewählte Zeile ist orange umrandet. Passt die Liste
+    nicht, scrollt sie, so dass die gewählte zu sehen ist. Darunter zur gewählten: Name, Version, Zahl der
+    Funktionen, ihre Beschreibung und was OK insgesamt bewirkt („OK lädt statistik, entlädt finanz.“, ohne
+    Änderung „OK ändert nichts.“).
+- **PC-Tastatur:** 4 öffnet die Bibliotheken, Enter (Return oder Ziffernblock) übernimmt bzw. schließt, Esc bricht
+  ab, F1 öffnet die Hilfe. Die Bibliotheken schaltet man mit Maus oder Finger. Andere Tasten tun nichts.
+- **Tooltips:** MENÜ zeigt das Hauptmenü, wie es auf dem Ziffernblock liegt; im Bereich Bibliotheken zeigt eine
+  Taste die Kurzinfo ihrer Bibliothek (5.1).
+- **Hilfe:** Die Einträge `menue:hauptmenue` und `menue:bibliotheken` erklären das Menü und den Bereich,
+  `menue:programm` den Eintrag Programm, `menue:ok` die Taste OK; `app:enter` verweist auf `menue:ok`.
+  Shift+MENÜ im Menü öffnet den Hilfe-Modus; eine Bibliothek zeigt dort ihre Übersicht (`#statistik`), Programm
+  `menue:programm`, OK `menue:ok`. BEENDEN führt zurück ins Menü.
 
 ## 4. Eingabezeilen
 
@@ -297,15 +359,15 @@ für ihre Bedienung (`app:…`) und setzt die Hilfe zu einzelnen Elementen zusam
   „Hilfe zum RPN-Rechner“ (`#`). Die Themen stehen nur als Verweise, nicht noch einmal im Text (api.md 8.3).
 - **Bibliotheken:** Die Seite `app:bibliotheken` erzeugt die App aus `bibliotheken()`: je Bibliothek der Satz aus
   `beschreibung` und ein Verweis auf ihre Übersicht (`#statistik`). Die Startseite der App verweist darauf. Lesen
-  lässt sich die Hilfe einer Bibliothek auch, bevor sie geladen ist; geladen wird sie über MENÜ (später über den
-  Bereich Bibliotheken des Menüs).
+  lässt sich die Hilfe einer Bibliothek auch, bevor sie geladen ist; geladen wird sie im Bereich Bibliotheken des
+  Menüs (3.6).
 
 ### 5.1 Tooltips
 
 - **PC und Browser:** Fährt die Maus über eine Taste, zeigt ein Tooltip **alle** Belegungen der Taste.
 - **Handy:** Langes Drücken zeigt denselben Tooltip.
 - Tooltips sind reine Anzeige. Die Einzelheiten gibt es im Hilfe-Modus.
-- **Bibliotheken** (im Menü, später im Bereich Bibliotheken): ein Satz, wofür die Bibliothek gedacht ist
+- **Bibliotheken** (im Bereich Bibliotheken des Menüs, 3.6): ein Satz, wofür die Bibliothek gedacht ist
   (`beschreibung` im version-Eintrag), darunter Version und Zahl der Funktionen; die Funktionen selbst stehen in
   den Tooltips ihrer Tasten.
 - **Kurze Pause beim Verlassen:** Verlässt die Maus eine Taste oder Zeile, ruhen alle Tooltips 1 s. So springen sie

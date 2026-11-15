@@ -83,8 +83,9 @@ mixin _HilfeModus on ModellKern {
     if (_hilfeSeiten.isEmpty) _neueSeite(AppHilfe.nachschlagen(api, "#"));
   }
 
+  /// BEENDEN führt dorthin zurück, wo die Hilfe begann: ins Menü oder ins Rechnen (doc/app.md 3.6).
   void _hilfeBeenden() {
-    modus = _modusRechnen;
+    modus = menueOffen ? _modusMenue : _modusRechnen;
     hilfeLesen = false;
     hilfeVerweis = -1;
     _hilfeSeiten.clear();

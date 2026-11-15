@@ -30,8 +30,8 @@ mixin _Eingabe on ModellKern {
         bereich = Bereich.values[(bereich.index + (shiftWirkt ? n - 1 : 1)) % n];
         shift = false;
       case Aktion.menue:
-        // Shift+MENÜ ist die Hilfe; MENÜ allein öffnet die Oberfläche (Domänen)
-        if (shiftWirkt) _hilfeStarten();
+        // Shift+MENÜ ist die Hilfe; MENÜ allein öffnet das Menü (doc/app.md 3.6)
+        shiftWirkt ? _hilfeStarten() : _menueOeffnen();
       case Aktion.maximieren:
         // nur Eingabe und Stack; die Seiten Funktionen und Variablen haben schon die ganze Breite
         if (bereich == Bereich.eingabe || bereich == Bereich.stack) maximiert = !maximiert;

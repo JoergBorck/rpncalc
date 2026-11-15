@@ -49,9 +49,42 @@ const Map<String, Hilfe> eintraege = {
     Verwendung("Shift+TAB", "voriger Bereich"),
   ], "Der gewählte Bereich hat einen orangen Rahmen. Siehe [[app:cursorkreuz]], [[app:maximieren]]."),
   "app:menue": Hilfe("app:menue", "Menü", [
-    Verwendung("MENÜ", "wählt die Domäne der Funktionstasten"),
+    Verwendung("MENÜ", "öffnet das Menü auf dem Tastenfeld; im Menü: abbrechen"),
+    Verwendung("4", "im Menü: Bibliotheken ein- und ausschalten"),
     Verwendung("Shift+MENÜ", "Hilfe an; im Hilfe-Modus heißt die Taste BEENDEN"),
-  ], "Siehe [[app:hilfe]], [[app:funktionen]]."),
+  ], "Siehe [[menue:hauptmenue]], [[menue:bibliotheken]], [[app:hilfe]]."),
+  "menue:hauptmenue": Hilfe("menue:hauptmenue", "Menü: Hauptmenü", [
+    Verwendung("4", "Bibliotheken"),
+    Verwendung("MENÜ", "bricht ab, am PC auch Esc"),
+    Verwendung("OK", "schließt das Menü (im Menü heißt ENTER OK)"),
+  ], "Die Bereiche des Menüs liegen auf dem Ziffernblock, bisher nur die Bibliotheken auf 4. Im Menü sind alle "
+      "anderen Tasten leer und tun nichts. Orange umrandet sind MENÜ und die gewählten Tasten; um den Block, in dem "
+      "gerade gewählt wird, liegt ein oranger Rahmen. Siehe [[menue:bibliotheken]], [[app:menue]]."),
+  "menue:bibliotheken": Hilfe("menue:bibliotheken", "Menü: Bibliotheken", [
+    Verwendung("Funktionstaste", "schaltet die Bibliothek ein bzw. aus und wählt sie"),
+    Verwendung("OK", "übernimmt: lädt die eingeschalteten, entlädt die ausgeschalteten Bibliotheken"),
+    Verwendung("MENÜ", "bricht ab, nichts wird geändert"),
+  ], "Die Funktionstasten zeigen die Bibliotheken und Programm (X, if, ifel, loop, times); eingeschaltet sind beim "
+      "Öffnen die geladenen. Der Rahmen einer Taste zeigt, was OK bewirkt: orange und breit die gewählte, grün "
+      "wird geladen, rot mit Strich wird entladen, weiß bleibt geladen, ohne Rahmen nicht geladen. Danach zeigen "
+      "die Funktionstasten die Grundfunktionen, die Seiten der eingeschalteten Einträge und die eigenen Funktionen. "
+      "Ruft eigener Code eine entladene Funktion auf, ist das ein Fehler. Siehe [[app:bibliotheken]], "
+      "[[menue:hauptmenue]], [[menue:programm]], [[menue:ok]]."),
+  "menue:ok": Hilfe("menue:ok", "Menü: OK", [
+    Verwendung("OK", "im Bereich Bibliotheken: übernimmt, lädt die eingeschalteten, entlädt die ausgeschalteten"),
+    Verwendung("OK", "im Hauptmenü: schließt das Menü"),
+    Verwendung("Enter", "am PC wie OK"),
+  ], "Im Menü heißt ENTER OK. Würde OK etwas ändern, liegt ein dünner oranger Rahmen um die Taste; ist alles wieder "
+      "wie beim Öffnen, verschwindet er. Was OK bewirkt, steht unten auf der Menüseite. Lässt sich eine Bibliothek "
+      "nicht laden, bleibt sie aus, und eine Meldung nennt den Fehler. Siehe [[menue:bibliotheken]], [[app:enter]]."),
+  "menue:programm": Hilfe("menue:programm", "Menü: Programm", [
+    Verwendung("X", "führt den obersten Code-Block aus"),
+    Verwendung("if, ifel", "führt einen Code-Block abhängig von einer Bedingung aus"),
+    Verwendung("loop, times", "wiederholen einen Code-Block"),
+  ], "Programm ist keine Bibliothek, sondern eine eingebaute Seite der Funktionstasten mit den Befehlen zum "
+      "Programmieren; die Befehle selbst gibt es immer, eingeschaltet wird nur die Seite. Beim Start ist Programm "
+      "aus. Im Bereich Bibliotheken des Menüs schaltet die Taste Programm die Seite ein bzw. aus, OK übernimmt. "
+      "Die Vergleiche < > = und & liegen auf Shift der Rechenspalte. Siehe [[#code]], [[menue:bibliotheken]]."),
   "app:hilfe": Hilfe("app:hilfe", "Hilfe-Modus", [
     Verwendung("Shift+MENÜ", "Hilfe an, im Inspekt-Modus; oben steht HILFE"),
     Verwendung("Taste", "Inspekt-Modus: zeigt die Hilfe zu allen Belegungen der Taste, eingegeben wird nichts"),
@@ -77,7 +110,7 @@ const Map<String, Hilfe> eintraege = {
     Verwendung("ENTER", "Leerzeichen: trennt und kopiert x; jedes weitere ENTER verdoppelt x", stack: "x → x x"),
     Verwendung("Shift+ENTER", "Trenner _: trennt ohne Kopie, z.B. für bessere Lesbarkeit"),
     Verwendung("ALPHA, ⏎", "im Alpha-Modus: Zeilenumbruch, z.B. in Code; weitere ⏎ geben leere Zeilen"), // ⏎ wie auf der Taste
-  ], "Siehe [[ ]], [[_]], [[app:umbruch]]."),
+  ], "Im Menü heißt die Taste OK, siehe [[menue:ok]]. Siehe auch [[ ]], [[_]], [[app:umbruch]]."),
   "app:loeschen": Hilfe("app:loeschen", "Löschen", [
     Verwendung("⌫", "nimmt das zuletzt eingegebene Zeichen zurück"),
     Verwendung("Shift+C", "löscht den Stack"),
@@ -118,7 +151,7 @@ const Map<String, Hilfe> eintraege = {
     Verwendung("Wischen", "über die Funktionstasten blättert ihre Seiten, am PC auch das Mausrad"),
   ], "Die Seite listet die eigenen Funktionen und je geladener Bibliothek deren Funktionen, jeweils mit ihrem Code; "
       "blättern die Tasten auf eine Bibliothek, springt sie zu deren Abschnitt. Den orangen Rahmen hat entweder "
-      "die Liste oder der Tastenblock; TAB wählt die Liste. Die Domäne wählt MENÜ. "
+      "die Liste oder der Tastenblock; TAB wählt die Liste. Welche Bibliotheken die Tasten zeigen, wählt man im Menü. "
       "Siehe [[#funktionen]]. "
       "Weiter: [[app:variablen]]."),
   "app:variablen": Hilfe("app:variablen", "Anzeige: Variablen", [
@@ -184,7 +217,7 @@ const bibliotheken = "Bibliotheken";
 /// Text der Seite „Bibliotheken“ mit Verweisen auf die Übersichten der Bibliotheken [namen].
 String bibliothekenText(List<String> namen) =>
     "Übersichten: ${[for (final n in namen) "[[#$n]]"].join(", ")}. Lesen geht auch, bevor eine Bibliothek "
-    "geladen ist; laden mit MENÜ, dann die Bibliothek wählen. Zurück zur Startseite: [[#]].";
+    "geladen ist; laden mit MENÜ, 4, die Bibliothek einschalten, ENTER. Zurück zur Startseite: [[#]].";
 
 /// Tooltip einer Bibliothek ohne `beschreibung`.
 const bibliothek = "Bibliothek";

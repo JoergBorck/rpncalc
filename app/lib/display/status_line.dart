@@ -99,7 +99,7 @@ class Statuszeile extends StatelessWidget {
     "Winkelmodus: $winkel",
     "Zufall: ${m.zustand.seed == null ? "echte Zufallszahlen" : "Startwert ${m.zustand.seed}"}",
     "Stack: ${m.zustand.tiefe} Werte",
-    "Funktionstasten: ${m.domaene}",
+    "Funktionstasten: ${["Grundfunktionen", ...m.eingeschalteteEintraege].join(", ")}",
   ].join("\n");
 
 }

@@ -120,12 +120,13 @@ stehen die Abhängigkeiten zwischen den Teilen an einer Stelle.
 |---|---|
 | `model.dart` | `RechnerModell`, `ModellKern`: `RpnApi`, `Zustand`, Umschaltungen, Bereich, Verlauf, Schreiben in den Rechner, Zeilenumbruch |
 | `input.dart` | Tastendruck und Präfixe (Shift, ~, \|, ', Alpha) |
-| `assignment.dart` | Belegung der Funktionstasten (Seiten, Domänen, Variablen, eigene Funktionen, Mausrad) und Beschriftung der Tasten |
+| `assignment.dart` | Belegung der Funktionstasten (Seiten der eingeschalteten Bibliotheken und von Programm, Variablen, eigene Funktionen, Mausrad), Übernehmen der Auswahl aus dem Menü und Beschriftung der Tasten |
 | `help_mode.dart` | Hilfe-Modus: Seitenfolge, Verweise, Lese-Modus |
 | `clipboard.dart` | Kopieren, Einfügen, `\c` `\s` `\v` |
 | `viewport.dart` | Ausschnitte der Anzeige: Versatz im Stack und Verlauf, waagrechtes Schieben, Pfeile |
 | `keyboard.dart` | Zeichen der PC-Tastatur auf Tasten abbilden, Leuchten der Tasten |
 | `modes.dart` | die Bedienmodi Rechnen und Hilfe (4.3) |
+| `menu.dart` | das Menü auf dem Tastenfeld mit seinem Bedienmodus (doc/app.md 3.6) |
 
 ### 4.3 Bedienmodi
 
@@ -135,7 +136,9 @@ Modell gibt jede Bedienung an den aktiven Modus (`modus`) weiter, statt an jeder
 `hilfeModus` heißt nur noch „der Modus Hilfe ist aktiv“ und dient der Anzeige. Rechnen gibt an Eingabe, Tastatur
 und Ausschnitt weiter (`_druckeRechnen` …), Hilfe enthält selbst, was Tasten und Pfeile dort bewirken; den
 Zustand der Hilfe (Seiten, Verweise) führt `help_mode.dart`. Wischen und Mausrad über den Funktionstasten fragen
-`hilfeModus` noch selbst ab. Das Menü (FA-6) wird ein weiterer Modus.
+`hilfeModus` noch selbst ab. Das Menü ist ein dritter Modus (`menu.dart`, doc/app.md 3.6); öffnet man darin die
+Hilfe, führt BEENDEN zurück ins Menü. Ob das Menü offen ist (`menueOffen`), gilt auch, solange die Hilfe darüber
+liegt.
 
 ### 4.4 Anzeige und Tastenfeld
 

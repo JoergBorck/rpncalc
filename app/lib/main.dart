@@ -1,7 +1,7 @@
 /// Aufgabe: Start der App. [RpnApp] setzt das Thema und den Zoom (alles wächst mit der Fensterbreite, begrenzt
 /// durch die Höhe), [RechnerSeite] ist die einzige Seite: Anzeige oben, Tastenfeld unten, das Cursorkreuz
-/// dazwischen. Sie hält das [RechnerModell], zeigt seine Meldungen, öffnet das Menü der Domänen und gibt die
-/// Tasten der PC-Tastatur (Sondertasten, Strg+C/V, sonst Zeichen) an das Modell weiter.
+/// dazwischen. Sie hält das [RechnerModell], zeigt seine Meldungen und gibt die Tasten der PC-Tastatur
+/// (Sondertasten, Strg+C/V, sonst Zeichen) an das Modell weiter. Das Menü liegt auf dem Tastenfeld (doc/app.md 3.6).
 ///
 /// Abgrenzung: Welches Zeichen welche Taste des Tastenfelds trifft, entscheidet model/keyboard.dart; Anzeige und
 /// Tastenfeld liegen in display/ und keypad/. Hier wird nicht gerechnet.
@@ -15,7 +15,6 @@ import 'package:flutter/services.dart';
 
 import 'colors.dart';
 import 'display/display.dart';
-import 'help_texts.dart';
 import 'keypad/cursor_cross.dart';
 import 'keypad/keypad.dart';
 import 'model/model.dart';
@@ -108,41 +107,6 @@ class _RechnerSeiteState extends State<RechnerSeite> {
     super.dispose();
   }
 
-  void _menue() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Farben.anzeige,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-              child: Text(
-                "DOMÄNE FÜR DIE FUNKTIONSTASTEN",
-                style: Schrift.monospace(12, Farben.anzeigeBlass, gewicht: FontWeight.w600),
-              ),
-            ),
-            for (final d in modell.domaenenNamen)
-              // Bibliotheken zeigen im Tooltip, wofür sie gedacht sind (doc/app.md 5.1)
-              tippTabelle(
-                AppHilfe.tippBibliothek(modell.api, d),
-                ListTile(
-                  title: Text(d, style: Schrift.monospace(15, Farben.anzeigeText)),
-                  trailing: d == modell.domaene ? const Icon(Icons.check, color: Farben.anzeigeText) : null,
-                  onTap: () {
-                    modell.waehleDomaene(d);
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // eine echte Tastatur bedient die App wie die Knöpfe (doc/app.md Kapitel 6)
@@ -168,7 +132,7 @@ class _RechnerSeiteState extends State<RechnerSeite> {
                       Column(
                         children: [
                           Expanded(child: Anzeige(modell)),
-                          Tastenfeld(modell, menue: _menue),
+                          Tastenfeld(modell),
                         ],
                       ),
                       Positioned(

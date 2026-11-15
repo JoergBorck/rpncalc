@@ -1,6 +1,6 @@
 /// Aufgabe: der Zustand der App über dem Rechner, ohne Widgets. [RechnerModell] ist die einzige Klasse, die die
 /// Widgets kennen: Umschaltungen (Shift, Präfixe, Alpha), gewählter Bereich, Verlauf und Zeilenumbruch, Belegung
-/// der Funktionstasten, Hilfe-Modus, Zwischenablage, Ausschnitte der Anzeige und die PC-Tastatur. Wie der
+/// der Funktionstasten, Hilfe-Modus, Zwischenablage, Ausschnitte der Anzeige, die PC-Tastatur und das Menü. Wie der
 /// Calculator ist es nach Aufgaben geteilt: [ModellKern] hält den gemeinsamen Zustand und schreibt in den Rechner,
 /// je ein Mixin in einer part-Datei übernimmt eine Aufgabe.
 ///
@@ -25,6 +25,7 @@ part 'clipboard.dart';
 part 'help_mode.dart';
 part 'input.dart';
 part 'keyboard.dart';
+part 'menu.dart';
 part 'modes.dart';
 part 'viewport.dart';
 
@@ -43,13 +44,14 @@ typedef Beschriftung = ({String text, Beschriftungsart art, bool gedimmt});
 typedef Verlaufszeile = ({String text, Fehler? fehler});
 
 /// Der Zustand der Oberfläche über dem Rechner; die Teile stehen in den Mixins (doc/architecture.md 4.2).
-class RechnerModell extends ModellKern with _Eingabe, _Belegung, _HilfeModus, _Ablage, _Ausschnitt, _Tastatur {
+class RechnerModell extends ModellKern
+    with _Eingabe, _Belegung, _HilfeModus, _Ablage, _Ausschnitt, _Tastatur, _Menue {
   @override
-  late final Bedienmodus _modusRechnen = _Rechnen(this), _modusHilfe = _Hilfe(this);
+  late final Bedienmodus _modusRechnen = _Rechnen(this), _modusHilfe = _Hilfe(this), _modusMenue = _MenueModus(this);
 
   /// Version der App (MAJOR.MINOR.PATCH wie in pubspec.yaml); der Rechner prüft damit die Angabe `app` von
   /// Bibliotheken (doc/api.md 9.1).
-  static const String appVersion = "0.3.0";
+  static const String appVersion = "0.4.0";
 
   static const int verlaufMax = 100;
 
@@ -85,7 +87,7 @@ class RechnerModell extends ModellKern with _Eingabe, _Belegung, _HilfeModus, _A
 
   /// Der Block der Funktionstasten ist leicht orange hinterlegt, weil er zur Liste mit dem Rahmen gehört; nur, wenn
   /// er etwas aus ihr zeigen kann (tastenblockVerbunden).
-  bool get tastenblockHinterlegt => listeGewaehlt && !hilfeModus && tastenblockVerbunden;
+  bool get tastenblockHinterlegt => listeGewaehlt && !hilfeModus && !menueOffen && tastenblockVerbunden;
 
   /// Tipp in Eingabe oder Stack: wählt den Bereich sofort; ein zweiter Tipp kurz danach (Doppelklick) wirkt wie
   /// die Taste □ / ◫ (doc/app.md 3.5). Selbst erkannt, damit der erste Tipp nicht auf den zweiten wartet.
@@ -184,6 +186,7 @@ abstract class ModellKern extends ChangeNotifier {
   late Bedienmodus modus = _modusRechnen;
   Bedienmodus get _modusRechnen;
   Bedienmodus get _modusHilfe;
+  Bedienmodus get _modusMenue;
 
   /// Der Hilfe-Modus (help_mode.dart): Shift+MENÜ (F1) schaltet ihn ein, BEENDEN aus. Solange er an ist, wird
   /// nichts eingegeben.
@@ -265,6 +268,12 @@ abstract class ModellKern extends ChangeNotifier {
 
   // Hilfe-Modus (help_mode.dart)
   void _hilfeStarten();
+
+  // Menü (menu.dart)
+  /// Das Menü ist offen, auch wenn darüber gerade der Hilfe-Modus liegt.
+  bool get menueOffen;
+  void _menueOeffnen();
+  String? menueHilfe(Taste t);
 
   // Zwischenablage (clipboard.dart)
   bool _rueckstrichBefehl(String c);

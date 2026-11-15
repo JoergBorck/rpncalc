@@ -26,6 +26,7 @@ class Nachricht {
   static String hilfeAbfragen(String kennung) => jsonEncode({"hilfe": kennung});
   static String bibliothekenAbfragen() => jsonEncode({"bibliotheken": true});
   static String ladeBibliothek(String name) => jsonEncode({"ladeBibliothek": name});
+  static String entladeBibliothek(String name) => jsonEncode({"entladeBibliothek": name});
 
   // Server -> Client
   static String zustand(Zustand z) => jsonEncode({"zustand": z});
@@ -84,6 +85,11 @@ Antwort beantworte(RpnApi api, String zeile) {
       // eine unbekannte Bibliothek ist ein Protokollfehler, ein Fehler beim Laden steht im Zustand
       if (api.bibliothek(wert) == null) return fehler("Unbekannte Bibliothek: $wert");
       api.ladeBibliothek(wert);
+      z = api.zustand(zeilen: n);
+    case "entladeBibliothek" when wert is String:
+      // wie beim Laden: unbekannt oder nicht geladen ist ein Protokollfehler
+      final f = api.bibliothek(wert) == null ? "Unbekannte Bibliothek: $wert" : api.entladeBibliothek(wert);
+      if (f != null) return fehler(f);
       z = api.zustand(zeilen: n);
     default:
       return fehler("Unbekannte Nachricht: $zeile");

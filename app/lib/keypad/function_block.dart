@@ -64,9 +64,9 @@ class _FunktionsBlockState extends State<FunktionsBlock> with SingleTickerProvid
   /// Seite zurück, und ein weiterer Tastendruck rechnet von hier aus weiter (VA-14).
   double? _ziel;
 
-  /// Die Seite, die das Modell zuletzt gezeigt hat, und woran man eine neue Domäne erkennt.
+  /// Die Seite, die das Modell zuletzt gezeigt hat, und woran man eine andere Belegung erkennt.
   int _seite = 0;
-  (String, int) _inhalt = ("", 0);
+  String _inhalt = "";
 
   RechnerModell get m => widget.m;
   int get _seiten => m.funktionsSeiten;
@@ -78,7 +78,7 @@ class _FunktionsBlockState extends State<FunktionsBlock> with SingleTickerProvid
     super.initState();
     _seite = m.funktionsSeite;
     _lage = _seite.toDouble();
-    _inhalt = (m.domaene, _seiten);
+    _inhalt = m.belegungsStand;
   }
 
   @override
@@ -90,7 +90,7 @@ class _FunktionsBlockState extends State<FunktionsBlock> with SingleTickerProvid
 
   /// Übernimmt eine Seite, die das Modell von sich aus gewählt hat (◄ ►, neue Domäne).
   void _vomModell() {
-    final inhalt = (m.domaene, _seiten);
+    final inhalt = m.belegungsStand;
     if (inhalt != _inhalt || !m.funktionenBlaetterbar) {
       // neue Domäne oder andere Zahl von Seiten: ohne Bewegung an die neue Stelle
       _inhalt = inhalt;

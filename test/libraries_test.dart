@@ -118,8 +118,48 @@ void main() {
       final info = api.bibliotheksInfo("schwingungen")!;
       expect(info.beschreibung, startsWith("Mechanische Schwingungen"));
       expect([info.version, info.funktionen], ["1.2.0", 25]);
+      expect(info.taste, "Schwing.");
+      expect([for (final p in info.symbol) p.breite], [1.5, 0.6], reason: "Vorgabe 1.5, die Achse dünn");
       expect(api.calculator.eigeneFunktionen, isEmpty, reason: "nur gefragt, nicht geladen");
       expect(api.bibliotheksInfo("gibtsnicht"), isNull);
+    });
+
+    test('Tastenname und Symbol sind freiwillig; ein Symbol enthält nur Pfaddaten (doc/api.md 9.1)', () {
+      BibliotheksInfo info(String version) {
+        final api = apiMitEinblick();
+        expect(api.bibliothekHinzufuegen("p", '{{{"version":{"name":"p",$version}}}rpnjson}'), isNull);
+        return api.bibliotheksInfo("p")!;
+      }
+      final ohne = info('"bibliothek":"1.0.0"');
+      expect([ohne.taste, ohne.symbol], [null, isEmpty]);
+      final eins = info('"taste":"P","symbol":"M2 12 H22"');
+      expect([eins.taste, eins.symbol], ["P", [(d: "M2 12 H22", breite: 1.5, fuellen: false)]]);
+      final liste = info('"symbol":[{"d":"M1 1 L2 2 Z","breite":1,"fuellen":true},"m0,0 h1e1"]');
+      expect(liste.symbol, [(d: "M1 1 L2 2 Z", breite: 1.0, fuellen: true), (d: "m0,0 h1e1", breite: 1.5, fuellen: false)]);
+      final api = apiMitEinblick();
+      api.bibliothekHinzufuegen("p", '{{{"version":{"name":"p","symbol":"M0 0 <script>"}}}rpnjson}');
+      expect(api.bibliotheksInfo("p")!.symbol, isEmpty, reason: "andere Zeichen: übergangen");
+      expect(api.hinweise(), ["Ungültiges Symbol in der Bibliothek p übergangen"]);
+      api.bibliothekHinzufuegen("p", '{{{"version":{"name":"p","symbol":[{"d":"M0 0","breite":-1}]}}}rpnjson}');
+      expect(api.bibliotheksInfo("p")!.symbol, isEmpty);
+    });
+
+    test('entladen: Funktionen, Hilfen und Versionsangabe gehen, Variablen bleiben (doc/api.md 9.1)', () {
+      final api = apiMitEinblick();
+      expect(api.entladeBibliothek("statistik"), "Bibliothek ist nicht geladen: statistik");
+      api.ladeBibliothek("statistik");
+      api.eingabe("sclr 1 2 sadd");
+      expect(api.calculator.variablen, isNotEmpty, reason: "sclr legt die Summen an");
+      api.eingabe("{mean}':m"); // eigene Funktion, die eine aus der Bibliothek benutzt
+      expect(api.entladeBibliothek("statistik"), isNull);
+      expect(api.calculator.herkunft, isEmpty);
+      expect(api.calculator.eigeneFunktionen.keys, ["m"], reason: "eigene Funktionen bleiben");
+      expect(api.calculator.eigeneHilfen, isEmpty);
+      expect(api.bibliotheksVersion("statistik"), isNull);
+      expect(api.calculator.variablen, isNotEmpty, reason: "Variablen bleiben");
+      expect(api.eingabe("m").fehler?.text, "Fehler in m: Unbekannte Funktion: mean", reason: "wie jede unbekannte Funktion");
+      expect(api.ladeBibliothek("statistik"), isNull, reason: "wieder laden geht");
+      expect(api.eingabe("m").fehler?.text, isNot(contains("Unbekannte Funktion")));
     });
 
     test('die Werte in den Beispielen stimmen (Schwingungen)', () {

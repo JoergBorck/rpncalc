@@ -1,8 +1,9 @@
 /// Aufgabe: das Tastenfeld: oben R1 mit SHIFT, ALPHA, TAB und MENÜ, darunter R2–R5 mit den Funktionstasten in
 /// R3 und R4, unten R6–R9 mit Ziffern und Rechenzeichen. Dazu der orange Rahmen um die Funktionstasten mit dem
 /// Namen der Seite, Wischen und Mausrad zum Blättern und die beiden kleinen Ecken neben dem Cursorkreuz
-/// (rechts Maximieren). Die Blöcke R1, R2–R5 und R6–R9 entstehen einzeln, damit das Querformat (FA-5) sie nur
-/// anders anordnen muss.
+/// (rechts Maximieren). Im Menü sind Tasten ohne Bedeutung leer, der orange Rahmen liegt um den Block, in dem
+/// gewählt wird (doc/app.md 3.6). Die Blöcke R1, R2–R5 und R6–R9 entstehen einzeln, damit das Querformat (FA-5)
+/// sie nur anders anordnen muss.
 ///
 /// Abgrenzung: Eine einzelne Taste zeichnet key_widget.dart, das Cursorkreuz cursor_cross.dart (die Seite legt
 /// es über R1). Welche Tasten es gibt, steht in keys.dart; die Belegung der Funktionstasten liefert das Modell.
@@ -23,13 +24,13 @@ import '../model/model.dart';
 import '../tooltip.dart';
 import 'function_block.dart';
 import 'key_widget.dart';
+import 'menu_keys.dart';
 
 /// Das Tastenfeld: oben 5 Reihen zu 6 Tasten, unten 4 Reihen zu 5 Tasten (doc/app.md Kapitel 3).
 /// In R1 bleiben die Spalten 3 und 4 frei für das Cursorkreuz, das die Seite darüberlegt.
 class Tastenfeld extends StatelessWidget {
   final RechnerModell modell;
-  final VoidCallback menue;
-  const Tastenfeld(this.modell, {required this.menue, super.key});
+  const Tastenfeld(this.modell, {super.key});
 
   static const double obenHoehe = 44, obenAbstand = 7, untenHoehe = 54, untenAbstand = 9;
   static const double randOben = 10, blockAbstand = 12, randUnten = 4;
@@ -64,19 +65,24 @@ class Tastenfeld extends StatelessWidget {
       ..sort((a, b) => a.funktion!.compareTo(b.funktion!));
     // hat die Liste der Seite Funktionen bzw. Variablen den Rahmen, gibt ein Tipp auf eine Taste ihn dem Block und
     // gibt nichts ein (VA-15); beim Schreiben von Buchstaben und Namen (Alpha, ') bleiben es Tasten
-    final wechselt = m.tastenblockHinterlegt && !m.alpha && !m.apostroph;
+    final wechselt = m.tastenblockHinterlegt && !m.alpha && !m.apostroph && !m.menueOffen;
     final beiDruck = wechselt ? m.waehleTastenblock : null;
     Widget funktionsTaste(int platz, Taste? belegt) {
       final t = plaetze[platz];
+      // im Menü nur die Schalter der Bibliotheken; sonst leer, auch ohne Buchstaben für Alpha (doc/app.md 3.6)
+      if (m.menueOffen && belegt?.aktion != Aktion.menueEintrag) return _leer(m, obenHoehe);
       if (belegt == null) {
         return TasteWidget(Taste("", reserviert: true, buchstabe: t.buchstabe), m,
             hoehe: obenHoehe, funktion: true, beiDruck: beiDruck);
       }
-      // die Belegung kommt aus der Domäne, der Buchstabe bleibt der des Platzes
+      // im Bereich Bibliotheken des Menüs: die Bibliotheken als Schalter (doc/app.md 3.6)
+      if (belegt.aktion == Aktion.menueEintrag) return MenueSchalter(belegt, m, hoehe: obenHoehe);
+      // die Belegung kommt aus der Seite, der Buchstabe bleibt der des Platzes
       return TasteWidget(belegt, m, hoehe: obenHoehe, funktion: true, buchstabe: t.buchstabe, beiDruck: beiDruck);
     }
 
     Widget oben(Taste t) {
+      if (t.funktion == null && m.menueOffen && !m.wirktImMenue(t)) return _leer(m, obenHoehe);
       // ⌫ ist im Lese-Modus BEENDEN und dann blau wie MENÜ: Blau sind die Tasten mit einer Aufgabe in der Hilfe
       if (t.aktion == Aktion.loeschen) {
         return TasteWidget(t, m, hoehe: obenHoehe, an: m.hilfeLesen, anFarbe: Farben.hilfe);
@@ -88,7 +94,9 @@ class Tastenfeld extends StatelessWidget {
     // Rahmen um die zehn Funktionstasten (R3 und R4, Spalten 2 bis 6), wenn der Tastenblock den Rahmen hat (VA-15)
     // nach Wischen oder Mausrad auch kurz ohne gewählten Bereich (doc/app.md 3.3)
     // im Hilfe-Modus immer: ein Klick in den Rahmen zeigt die Hilfe zur Seite (doc/app.md 5.2)
-    final funktionenGewaehlt = m.tastenblockGewaehlt || m.funktionenHinweis || m.hilfeModus;
+    // im Bereich Bibliotheken des Menüs: hier wird gewählt (doc/app.md 3.6)
+    final imMenue = m.menueBereich == MenueBereich.bibliotheken;
+    final funktionenGewaehlt = m.tastenblockGewaehlt || m.funktionenHinweis || m.hilfeModus || imMenue;
     List<Widget> rahmen(double breite) {
       final taste = (breite - 5 * (obenAbstand - 1)) / 6;
       final links = taste + obenAbstand - 1 - 4, oben = randOben + 2 * (obenHoehe + obenAbstand) - 4;
@@ -113,7 +121,7 @@ class Tastenfeld extends StatelessWidget {
               onTap: m.hilfeModus ? m.hilfeZurSeite : null,
               child: tipp(
                 [
-                  for (final v in AppHilfe.eintraege[variablen ? "app:variablen" : "app:funktionen"]!.verwendungen)
+                  for (final v in AppHilfe.eintraege[imMenue ? "menue:bibliotheken" : variablen ? "app:variablen" : "app:funktionen"]!.verwendungen)
                     "${v.schreibweise}  ${v.kurz}",
                 ].join("\n"),
                 Padding(
@@ -152,11 +160,58 @@ class Tastenfeld extends StatelessWidget {
             _bloecke(m, reihe, oben),
             _funktionsBlock(m, platz.maxWidth, funktionsTaste),
             ...rahmen(platz.maxWidth),
+            if (m.menueBereich == MenueBereich.haupt) ..._ziffernRahmen(platz.maxWidth),
+            if (m.menueAendert) _okRahmen(platz.maxWidth),
           ],
         ),
       ),
     );
   }
+
+  /// Im Hauptmenü: der orange Rahmen um den Ziffernblock (Spalten 2–4, alle vier Reihen) mit dem Namen
+  /// „Hauptmenü“ unten (doc/app.md 3.6).
+  List<Widget> _ziffernRahmen(double breite) {
+    final spalte = (breite - 4 * (untenAbstand - 1)) / 5;
+    final links = spalte + untenAbstand - 1 - 4;
+    final oben = randOben + 5 * obenHoehe + 4 * obenAbstand + blockAbstand - 4;
+    final weit = 3 * spalte + 2 * (untenAbstand - 1) + 8, hoch = 4 * untenHoehe + 3 * untenAbstand + 8;
+    const name = "Hauptmenü";
+    return [
+      Positioned(
+        left: links,
+        width: weit,
+        top: oben,
+        height: hoch,
+        child: IgnorePointer(child: CustomPaint(painter: _Rahmen(luecke: (10, 10 + 6 + _breite(name, _nameStil))))),
+      ),
+      Positioned(
+        left: links + 10,
+        top: oben + hoch - 7,
+        child: tipp(
+          [for (final v in AppHilfe.eintraege["menue:hauptmenue"]!.verwendungen) "${v.schreibweise}  ${v.kurz}"].join("\n"),
+          const Padding(padding: EdgeInsets.symmetric(horizontal: 3), child: Text(name, style: _nameStil)),
+        ),
+      ),
+    ];
+  }
+
+  /// Im Bereich Bibliotheken, solange OK etwas ändern würde: ein dünner oranger Rahmen etwas außerhalb um OK
+  /// (ENTER, links oben im unteren Block), wie um die Funktionstasten (doc/app.md 3.6).
+  Widget _okRahmen(double breite) {
+    final spalte = (breite - 4 * (untenAbstand - 1)) / 5;
+    final oben = randOben + 5 * obenHoehe + 4 * obenAbstand + blockAbstand - 4;
+    return Positioned(
+      left: -4,
+      width: spalte + 8,
+      top: oben,
+      height: untenHoehe + 8,
+      child: const IgnorePointer(child: CustomPaint(painter: _Rahmen(luecke: (0, 0)))),
+    );
+  }
+
+  /// Eine Taste ohne Bedeutung im Menü: leer, ohne Beschriftung; Ziffern grau statt hell (doc/app.md 3.6).
+  static Widget _leer(RechnerModell m, double hoehe, {bool ziffer = false}) => TasteWidget(
+      const Taste("", reserviert: true), m, hoehe: hoehe, gross: ziffer, farbe: ziffer ? Farben.zifferLeer : null);
 
   /// Am PC (auch im Browser auf einem PC) zeigt der Rahmen ▲ ▼, weil das Mausrad senkrecht schiebt (VA-10).
   static bool get _amPc => const {TargetPlatform.windows, TargetPlatform.linux, TargetPlatform.macOS}.contains(defaultTargetPlatform);
@@ -236,16 +291,23 @@ class Tastenfeld extends StatelessWidget {
             farbe: Farben.shift,
             an: m.shift,
           ),
-          TasteWidget(
-            const Taste("ALPHA", shift: "ABC", aktion: Aktion.alpha),
-            m,
-            hoehe: obenHoehe,
-            farbe: Farben.alpha,
-            an: m.alpha || m.hilfeLesen, // im Hilfe-Modus: Lese-Modus
-          ),
+          if (m.menueOffen && !m.hilfeModus)
+            _leer(m, obenHoehe)
+          else
+            TasteWidget(
+              const Taste("ALPHA", shift: "ABC", aktion: Aktion.alpha),
+              m,
+              hoehe: obenHoehe,
+              farbe: Farben.alpha,
+              an: m.alpha || m.hilfeLesen, // im Hilfe-Modus: Lese-Modus
+            ),
           _Ecke(m, rechts: false), // Platzhalter rechts neben ALPHA
           _Ecke(m, rechts: true), // Maximieren links neben TAB
-          TasteWidget(const Taste("TAB", shift: "⇤", aktion: Aktion.tab), m, hoehe: obenHoehe, bedienung: true),
+          if (m.menueOffen && !m.hilfeModus)
+            _leer(m, obenHoehe)
+          else
+            TasteWidget(const Taste("TAB", shift: "⇤", aktion: Aktion.tab), m, hoehe: obenHoehe, bedienung: true),
+          // MENÜ öffnet das Menü auf dem Tastenfeld, Shift+MENÜ die Hilfe; im Menü orange umrandet (doc/app.md 3.6)
           TasteWidget(
             const Taste("MENÜ", shift: "HILFE", aktion: Aktion.menue),
             m,
@@ -253,8 +315,7 @@ class Tastenfeld extends StatelessWidget {
             bedienung: true,
             an: m.hilfeModus,
             anFarbe: Farben.hilfe,
-            // Shift+MENÜ und MENÜ im Hilfe-Modus gehören zur Hilfe, MENÜ allein öffnet die Domänen
-            beiDruck: () => m.shiftWirkt || m.hilfeModus ? m.druecke(const Taste("MENÜ", aktion: Aktion.menue)) : menue(),
+            rahmen: m.menueOffen ? Farben.shift : null,
           ),
     ], obenAbstand);
   }
@@ -271,9 +332,19 @@ class Tastenfeld extends StatelessWidget {
   List<Widget> _untererBlock(RechnerModell m, Widget Function(List<Widget>, double) reihe) => [
         for (int i = 0; i < untereTasten.length; i++) ...[
           if (i > 0) const SizedBox(height: untenAbstand),
-          reihe([for (final t in untereTasten[i]) TasteWidget(t, m, hoehe: untenHoehe, gross: true)], untenAbstand),
+          reihe([for (final t in untereTasten[i]) _untereTaste(m, t)], untenAbstand),
         ],
       ];
+}
+
+/// Eine Taste des unteren Blocks; im Menü ein Bereich des Hauptmenüs, ENTER oder leer (doc/app.md 3.6).
+Widget _untereTaste(RechnerModell m, Taste t) {
+  const hoehe = Tastenfeld.untenHoehe;
+  if (!m.menueOffen) return TasteWidget(t, m, hoehe: hoehe, gross: true);
+  final punkt = t.aktion == Aktion.schreiben ? menuePunktAuf(t.text) : null;
+  if (punkt != null) return MenueBereichTaste(t, punkt, m, hoehe: hoehe);
+  if (m.wirktImMenue(t)) return TasteWidget(t, m, hoehe: hoehe, gross: true);
+  return Tastenfeld._leer(m, hoehe, ziffer: RegExp(r"^[0-9.ê]$").hasMatch(t.text));
 }
 
 /// Kleine Taste in der unteren Außenecke neben dem Cursorkreuz (doc/app.md 3.5): rechts Maximieren,
@@ -286,7 +357,7 @@ class _Ecke extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // zeigt, was ein Druck bewirkt: geteilt → maximieren □, maximiert → wieder teilen ◫
-    final wirkt = rechts && (m.bereich == Bereich.eingabe || m.bereich == Bereich.stack);
+    final wirkt = rechts && !m.menueOffen && (m.bereich == Bereich.eingabe || m.bereich == Bereich.stack);
     // bei gedehnten Tasten wächst die Spalte, das Cursorkreuz nicht: die Taste füllt den zusätzlichen Platz
     Widget taste(double spalte) => Material(
       color: Farben.funktion, // wie das Cursorkreuz; der Platzhalter bleibt ohne Beschriftung
@@ -297,7 +368,7 @@ class _Ecke extends StatelessWidget {
         child: SizedBox(
           width: 30 + math.max(0, spalte - Tastenfeld.normalSpalte),
           height: 22,
-          child: rechts
+          child: rechts && !m.menueOffen // im Menü leer (doc/app.md 3.6)
               ? CustomPaint(painter: _Layout(geteilt: m.maximiert, farbe: wirkt ? Farben.tasteText : Farben.gedimmt))
               : null,
         ),

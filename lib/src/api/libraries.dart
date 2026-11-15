@@ -1,8 +1,8 @@
 /// Aufgabe: die Bibliotheken eines Rechners. [Bibliotheksverwaltung] kennt die mitgelieferten und die zur
 /// Laufzeit hinzugefügten, lädt eine Bibliothek in den Interpreter (nur, wenn keiner ihrer Namen schon anders
-/// belegt ist), liest Kurzinfo, Funktionen und Hilfen einer Bibliothek in einem eigenen Probe-Interpreter, ohne
-/// sie zu laden, und exportiert die eigenen Funktionen als Bibliothek. [ladeAlsBibliothek] führt den Text einer
-/// Bibliothek aus.
+/// belegt ist) und entlädt sie wieder, liest Kurzinfo (mit Tastenname und Symbol), Funktionen und Hilfen einer
+/// Bibliothek in einem eigenen Probe-Interpreter, ohne sie zu laden, und exportiert die eigenen Funktionen als
+/// Bibliothek. [ladeAlsBibliothek] führt den Text einer Bibliothek aus.
 ///
 /// Abgrenzung: Die Texte der mitgelieferten Bibliotheken stehen in libraries/libraries.g.dart; was `rpnjson`
 /// (Version, Hilfe) bewirkt, steht im Calculator (engine/functions.dart). Öffentlich ist das über RpnApi.
@@ -14,6 +14,32 @@ import '../engine/interpreter.dart';
 import '../engine/session.dart';
 import '../libraries/libraries.g.dart';
 import '../version.dart';
+
+/// Ein Pfad im Symbol einer Bibliothek: Pfaddaten eines SVG im Raster 24 × 24, Strichstärke, gefüllt oder nicht
+/// (doc/api.md 9.1).
+typedef SymbolPfad = ({String d, double breite, bool fuellen});
+
+/// Kurzinfo zu einer Bibliothek für Menüs und Tooltips; [taste] ist null und [symbol] leer, wenn sie keine angibt.
+typedef BibliotheksInfo = ({String beschreibung, String version, int funktionen, String? taste, List<SymbolPfad> symbol});
+
+/// Nur die Zeichen von Pfaddaten: Befehle, Zahlen, Leerzeichen und Kommas. So kann ein Symbol nichts anderes
+/// enthalten als Linien, auch wenn die Oberfläche es als SVG zeichnet.
+final _pfaddaten = RegExp(r"^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\- ]+$");
+
+/// Liest `symbol` aus dem version-Eintrag: ein Text (ein Pfad) oder eine Liste von Pfaden; null, wenn es ungültig
+/// ist.
+List<SymbolPfad>? symbolAus(Object? s) {
+  if (s == null) return const [];
+  SymbolPfad? pfad(Object? p) {
+    if (p is String) p = {"d": p};
+    if (p is! Map<String, Object?>) return null;
+    final (d, breite, fuellen) = (p["d"], p["breite"] ?? 1.5, p["fuellen"] ?? false);
+    if (d is! String || !_pfaddaten.hasMatch(d) || breite is! num || breite <= 0 || fuellen is! bool) return null;
+    return (d: d, breite: breite.toDouble(), fuellen: fuellen);
+  }
+  final liste = [for (final p in s is List ? s : [s]) pfad(p)];
+  return liste.isEmpty || liste.contains(null) ? null : [for (final p in liste) p!];
+}
 
 /// Eine Bibliothek ist ein Block, der mit X ausgeführt wird: erst importieren, dann X (doc/api.md 9.1).
 /// Liefert null oder den Fehler.
@@ -71,6 +97,25 @@ class Bibliotheksverwaltung {
     return ladeAlsBibliothek(_rechner, text);
   }
 
+  /// Entlädt eine Bibliothek: ihre Funktionen, die Hilfen, die sie mitbringt, und ihre Versionsangabe. Variablen,
+  /// die sie angelegt hat, bleiben (doc/api.md 9.1).
+  String? entladen(String name) {
+    final c = _rechner.calculator;
+    if (!c.versionen.containsKey(name)) return "Bibliothek ist nicht geladen: $name";
+    for (final f in [for (final e in c.herkunft.entries) if (e.value == name) e.key]) {
+      c.eigeneFunktionen.remove(f);
+      c.herkunft.remove(f);
+      c.intern.remove(f);
+    }
+    final text = this.text(name);
+    final probe = Interpreter();
+    if (text != null && ladeAlsBibliothek(probe, text) == null) {
+      probe.calculator.eigeneHilfen.keys.forEach(c.eigeneHilfen.remove);
+    }
+    c.versionen.remove(name);
+    return null;
+  }
+
   /// Die Namen der Funktionen einer Bibliothek in der Reihenfolge der Datei, mit [ohneIntern] ohne die internen.
   List<String> funktionen(String name, {bool ohneIntern = false}) {
     final text = this.text(name);
@@ -84,17 +129,23 @@ class Bibliotheksverwaltung {
   /// Die Versionsangabe einer geladenen Bibliothek oder null.
   Map<String, Object?>? version(String name) => _rechner.calculator.versionen[name];
 
-  /// Satz aus `beschreibung`, Version und Zahl der Funktionen, auch wenn die Bibliothek nicht geladen ist.
-  ({String beschreibung, String version, int funktionen})? info(String name) {
+  /// Satz aus `beschreibung`, Version, Zahl der Funktionen, Tastenname und Symbol, auch wenn die Bibliothek
+  /// nicht geladen ist. Ein ungültiges Symbol wird übergangen und als Hinweis gemeldet.
+  BibliotheksInfo? info(String name) {
     final text = this.text(name);
     if (text == null) return null;
     final probe = Interpreter();
     if (ladeAlsBibliothek(probe, text) != null) return null;
     final v = probe.calculator.versionen.values.firstOrNull ?? const <String, Object?>{};
+    final symbol = symbolAus(v["symbol"]);
+    if (symbol == null) _rechner.calculator.hinweise.add("Ungültiges Symbol in der Bibliothek $name übergangen");
+    final taste = v["taste"];
     return (
       beschreibung: v["beschreibung"] as String? ?? "",
       version: v["bibliothek"] as String? ?? "",
       funktionen: probe.calculator.eigeneFunktionen.length,
+      taste: taste is String && taste.isNotEmpty ? taste : null,
+      symbol: symbol ?? const [],
     );
   }
 

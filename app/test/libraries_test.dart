@@ -10,7 +10,9 @@ import 'package:rpncalc_app/display/display.dart';
 import 'package:rpncalc_app/model/model.dart';
 import 'package:rpncalc_app/keys.dart';
 
-/// Bibliotheken als Domänen der Funktionstasten (doc/app.md 3.4, doc/api.md 9.1).
+import 'menu_helper.dart';
+
+/// Bibliotheken auf den Funktionstasten (doc/app.md 3.4, doc/api.md 9.1).
 void main() {
   late RechnerModell m;
   setUp(() => m = RechnerModell());
@@ -20,12 +22,13 @@ void main() {
     expect(File("pubspec.yaml").readAsStringSync(), contains("version: ${RechnerModell.appVersion}"));
   });
 
-  test('das Menü zeigt nach den eingebauten Domänen die Bibliotheken des Rechners', () {
-    expect(m.domaenenNamen, ["Grundfunktionen", "Programm", "schwingungen", "statistik"]);
+  test('das Menü zeigt die Bibliotheken des Rechners nach Namen, zuletzt Programm (doc/app.md 3.6)', () {
+    expect(m.menueEintraege, ["schwingungen", "statistik", "Programm"]);
+    expect(m.eingeschalteteEintraege, isEmpty, reason: "beim Start ist nichts geladen und Programm aus");
   });
 
-  test('eine Bibliothek wird beim Wählen geladen, ihre Funktionen liegen auf den Funktionstasten', () {
-    m.waehleDomaene("statistik");
+  test('eine Bibliothek wird beim Einschalten geladen, ihre Funktionen liegen auf den Funktionstasten', () {
+    einschalten(m, "statistik");
     expect(m.zustand.speicher.map((s) => s.name), contains("mean"));
     expect([for (final t in m.funktionstasten) t?.text], ["sclr", "sadd", "sall", "sq", "mean", "sdev", "corr", "lr", "yhat", "xhat"]);
     expect(m.seitenName, "statistik");
@@ -33,7 +36,7 @@ void main() {
   });
 
   test('mehr als zehn Funktionen: mehrere Seiten, ◄ ► blättern; Eigene ohne Bibliotheksfunktionen', () {
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     expect(m.seitenName, "schwingungen 1/3");
     m.bereich = Bereich.funktionen;
     m.waehleTastenblock();
@@ -46,29 +49,28 @@ void main() {
         "die Grundfunktionen, die immer dabei sind");
     m.zustand = m.api.eingabe("{1+}':inc");
     m.pfeil(AxisDirection.left);
-    expect(m.seitenName, "Eigene", reason: "nach den Seiten der Domäne die eigenen Funktionen");
+    expect(m.seitenName, "Eigene", reason: "nach den Seiten der Bibliotheken die eigenen Funktionen");
     expect([for (final t in m.funktionstasten.whereType<Taste>()) t.text], ["inc"],
-        reason: "Bibliotheksfunktionen stehen bei ihrer Domäne");
+        reason: "Bibliotheksfunktionen stehen bei ihrer Bibliothek");
   });
 
-  test('beim zweiten Wählen wird nicht noch einmal geladen', () {
-    m.waehleDomaene("statistik");
+  test('bleibt eine Bibliothek eingeschaltet, wird sie nicht noch einmal geladen', () {
+    einschalten(m, "statistik");
     expect(m.api.eingabe("'~~sclr").fehler, isNull); // entfernt sclr aus der Bibliothek
-    m.waehleDomaene("Grundfunktionen");
-    m.waehleDomaene("statistik");
+    einschalten(m, "Programm");
     expect(m.api.zustand().speicher.any((s) => s.art == SpeicherArt.funktion && s.name == "sclr"), isFalse);
   });
 
   test('seitenBibliothek: die Bibliothek der gezeigten Seite der Funktionstasten, sonst null', () {
     expect(m.seitenBibliothek, isNull, reason: "Grundfunktionen");
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     expect(m.seitenBibliothek, "schwingungen");
     m.bereich = Bereich.funktionen;
     m.waehleTastenblock();
     m.pfeil(AxisDirection.left);
     expect([m.seitenName, m.seitenBibliothek], ["Grundfunktionen", null]);
-    m.waehleDomaene("Programm");
-    expect(m.seitenBibliothek, isNull, reason: "eingebaute Domäne, keine Bibliothek");
+    einschalten(m, "Programm");
+    expect(m.seitenBibliothek, isNull, reason: "eingebaute Seite, keine Bibliothek");
   });
 
   testWidgets('Seite Funktionen: Abschnitte je Bibliothek, scrollt mit den Funktionstasten (doc/app.md 2)',
@@ -82,10 +84,7 @@ void main() {
       await tester.pumpAndSettle();
     }
     final oben = tester.getTopLeft(find.text("EIGENE FUNKTIONEN")).dy;
-    await tester.tap(find.text("MENÜ"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     expect(find.text("BIBLIOTHEK SCHWINGUNGEN"), findsOneWidget);
     expect(find.text("Noch keine eigenen Funktionen. Anlegen z.B. mit {1+}':inc"), findsOneWidget,
         reason: "omega und Co. stehen nicht mehr unter Eigene");
@@ -105,7 +104,7 @@ void main() {
   });
 
   test('interne Funktionen (rpnintern) bekommen keine Funktionstaste, auch nicht auf „Eigene“ (FL-2)', () {
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     final tasten = <String>{};
     for (var i = 0; i < m.funktionsSeiten; i++) {
       m.funktionsSeite = i;
@@ -123,10 +122,7 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const RpnApp());
-    await tester.tap(find.text("MENÜ"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     for (var i = 0; i < 2; i++) {
       await tester.tap(find.text("TAB"));
       await tester.pumpAndSettle();
@@ -137,7 +133,7 @@ void main() {
   });
 
   test('Bereich Funktionen: ▲ ▼ blättern begrenzt und senkrecht wie das Mausrad, ◄ ► im Kreis (VA-14)', () {
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     m.waehleBereich(Bereich.funktionen);
     m.waehleTastenblock();
     m.funktionsSeite = 0;
@@ -158,10 +154,7 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const RpnApp());
-    await tester.tap(find.text("MENÜ"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     await tester.tap(find.text("TAB"));
     await tester.tap(find.text("TAB"));
     await tester.pumpAndSettle();
@@ -177,7 +170,7 @@ void main() {
   });
 
   test('Liste und Tastenblock: TAB und Tipp in die Liste wählen die Liste, die Pfeile bewegen sie (VA-15)', () {
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     m.waehleBereich(Bereich.funktionen);
     expect([m.listeGewaehlt, m.tastenblockGewaehlt], [true, false], reason: "zuerst hat die Liste den Rahmen");
     m.pfeil(AxisDirection.down);
@@ -213,7 +206,7 @@ void main() {
     m.waehleTastenblock();
     expect([m.tastenblockHinterlegt, m.tastenblockGewaehlt], [false, false],
         reason: "nur eine interne Funktion: sie hat keine Taste, der Block lässt sich nicht wählen");
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     expect(m.tastenblockHinterlegt, isTrue);
     m.waehleTastenblock();
     expect(m.tastenblockHinterlegt, isFalse, reason: "dann hat der Block den Rahmen");
@@ -230,10 +223,7 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const RpnApp());
-    await tester.tap(find.text("MENÜ"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     await tester.tap(find.text("TAB"));
     await tester.tap(find.text("TAB"));
     await tester.pumpAndSettle();

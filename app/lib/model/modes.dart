@@ -5,7 +5,7 @@
 ///
 /// Abgrenzung: Den Zustand der Hilfe (Seitenfolge, gewählter Verweis, Lese-Modus) und das Ein- und Ausschalten
 /// führt help_mode.dart; das Modell gibt in input.dart, keyboard.dart und viewport.dart nur an [ModellKern.modus]
-/// weiter. Das Menü (FA-6) wird ein weiterer Modus.
+/// weiter. Der Modus des Menüs steht mit dem Menü in menu.dart.
 ///
 /// Siehe auch: doc/app.md 5.2 und Kapitel 6, help_mode.dart, keyboard.dart.
 part of 'model.dart';
@@ -117,7 +117,9 @@ class _Hilfe extends Bedienmodus {
       case Aktion.menue:
         m._hilfeBeenden();
       default:
-        m._neueSeite(AppHilfe.fuerTaste(m.api, t));
+        // im Menü: Bibliotheken zeigen ihre Übersicht, Bereiche ihre Hilfe (doc/app.md 3.6)
+        final menue = m.menueOffen ? m.menueHilfe(t) : null;
+        m._neueSeite(menue != null ? AppHilfe.nachschlagen(m.api, menue) : AppHilfe.fuerTaste(m.api, t));
     }
   }
 
@@ -179,6 +181,7 @@ class _Hilfe extends Bedienmodus {
       Aktion.menue => m.hilfeLesen ? "ANFANG" : "BEENDEN",
       Aktion.alpha => m.hilfeLesen ? "INSPEKT" : "LESEN",
       Aktion.loeschen when m.hilfeLesen => "BEENDEN",
+      Aktion.enter when m.menueOffen && !m.hilfeLesen => "OK", // Hilfe über dem Menü (doc/app.md 3.6)
       _ => null,
     };
     return text == null ? null : (text: text, art: Beschriftungsart.normal, gedimmt: false);

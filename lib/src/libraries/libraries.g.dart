@@ -3,7 +3,7 @@
 /// Die mitgelieferten Bibliotheken: Name → Text der .rpnlib-Datei.
 const Map<String, String> mitgelieferteBibliotheken = {
   "schwingungen": r'''{
-{{"version":{"name":"schwingungen","bibliothek":"1.2.0","rechner":"0.3.0","beschreibung":"Mechanische Schwingungen: harmonisch, gedämpft und erzwungen, mit Feder- und Fadenpendel, Dämpfung und Resonanz."}}}rpnjson
+{{"version":{"name":"schwingungen","bibliothek":"1.2.0","rechner":"0.3.0","beschreibung":"Mechanische Schwingungen: harmonisch, gedämpft und erzwungen, mit Feder- und Fadenpendel, Dämpfung und Resonanz.","taste":"Schwing.","symbol":[{"d":"M1.5 12 C2.8 3 5.6 3 7 12 C8.1 18.6 10.3 18.6 11.3 12 C12.1 7.8 13.8 7.8 14.6 12 C15.3 14.8 16.6 14.8 17.3 12 C17.9 10.6 19 10.6 19.6 12 H22.5"},{"d":"M1.5 12 H22.5","breite":0.6}]}}}rpnjson
 {~1_acos*pi/}':rw rpnintern
 {~1_acos/pi*}':wr rpnintern
 {2*pi*}':omega
@@ -65,7 +65,7 @@ const Map<String, String> mitgelieferteBibliotheken = {
 }
 ''',
   "statistik": r'''{
-{{"version":{"name":"statistik","bibliothek":"1.1.0","rechner":"0.1.0","beschreibung":"Statistik für Wertepaare (x, y): Mittelwerte, Standardabweichungen, Korrelation und Ausgleichsgerade."}}}rpnjson
+{{"version":{"name":"statistik","bibliothek":"1.1.0","rechner":"0.1.0","beschreibung":"Statistik für Wertepaare (x, y): Mittelwerte, Standardabweichungen, Korrelation und Ausgleichsgerade.","taste":"Statistik","symbol":[{"d":"M8.5 2.5 H2.5 L5.6 6.5 L2.5 10.5 H8.5 M4 20 C8.6 20 10.4 6 14.2 6 C18 6 19.6 20 23 20"},{"d":"M1.5 21.3 H23","breite":1}]}}}rpnjson
 {0 0 0 0 0 0 6:'!ss}':sclr
 {'!tx'!ty'tx'ty*_'ty²_'ty_'tx²_'tx_1_0:6:'+ss_6:D'~tx'~ty_0:'ss}':sadd
 {~::{sadd_D}times_0:'ss}':sall

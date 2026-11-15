@@ -11,6 +11,8 @@ import 'package:rpncalc_app/main.dart';
 import 'package:rpncalc_app/model/model.dart';
 import 'package:rpncalc_app/tooltip.dart';
 import 'package:rpncalc_app/keys.dart';
+
+import 'menu_helper.dart';
 import 'package:rpncalc_app/keypad/function_block.dart';
 import 'package:rpncalc_app/keypad/keypad.dart';
 
@@ -335,10 +337,7 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const RpnApp());
-    await tester.tap(find.text("MENÜ")); // Schwingungen hat drei Seiten
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     expect(find.text("F: schwingungen 1/3"), findsOneWidget);
     final modell = tester.widget<Anzeige>(find.byType(Anzeige)).modell;
     int pfeile() => find.byIcon(Icons.arrow_left).evaluate().length + find.byIcon(Icons.arrow_right).evaluate().length;
@@ -530,10 +529,7 @@ void main() {
     await tester.pumpWidget(const RpnApp());
     final api = RpnApi();
     String titel(String kennung) => api.hilfe(kennung)!.titel;
-    await tester.tap(find.text("MENÜ"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     await tester.sendKeyEvent(LogicalKeyboardKey.f1);
     await tester.pumpAndSettle();
     expect(find.text("schwingungen 1/3"), findsOneWidget, reason: "der Rahmen mit Seitenname ist im Hilfe-Modus da");
@@ -576,7 +572,7 @@ void main() {
     m.zustand = m.api.eingabe("{1+}':inc");
     m.funktionsSeite = m.funktionsSeiten - 1;
     expect([m.seitenName, m.seitenHilfe], ["Eigene", "#funktionen"], reason: "Eigene: das Thema des Rechners (BA-9)");
-    m.waehleDomaene("schwingungen");
+    einschalten(m, "schwingungen");
     expect(m.seitenHilfe, "#schwingungen");
     m.hilfeZurSeite();
     expect(m.hilfeSeite?.first.kennung, "#schwingungen");
@@ -675,10 +671,7 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const RpnApp());
-    await tester.tap(find.text("MENÜ"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("schwingungen"));
-    await tester.pumpAndSettle();
+    await bibliothekEinschalten(tester, "schwingungen");
     final modell = tester.widget<Anzeige>(find.byType(Anzeige)).modell;
     final zweite = modell.funktionstastenAuf(2).whereType<Taste>().first.text;
     expect(find.text(zweite), findsNothing, reason: "die Nachbarseite ist erst beim Schieben da");
