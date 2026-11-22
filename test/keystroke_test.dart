@@ -260,4 +260,16 @@ void main() {
     expect(z.zeileFertig, isTrue);
     expect(RpnApi().zustand().zeileFertig, isFalse);
   });
+
+  test('winkel setzt den Winkelmodus, ohne die offene Zeile zu berühren (FA-32)', () {
+    final api = RpnApi();
+    api.taste("9");
+    api.taste("0");
+    api.winkel = AngleMode.rad;
+    var z = api.zustand();
+    expect([z.winkel, z.zeile, z.offen], [AngleMode.rad, "90", "90"]);
+    z = api.eingabe("90sin");
+    expect(z.winkel, AngleMode.rad);
+    expect(api.eingabe("1 2/pi*sin").stack.first.wert, closeTo(1, 1e-12));
+  });
 }

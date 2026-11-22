@@ -16,7 +16,8 @@ void main() {
     expect(jsonEncode(api.zustand()),
         '{"stack":[{"position":0,"wert":7,"tags":[]}],"tiefe":1,"speicher":[],"argumente":[],'
         '"winkel":"deg","seed":null,"fehler":null,"codeOffen":false,"codeStack":[],'
-        '"offen":"","enterVorgemerkt":false,"zeile":"3 4+","zeileFertig":false}');
+        '"offen":"","enterVorgemerkt":false,"zeile":"3 4+","zeileFertig":false,'
+        '"format":"std","stellen":4,"trenner":"none","bruch":"off"}');
   });
 
   test('ein voller Zustand bleibt auf dem Weg über JSON erhalten', () {

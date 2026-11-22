@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- Help: the mouse wheel scrolls the help screen anywhere, not only over a link.
+- New help page "All keys": every key with its labels per prefix, Shift, Alpha and PC keyboard, plus the domain keys and the menu.
+- Display format: Std, Fix, Sci, Eng and SI with 0–15 digits, thousands separator and fractions; set in the Modes menu or with rpn.format.*, rpn.sep.*, rpn.frac.*. Rounded values show a faint "…"; long values keep their exponent. Fixed: 1ê23 was entered slightly off; ^ e on a German keyboard now types ê.
+- MENU 8 opens Modes: angle mode, display format, separator and fractions are set with the function keys; the trig family is still a placeholder; F10 or \m opens the menu
+- Context menu "Copy log": the last 1000 operations for bug reports
+- Names may contain dots for namespaces (rpn.fix, 'geo.r); write "x .5" instead of "x.5"
+
 ## 0.4.0
 
 - MENU opens a menu on the keypad; libraries are switched on and off with F1–F10 and loaded with OK

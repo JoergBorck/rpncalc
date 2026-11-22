@@ -41,13 +41,16 @@ mixin _HilfeModus on ModellKern {
   }
 
   /// Zeigt eine Hilfeseite, z.B. zu einem Element der Anzeige oder einem Verweis.
-  void zeigeHilfe(List<Hilfe> seite) {
-    _neueSeite(seite);
-    notifyListeners();
-  }
+  void zeigeHilfe(List<Hilfe> seite) => _bedienung("hilfe", [seite.isEmpty ? "" : seite.first.kennung], () {
+        _neueSeite(seite);
+        notifyListeners();
+      });
 
   /// „Hilfe“ im Kontextmenü der Anzeige: öffnet die Hilfe im Lese-Modus mit dieser Seite (doc/app.md 2.1).
-  void oeffneHilfe(List<Hilfe> seite) {
+  void oeffneHilfe(List<Hilfe> seite) =>
+      _bedienung("hilfeLesen", [seite.isEmpty ? "" : seite.first.kennung], () => _oeffneHilfe(seite));
+
+  void _oeffneHilfe(List<Hilfe> seite) {
     if (!hilfeModus) {
       modus = _modusHilfe;
       hilfeLesen = true;
@@ -64,11 +67,11 @@ mixin _HilfeModus on ModellKern {
   void folgeVerweis(String kennung) => zeigeHilfe(AppHilfe.nachschlagen(api, kennung));
 
   /// Ein Tipp auf den Hilfeschirm schließt ihn, der Hilfe-Modus bleibt.
-  void hilfeSchliessen() {
-    _hilfeSeiten.clear();
-    hilfeVerweis = -1;
-    notifyListeners();
-  }
+  void hilfeSchliessen() => _bedienung("hilfeZu", [], () {
+        _hilfeSeiten.clear();
+        hilfeVerweis = -1;
+        notifyListeners();
+      });
 
   /// Startet die Hilfe im Inspekt-Modus mit der Seite des letzten Tooltips (höchstens 10 s her) oder der Startseite.
   @override

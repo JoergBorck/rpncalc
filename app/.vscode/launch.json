@@ -6,7 +6,9 @@
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
-            "deviceId": "windows"
+            "deviceId": "windows",
+            // Tastenprotokoll fortlaufend in eine Datei, die Claude lesen kann (PA-1, gitignored)
+            "toolArgs": ["--dart-define=RPN_PROTOKOLL=../process/testing/logs/protokoll.txt"]
         },
         {
             "name": "RPN App (Handy)",

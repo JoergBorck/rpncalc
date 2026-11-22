@@ -1,6 +1,6 @@
 # Arbeitsweise
 
-Wie Jörg und Claude am RPN-Rechner zusammenarbeiten. Die Aufgaben stehen in [backlog.md](backlog.md).
+Wie Jörg und Claude am RPN-Rechner zusammenarbeiten. Die Aufgaben stehen in [backlog.md](backlog.md), die erledigten in [done.md](done.md).
 
 ## Ablauf einer Aufgabe
 
@@ -13,7 +13,10 @@ Wie Jörg und Claude am RPN-Rechner zusammenarbeiten. Die Aufgaben stehen in [ba
   (reference.md, api.md, app.md) beschreibt den aktuellen Stand; die Datei hält fest, wie es dazu kam.
   Committet und veröffentlicht.
   - **Inhaltsverzeichnis:** [requirements/README.md](requirements/README.md) ordnet die Einträge nach den
-    Fähigkeiten des Produkts, jeden genau einmal.
+    Fähigkeiten des Produkts, jeden genau einmal. Die Gliederung pflegt Jörg dort; Link, Titel und Status ergänzt
+    `dart run tool/requirements.dart` (PT-2) nach jeder Änderung an Backlog oder done.md, für einen neuen Eintrag
+    reicht eine Zeile `- FR-16` an der passenden Stelle. Fehlende, doppelte und unbekannte IDs meldet das Werkzeug,
+    und test/requirements_test.dart schlägt fehl, solange die README nicht aktuell ist.
   - **Bugs, Recherchen und Tests** (B, R, T) dienen dem Nachweis, nicht der Beschreibung des Systems: Ihre Dateien
     liegen in `requirements/bugs/`, `requirements/research/` und `requirements/tests/`, und sobald sie erledigt
     oder abgelehnt sind, fallen sie aus dem Inhaltsverzeichnis. Die Datei bleibt erhalten.
@@ -67,7 +70,8 @@ Muster, auf die ein Eintrag im Backlog verweisen kann („Ablauf: Zeitbox“), s
 ## Veröffentlichen
 
 - Nur über `dart run tool/veroeffentlichen.dart [--web] [--push]` und nur auf Jörgs Wunsch. Der öffentliche
-  Stand (JoergBorck/rpncalc) lässt `scratchpad/` und `spec/` weg.
+  Stand (JoergBorck/rpncalc) lässt `scratchpad/` (Kursmaterial der Akademie, steckt auch in der Historie von main,
+  deshalb main nie direkt öffentlich pushen) und `spec/` weg.
 - **Gate:** Das Werkzeug bricht ab, solange im Backlog ein Eintrag mit „· Gate“ offen ist oder unter „Erforderlich“ steht.
 - **CHANGELOG.md** entsteht mit `dart run tool/changelog.dart` aus „Erledigt“ (englisch, je Version, aus den Zeilen
   „EN: …“); beim Verschieben nach „Erledigt“ neu erzeugen und mitcommitten. Das Werkzeug veröffentlicht nur, wenn
@@ -78,5 +82,20 @@ Muster, auf die ein Eintrag im Backlog verweisen kann („Ablauf: Zeitbox“), s
   Version noch nicht gab, kommt nicht in den CHANGELOG; der Eintrag bekommt „EN: –“. Widerspricht die Änderung der
   Zeile des Features, wird stattdessen diese Zeile angepasst: Ein Feature hat genau eine Zeile im CHANGELOG.
 - `--web` legt die Browser-Version auf `gh-pages` (https://joergborck.github.io/rpncalc/).
-- Die Windows-Version: `flutter build windows --release` in `app/`, den Ordner `build/windows/x64/runner/Release`
-  als Zip; Jörg lädt sie unter Releases hoch (ohne GitHub CLI geht es nicht automatisch, siehe PT-1).
+- `--exe` (mit `--push`) baut die Windows-Version und legt das Pre-release `v<version>` mit
+  `rpncalc-<version>-windows.zip` an (PT-1; braucht die GitHub CLI, angemeldet). Vorher die Version erhöhen: unter
+  „### Nächste Version“ darf nichts mehr stehen. Direkt unter „### Version x.y.z“ in done.md stehen die
+  **Highlights**: erste Zeile die Kurzfassung für den Titel, darunter `- **Stichwort:** Erklärung` auf Englisch;
+  Claude macht den Entwurf, Jörg korrigiert. Gibt es das Release schon, werden Datei, Titel und Text ersetzt.
+
+## Prozess-Review
+
+Regelmäßig, etwa wöchentlich oder spätestens vor einer neuen Version, etwa 15 Minuten
+([lessons.md](lessons.md), 2026-11-21):
+
+1. Was hat seit dem letzten Review Zeit oder Kontext gekostet? Claude bringt eigene Beobachtungen mit.
+2. Welche Fehler sind mehrfach passiert?
+3. Stimmen CLAUDE.md, diese Datei und Claudes Gedächtnis noch? Wachsen Dateien, die jede Sitzung gelesen werden?
+4. Backlog-Pflege: veraltete Einträge, Reife, Reihenfolge.
+5. Ergebnis: Einträge im Backlog (meist P), Regeländerungen, neue Lehren in [lessons.md](lessons.md) (Team) bzw.
+   [lessons-claude.md](lessons-claude.md) (Claude).

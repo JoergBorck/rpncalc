@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import '../helper.dart';
+import '../number_format.dart';
 import '../version.dart';
 import 'arguments.dart';
 import 'core.dart';
@@ -25,6 +26,9 @@ enum AngleMode { deg, rad, grad }
 /// Ein "~" vor dem Namen bildet die Umkehrfunktion.
 mixin Funktionen on Kern {
   AngleMode angleMode = AngleMode.deg;
+
+  /// Das Anzeigeformat der Zahlen (FR-3): nur Anzeige, gerechnet wird mit dem vollen Wert.
+  Anzeigeformat anzeige = Anzeigeformat.standard;
 
   // Zufallszahlen: "s seed" setzt den Startwert, danach liefert rnd eine reproduzierbare Folge.
   math.Random _zufall = math.Random();
@@ -39,10 +43,21 @@ mixin Funktionen on Kern {
   /// Version der Oberfläche (App), wenn sie sie mitgeteilt hat; sonst wird `app` in rpnjson übergangen.
   String? appVersion;
 
+  /// Stellt das Format ein; die Stellen kommen als Argument (0–15), sonst bleiben die bisherigen.
+  void _format(Zahlformat f, Argumente a) {
+    final n = a.ganz(0, anzeige.stellen);
+    if (n < 0 || n > Anzeigeformat.maxStellen) {
+      error("stellen", "$n");
+      return;
+    }
+    anzeige = anzeige.mit(format: f, stellen: n);
+  }
+
   @override
   void reset() {
     super.reset();
     angleMode = AngleMode.deg;
+    anzeige = Anzeigeformat.standard;
     seed = null;
     _zufall = math.Random();
     eigeneHilfen.clear();
@@ -142,6 +157,19 @@ mixin Funktionen on Kern {
     "deg"  : (a) { angleMode = AngleMode.deg; },
     "rad"  : (a) { angleMode = AngleMode.rad; },
     "grd"  : (a) { angleMode = AngleMode.grad; },
+    // Anzeigeformat (FR-3): Stellen als Argument, ohne Argument die zuletzt eingestellten
+    "rpn.format.std": (a) { _format(Zahlformat.std, a); },
+    "rpn.format.fix": (a) { _format(Zahlformat.fix, a); },
+    "rpn.format.sci": (a) { _format(Zahlformat.sci, a); },
+    "rpn.format.eng": (a) { _format(Zahlformat.eng, a); },
+    "rpn.format.si" : (a) { _format(Zahlformat.si, a); },
+    "rpn.frac.off"     : (a) { anzeige = anzeige.mit(bruch: Bruch.off); },
+    "rpn.frac.improper": (a) { anzeige = anzeige.mit(bruch: Bruch.improper); },
+    "rpn.frac.mixed"   : (a) { anzeige = anzeige.mit(bruch: Bruch.mixed); },
+    "rpn.sep.none" : (a) { anzeige = anzeige.mit(trenner: Trenner.none); },
+    "rpn.sep.comma": (a) { anzeige = anzeige.mit(trenner: Trenner.comma); },
+    "rpn.sep.apos" : (a) { anzeige = anzeige.mit(trenner: Trenner.apos); },
+    "rpn.sep.space": (a) { anzeige = anzeige.mit(trenner: Trenner.space); },
     "sin"  : (a) { ops=1; result(sinus(x)); },
     "cos"  : (a) { ops=1; result(cosinus(x)); },
     "tan"  : (a) { ops=1; result(tangens(x)); },

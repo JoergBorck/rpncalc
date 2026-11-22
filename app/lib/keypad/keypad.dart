@@ -69,14 +69,16 @@ class Tastenfeld extends StatelessWidget {
     final beiDruck = wechselt ? m.waehleTastenblock : null;
     Widget funktionsTaste(int platz, Taste? belegt) {
       final t = plaetze[platz];
-      // im Menü nur die Schalter der Bibliotheken; sonst leer, auch ohne Buchstaben für Alpha (doc/app.md 3.6)
-      if (m.menueOffen && belegt?.aktion != Aktion.menueEintrag) return _leer(m, obenHoehe);
+      // im Menü nur die Schalter der Bibliotheken bzw. die Modi; sonst leer, auch ohne Buchstaben für Alpha (doc/app.md 3.6)
+      final imMenue = belegt?.aktion == Aktion.menueEintrag || belegt?.aktion == Aktion.menueModus;
+      if (m.menueOffen && !imMenue) return _leer(m, obenHoehe);
       if (belegt == null) {
         return TasteWidget(Taste("", reserviert: true, buchstabe: t.buchstabe), m,
             hoehe: obenHoehe, funktion: true, beiDruck: beiDruck);
       }
       // im Bereich Bibliotheken des Menüs: die Bibliotheken als Schalter (doc/app.md 3.6)
-      if (belegt.aktion == Aktion.menueEintrag) return MenueSchalter(belegt, m, hoehe: obenHoehe);
+      if (belegt.aktion == Aktion.menueEintrag) return MenueSchalter(belegt, m, hoehe: obenHoehe, buchstabe: t.buchstabe);
+      if (belegt.aktion == Aktion.menueModus) return MenueModusTaste(belegt, m, hoehe: obenHoehe, buchstabe: t.buchstabe);
       // die Belegung kommt aus der Seite, der Buchstabe bleibt der des Platzes
       return TasteWidget(belegt, m, hoehe: obenHoehe, funktion: true, buchstabe: t.buchstabe, beiDruck: beiDruck);
     }
@@ -94,8 +96,8 @@ class Tastenfeld extends StatelessWidget {
     // Rahmen um die zehn Funktionstasten (R3 und R4, Spalten 2 bis 6), wenn der Tastenblock den Rahmen hat (VA-15)
     // nach Wischen oder Mausrad auch kurz ohne gewählten Bereich (doc/app.md 3.3)
     // im Hilfe-Modus immer: ein Klick in den Rahmen zeigt die Hilfe zur Seite (doc/app.md 5.2)
-    // im Bereich Bibliotheken des Menüs: hier wird gewählt (doc/app.md 3.6)
-    final imMenue = m.menueBereich == MenueBereich.bibliotheken;
+    // in den Bereichen Bibliotheken und Modi des Menüs: hier wird gewählt (doc/app.md 3.6)
+    final imMenue = m.menueBereich == MenueBereich.bibliotheken || m.menueBereich == MenueBereich.modi;
     final funktionenGewaehlt = m.tastenblockGewaehlt || m.funktionenHinweis || m.hilfeModus || imMenue;
     List<Widget> rahmen(double breite) {
       final taste = (breite - 5 * (obenAbstand - 1)) / 6;
@@ -285,7 +287,7 @@ class Tastenfeld extends StatelessWidget {
           // im Alpha-Modus zeigt SHIFT, was ein Druck bewirkt: einen Großbuchstaben
           TasteWidget(
             // zeigt, was ein Druck bewirkt: im Alpha-Modus Großbuchstabe (ABC) bzw. zurück zu klein (abc)
-            Taste(m.alpha ? (m.shift ? "abc" : "ABC") : "SHIFT", aktion: Aktion.shift),
+            m.alpha ? Taste(m.shift ? "abc" : "ABC", aktion: Aktion.shift) : tasteShift,
             m,
             hoehe: obenHoehe,
             farbe: Farben.shift,
@@ -295,7 +297,7 @@ class Tastenfeld extends StatelessWidget {
             _leer(m, obenHoehe)
           else
             TasteWidget(
-              const Taste("ALPHA", shift: "ABC", aktion: Aktion.alpha),
+              tasteAlpha,
               m,
               hoehe: obenHoehe,
               farbe: Farben.alpha,
@@ -306,10 +308,10 @@ class Tastenfeld extends StatelessWidget {
           if (m.menueOffen && !m.hilfeModus)
             _leer(m, obenHoehe)
           else
-            TasteWidget(const Taste("TAB", shift: "⇤", aktion: Aktion.tab), m, hoehe: obenHoehe, bedienung: true),
+            TasteWidget(tasteTab, m, hoehe: obenHoehe, bedienung: true),
           // MENÜ öffnet das Menü auf dem Tastenfeld, Shift+MENÜ die Hilfe; im Menü orange umrandet (doc/app.md 3.6)
           TasteWidget(
-            const Taste("MENÜ", shift: "HILFE", aktion: Aktion.menue),
+            tasteMenue,
             m,
             hoehe: obenHoehe,
             bedienung: true,
@@ -341,6 +343,8 @@ class Tastenfeld extends StatelessWidget {
 Widget _untereTaste(RechnerModell m, Taste t) {
   const hoehe = Tastenfeld.untenHoehe;
   if (!m.menueOffen) return TasteWidget(t, m, hoehe: hoehe, gross: true);
+  // Bereich Modi mit Format gewählt: der Ziffernblock zeigt Ziffern für die Stellen (FA-32)
+  if (m.menueZiffern && m.menueZiffer(t) != null) return MenueZifferTaste(t, m, hoehe: hoehe);
   final punkt = t.aktion == Aktion.schreiben ? menuePunktAuf(t.text) : null;
   if (punkt != null) return MenueBereichTaste(t, punkt, m, hoehe: hoehe);
   if (m.wirktImMenue(t)) return TasteWidget(t, m, hoehe: hoehe, gross: true);
@@ -364,7 +368,7 @@ class _Ecke extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
-        onTap: wirkt || (rechts && m.hilfeModus) ? () => m.druecke(const Taste("", aktion: Aktion.maximieren)) : null,
+        onTap: wirkt || (rechts && m.hilfeModus) ? () => m.druecke(tasteMaximieren) : null,
         child: SizedBox(
           width: 30 + math.max(0, spalte - Tastenfeld.normalSpalte),
           height: 22,

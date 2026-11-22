@@ -76,7 +76,6 @@ class _Hilfe extends Bedienmodus {
   final RechnerModell m;
   _Hilfe(this.m);
 
-  static const _tab = Taste("TAB", aktion: Aktion.tab);
 
   /// Inspekt-Modus: jede Taste zeigt ihre Hilfe (auch ⌫ und SHIFT), BEENDEN (MENÜ) beendet, LESEN (ALPHA) wechselt
   /// in den Lese-Modus. Lese-Modus: TAB wählt einen Verweis, ENTER folgt ihm, ANFANG (MENÜ) zeigt die Startseite,
@@ -159,7 +158,7 @@ class _Hilfe extends Bedienmodus {
   /// Tab wählt im Lese-Modus einen Verweis; im Inspekt-Modus zeigt es die Hilfe zu TAB.
   @override
   void tab({bool rueckwaerts = false}) {
-    if (!m.hilfeLesen) return druecke(_tab);
+    if (!m.hilfeLesen) return druecke(tasteTab);
     m._waehleVerweis(rueckwaerts: rueckwaerts);
     m._geaendert();
   }

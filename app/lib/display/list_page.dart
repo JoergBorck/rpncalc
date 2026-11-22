@@ -44,7 +44,7 @@ class ListenSeite extends StatefulWidget {
               if (s.art != SpeicherArt.funktion)
                 (
                   anzeige: "${s.art == SpeicherArt.tag ? "|" : ""}${s.name}",
-                  inhalt: s.werte.map(zahl).join(" "), // Felder ohne [ ], die sind für Einheiten reserviert
+                  inhalt: s.werte.map(m.wertText).join(" "), // im Anzeigeformat (FR-3); Felder ohne [ ], die sind für Einheiten reserviert
                   name: s.name,
                   kursiv: false,
                 ),

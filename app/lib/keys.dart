@@ -3,7 +3,7 @@ library;
 
 /// Was eine Taste tut, außer Text zu schreiben.
 enum Aktion { schreiben, shift, alpha, tab, menue, loeschen, zeileLoeschen, apostroph, tilde, strich, enter, funktion, maximieren,
-  menueEintrag } // menueEintrag: ein Schalter im Bereich Bibliotheken des Menüs (doc/app.md 3.6)
+  menueEintrag, menueModus } // ein Schalter im Bereich Bibliotheken bzw. ein Modus im Bereich Modi des Menüs (doc/app.md 3.6)
 
 /// Eine Taste mit ihren Beschriftungen. Ohne eigene Eingabe schreibt sie ihre Beschriftung.
 /// [tilde], [strich] und [beide] sind die Beschriftungen nach den Präfixen `~`, `|` und `~|`;
@@ -38,13 +38,58 @@ class Taste {
       : this(text, eingabe: eingabe, shift: shift, shiftEingabe: shiftEingabe, tilde: tilde, tildeEingabe: tildeEingabe,
              shiftTilde: shiftTilde, name: true);
 
+  /// Die Taste als JSON für das Tastenprotokoll (PA-1); nur gesetzte Felder, damit die Zeile kurz bleibt.
+  Map<String, Object?> toJson() => {
+        "text": text,
+        if (_eingabe != null) "eingabe": _eingabe,
+        if (shift != null) "shift": shift,
+        if (_shiftEingabe != null) "shiftEingabe": _shiftEingabe,
+        if (tilde != null) "tilde": tilde,
+        if (tildeEingabe != null) "tildeEingabe": tildeEingabe,
+        if (shiftTilde != null) "shiftTilde": shiftTilde,
+        if (shiftTildeEingabe != null) "shiftTildeEingabe": shiftTildeEingabe,
+        if (strich != null) "strich": strich,
+        if (beide != null) "beide": beide,
+        if (buchstabe != null) "buchstabe": buchstabe,
+        if (aktion != Aktion.schreiben) "aktion": aktion.name,
+        if (reserviert) "reserviert": true,
+        if (funktion != null) "funktion": funktion,
+        if (name) "name": true,
+      };
+
+  /// Gegenstück zu [toJson], zum Abspielen eines Protokolls.
+  factory Taste.fromJson(Map<String, Object?> j) => Taste(j["text"] as String,
+      eingabe: j["eingabe"] as String?,
+      shift: j["shift"] as String?,
+      shiftEingabe: j["shiftEingabe"] as String?,
+      tilde: j["tilde"] as String?,
+      tildeEingabe: j["tildeEingabe"] as String?,
+      shiftTilde: j["shiftTilde"] as String?,
+      shiftTildeEingabe: j["shiftTildeEingabe"] as String?,
+      strich: j["strich"] as String?,
+      beide: j["beide"] as String?,
+      buchstabe: j["buchstabe"] as String?,
+      aktion: Aktion.values.byName(j["aktion"] as String? ?? "schreiben"),
+      reserviert: j["reserviert"] as bool? ?? false,
+      funktion: j["funktion"] as int?,
+      name: j["name"] as bool? ?? false);
+
   String get eingabe => _eingabe ?? text;
   String? get shiftEingabe => _shiftEingabe ?? shift;
   bool get erlaubtTilde => tilde != null || beide != null || shiftTilde != null;
   bool get erlaubtStrich => strich != null || beide != null;
 }
 
-/// Oberer Block, Reihen R2 bis R5 (R1 mit Shift, Alpha, Cursorkreuz, Tab und Menü baut das Tastenfeld selbst).
+/// Die Tasten der Reihe R1 (doc/app.md 3.1, doc/keys.md). Angeordnet werden sie in keypad/keypad.dart zusammen mit
+/// dem Cursorkreuz und den beiden kleinen Tasten in seinen Ecken; was SHIFT im Alpha-Modus zeigt (ABC, abc),
+/// entscheidet dort die Oberfläche.
+const tasteShift = Taste("SHIFT", aktion: Aktion.shift);
+const tasteAlpha = Taste("ALPHA", shift: "ABC", aktion: Aktion.alpha);
+const tasteTab = Taste("TAB", shift: "⇤", aktion: Aktion.tab);
+const tasteMenue = Taste("MENÜ", shift: "HILFE", aktion: Aktion.menue);
+const tasteMaximieren = Taste("", aktion: Aktion.maximieren); // zeigt □ bzw. ◫, gezeichnet (doc/app.md 3.5)
+
+/// Oberer Block, Reihen R2 bis R5.
 const List<List<Taste>> obereTasten = [
   [
     Taste("'", aktion: Aktion.apostroph, buchstabe: r"\"),

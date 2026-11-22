@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rpncalc_app/display/display.dart';
 import 'package:rpncalc_app/main.dart';
 import 'package:rpncalc_app/model/model.dart';
 import 'package:rpncalc_app/keys.dart';
@@ -143,6 +144,29 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
     expect(find.text("Stack"), findsOneWidget, reason: "Tab wählt den Stack");
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Tottaste ^: das ^ wartet auf die nächste Taste; mit e kommt nur ê, sonst das ^ davor', (tester) async {
+    tester.view.physicalSize = const Size(400 * 3, 860 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    final modell = tester.widget<Anzeige>(find.byType(Anzeige)).modell;
+    Future<void> tot() => tester.sendKeyEvent(LogicalKeyboardKey.backquote, character: "^", physicalKey: PhysicalKeyboardKey.backquote);
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit2, character: "2");
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit5, character: "5");
+    await tot();
+    expect(modell.zeile, "25", reason: "das ^ wartet");
+    await tester.sendKeyEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyE, character: "ê");
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit3, character: "3");
+    expect([modell.zeile, modell.zustand.fehler], ["25ê3", null], reason: "Umschalt dazwischen zählt nicht");
+    await tester.sendKeyEvent(LogicalKeyboardKey.space, character: " ");
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit2, character: "2");
+    await tot();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space, character: " ");
+    expect(modell.zeile, "25ê3 2^ ", reason: "sonst geht das ^ vor der Taste an den Rechner");
+    await tester.pump(const Duration(milliseconds: 700));
     expect(tester.takeException(), isNull);
   });
 }

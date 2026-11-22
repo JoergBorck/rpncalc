@@ -62,14 +62,15 @@ mixin _Belegung on ModellKern {
 
   /// Alle Seiten der Funktionstasten: die Grundfunktionen (immer vorn, doc/app.md 3.3), die Seiten der
   /// eingeschalteten Einträge in der Reihenfolge des Menüs, die eigenen Funktionen. Im Bereich Bibliotheken des
-  /// Menüs stattdessen die Schalter der Bibliotheken.
+  /// Menüs stattdessen die Schalter der Bibliotheken, im Bereich Modi die Modi.
   List<_Seite> get _seitenListe {
     final schalter = _menueSchalter;
     if (schalter != null) {
       final n = (schalter.length / 10).ceil().clamp(1, 1 << 20);
+      final name = schalter.any((t) => t?.aktion == Aktion.menueModus) ? "Modi" : "Bibliotheken";
       return [
         for (int s = 0; s < n; s++)
-          (name: n > 1 ? "Bibliotheken ${s + 1}/$n" : "Bibliotheken", bibliothek: null, teil: s, tasten: _seiten(schalter, s)),
+          (name: n > 1 ? "$name ${s + 1}/$n" : name, bibliothek: null, teil: s, tasten: _seiten(schalter, s)),
       ];
     }
     final eigene = _eigene, e = (eigene.length / 10).ceil();
@@ -91,8 +92,9 @@ mixin _Belegung on ModellKern {
     ];
   }
 
-  /// Im Bereich Bibliotheken des Menüs: je Eintrag eine Taste, die ihn ein- und ausschaltet; sonst null (menu.dart).
-  List<Taste>? get _menueSchalter;
+  /// Im Bereich Bibliotheken des Menüs: je Eintrag eine Taste, die ihn ein- und ausschaltet; im Bereich Modi je
+  /// Modus eine Taste, null für eine leere; sonst null (menu.dart).
+  List<Taste?>? get _menueSchalter;
 
   static const _grund = "Grundfunktionen";
 
@@ -126,7 +128,7 @@ mixin _Belegung on ModellKern {
             Taste(s.name, name: true),
       ];
 
-  static List<Taste?> _seiten(List<Taste> alle, [int seite = 0]) =>
+  static List<Taste?> _seiten(List<Taste?> alle, [int seite = 0]) =>
       [for (int i = 0; i < 10; i++) seite * 10 + i < alle.length ? alle[seite * 10 + i] : null];
 
   /// Beschriftung einer Taste in den aktuellen Umschaltungen.
@@ -216,7 +218,9 @@ mixin _Belegung on ModellKern {
 
   /// Wischen und Mausrad über den Funktionstasten (keypad/function_block.dart) zeigen die Seite [seite], im Kreis
   /// gezählt; dazu kurz der Rahmen (doc/app.md 3.3). Nur, wenn die Tasten blättern.
-  void zeigeFunktionsSeite(int seite) {
+  void zeigeFunktionsSeite(int seite) => _bedienung("fseite", [seite], () => _zeigeFunktionsSeite(seite));
+
+  void _zeigeFunktionsSeite(int seite) {
     if (!funktionenBlaetterbar) return;
     final n = funktionsSeiten;
     funktionsSeite = (seite % n + n) % n;
@@ -228,7 +232,9 @@ mixin _Belegung on ModellKern {
   /// lädt die eingeschalteten, schaltet Programm. Danach zeigen die Funktionstasten die erste Seite des ersten neu
   /// eingeschalteten Eintrags, sonst die bisherige Seite, wenn es sie noch gibt, sonst die Grundfunktionen
   /// (doc/app.md 3.6). Liefert die Fehler beim Laden; eine solche Bibliothek bleibt aus.
-  List<String> uebernimmAuswahl(Set<String> an) {
+  List<String> uebernimmAuswahl(Set<String> an) => _bedienung("auswahl", [an.join(",")], () => _uebernimmAuswahl(an));
+
+  List<String> _uebernimmAuswahl(Set<String> an) {
     final vorher = eingeschalteteEintraege.toSet();
     final bisher = seitenName;
     final fehler = <String>[];

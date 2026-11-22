@@ -28,7 +28,7 @@ const Map<String, Hilfe> eintraege = {
       "Oben die Anzeige mit den Seiten Rechnen, Variablen und Tags, Funktionen; darunter das Tastenfeld. Unten die "
       "Anzeigen, die Bedienung und die Bibliotheken.", [
     "app:eingabe", "app:stack", "app:funktionen", "app:variablen", "app:shift", "app:alpha", "app:tab",
-    "app:cursorkreuz", "app:maximieren", "app:enter", "app:umbruch", "app:hilfe", "app:bibliotheken",
+    "app:cursorkreuz", "app:maximieren", "app:enter", "app:umbruch", "app:hilfe", "app:bibliotheken", "app:tasten",
   ]),
   "~": Hilfe("~", "Die Taste ~", [Verwendung("~", "schreibt ~ und zeigt auf den Tasten, was mit ~ davor geschieht")],
       "Erlaubt ist ~ dort, wo die Taste rechts oben ein kleines ~ trägt. Zusammen mit | ergibt es ~|."),
@@ -50,18 +50,22 @@ const Map<String, Hilfe> eintraege = {
   ], "Der gewählte Bereich hat einen orangen Rahmen. Siehe [[app:cursorkreuz]], [[app:maximieren]]."),
   "app:menue": Hilfe("app:menue", "Menü", [
     Verwendung("MENÜ", "öffnet das Menü auf dem Tastenfeld; im Menü: abbrechen"),
+    Verwendung("F10", "am PC wie MENÜ"),
     Verwendung("4", "im Menü: Bibliotheken ein- und ausschalten"),
+    Verwendung("8", "im Menü: Modi, z.B. der Winkelmodus"),
     Verwendung("Shift+MENÜ", "Hilfe an; im Hilfe-Modus heißt die Taste BEENDEN"),
-  ], "Siehe [[menue:hauptmenue]], [[menue:bibliotheken]], [[app:hilfe]]."),
+  ], "Siehe [[menue:hauptmenue]], [[menue:bibliotheken]], [[menue:modi]], [[app:hilfe]]."),
   "menue:hauptmenue": Hilfe("menue:hauptmenue", "Menü: Hauptmenü", [
     Verwendung("4", "Bibliotheken"),
-    Verwendung("MENÜ", "bricht ab, am PC auch Esc"),
+    Verwendung("8", "Modi"),
+    Verwendung("MENÜ", "bricht ab, am PC auch Esc oder F10"),
     Verwendung("OK", "schließt das Menü (im Menü heißt ENTER OK)"),
-  ], "Die Bereiche des Menüs liegen auf dem Ziffernblock, bisher nur die Bibliotheken auf 4. Im Menü sind alle "
+  ], "Die Bereiche des Menüs liegen auf dem Ziffernblock: Bibliotheken auf 4, Modi auf 8. Im Menü sind alle "
       "anderen Tasten leer und tun nichts. Orange umrandet sind MENÜ und die gewählten Tasten; um den Block, in dem "
-      "gerade gewählt wird, liegt ein oranger Rahmen. Siehe [[menue:bibliotheken]], [[app:menue]]."),
+      "gerade gewählt wird, liegt ein oranger Rahmen. Siehe [[menue:bibliotheken]], [[menue:modi]], [[app:menue]]."),
   "menue:bibliotheken": Hilfe("menue:bibliotheken", "Menü: Bibliotheken", [
     Verwendung("Funktionstaste", "schaltet die Bibliothek ein bzw. aus und wählt sie"),
+    Verwendung("f–j, l–p", "am PC: der Buchstabe oben links an der Taste drückt sie"),
     Verwendung("OK", "übernimmt: lädt die eingeschalteten, entlädt die ausgeschalteten Bibliotheken"),
     Verwendung("MENÜ", "bricht ab, nichts wird geändert"),
   ], "Die Funktionstasten zeigen die Bibliotheken und Programm (X, if, ifel, loop, times); eingeschaltet sind beim "
@@ -70,8 +74,59 @@ const Map<String, Hilfe> eintraege = {
       "die Funktionstasten die Grundfunktionen, die Seiten der eingeschalteten Einträge und die eigenen Funktionen. "
       "Ruft eigener Code eine entladene Funktion auf, ist das ein Fehler. Siehe [[app:bibliotheken]], "
       "[[menue:hauptmenue]], [[menue:programm]], [[menue:ok]]."),
+  "menue:modi": Hilfe("menue:modi", "Menü: Modi", [
+    Verwendung("Funktionstaste", "schaltet den Modus zum nächsten Wert und wählt ihn"),
+    Verwendung("Shift+Funktionstaste", "schaltet zum vorigen Wert"),
+    Verwendung("f–j, l–p", "am PC: der Buchstabe oben links an der Taste drückt sie, groß wie mit Shift"),
+    Verwendung("OK", "übernimmt die geänderten Werte"),
+    Verwendung("MENÜ", "bricht ab, nichts wird geändert"),
+  ], "Die Funktionstasten zeigen die Modi: oben Format, Winkel, Trig und Klasse, unten Trenner, Bruch, Domain und "
+      "Auflösung. Jede Taste zeigt ihr Symbol und den gewählten Wert. Der Rahmen zeigt, was OK bewirkt: orange und "
+      "breit die zuletzt gedrückte, grün geändert, weiß unverändert. Ausgegraut sind Modi, die erst später kommen; "
+      "es wirken Format, Winkel, Trenner und Bruch. Die Menüseite zeigt alle Werte, den gewählten fett, darunter "
+      "eine Beispielzahl im neuen Format und was OK ändert. Siehe [[menue:hauptmenue]], [[menue:modus:format]], "
+      "[[menue:modus:winkel]], [[menue:ok]]."),
+  "menue:modus:winkel": Hilfe("menue:modus:winkel", "Menü: Winkel", [
+    Verwendung("Deg", "Grad, ein Vollkreis hat 360°"),
+    Verwendung("Rad", "Bogenmaß, ein Vollkreis hat 2π"),
+    Verwendung("Grd", "Gon, ein Vollkreis hat 400 gon"),
+  ], "Der Winkelmodus gilt für sin, cos, tan und ihre Umkehrungen und für die Umrechnung mit °. OK stellt ihn ein "
+      "wie die Befehle deg, rad und grd; die Statuszeile zeigt ihn. Später kommen Mil, Prad und Turn dazu (FR-15). "
+      "Siehe [[#winkel]], [[menue:modi]]."),
+  "menue:modus:format": Hilfe("menue:modus:format", "Menü: Format", [
+    Verwendung("Std", "wie bisher, bis 12 Nachkommastellen"),
+    Verwendung("Fix n", "n Nachkommastellen"),
+    Verwendung("Sci n", "Mantisse mit n Nachkommastellen und Exponent: 1.235ê6"),
+    Verwendung("Eng n", "wie Sci, der Exponent ein Vielfaches von 3: 12.34ê−3"),
+    Verwendung("SI n", "wie Eng, mit SI-Vorsatz statt Exponent: 12.34 m"),
+    Verwendung("Ziffer", "solange Format gewählt ist: setzt die Stellen; ê 12, „.“ 15"),
+  ], "Ist Format gewählt und steht nicht auf Std, zeigt der Ziffernblock Ziffern für die Stellen, die eingestellte "
+      "dunkel umrandet; am PC tippt man die Ziffer. Steht Format nicht auf Std, wählt der erste Druck es nur aus, "
+      "erst der nächste schaltet weiter. Gerechnet wird weiter mit dem vollen Wert, ein gerundeter Wert "
+      "hat blass „…“ dahinter. Wie die Befehle rpn.format.std usw. Siehe [[#format]], [[menue:modi]]."),
+  "menue:modus:trenner": Hilfe("menue:modus:trenner", "Menü: Trenner", [
+    Verwendung("1000, 1,000, 1'000, 1 000", "Tausendertrenner in der Anzeige: keiner, Komma, Apostroph, schmales Leerzeichen"),
+  ], "Der Dezimalpunkt bleibt ein Punkt. Wie die Befehle rpn.sep.none usw. Siehe [[#format]], [[menue:modi]]."),
+  "menue:modus:bruch": Hilfe("menue:modus:bruch", "Menü: Bruch", [
+    Verwendung("1.5, 3/2, 1 1/2", "Zahlen als Dezimalzahl, als unechter oder als gemischter Bruch anzeigen"),
+  ], "Ein Bruch erscheint, wenn er mindestens so genau ist wie die Dezimalzahl und nicht länger: 0.75 wird 3/4, "
+      "1234.56 bleibt. Wie die Befehle rpn.frac.off usw. Siehe [[#format]], [[menue:modi]]."),
+  "menue:modus:trig": Hilfe("menue:modus:trig", "Menü: Trig", [
+    Verwendung("CIRC, HYPR, CARD, VERS, ELLP, ELLQ", "Familie der Winkelfunktionen auf sin, cos und tan"),
+  ], "Kommt mit FR-15; bis dahin ausgegraut. Die Familie belegt sin, cos und tan um, z.B. mit sinh, cosh, tanh. "
+      "Siehe [[menue:modi]]."),
+  "menue:modus:klasse": Hilfe("menue:modus:klasse", "Menü: Klasse", [
+    Verwendung("ℝ, 𝔻, ℚ, ℤ", "Zahlenklasse der Werte"),
+  ], "Kommt mit FR-11; bis dahin ausgegraut. Siehe [[menue:modi]]."),
+  "menue:modus:domain": Hilfe("menue:modus:domain", "Menü: Domain", [
+    Verwendung("ℝ, ℂ", "reelle oder komplexe Zahlen"),
+  ], "Kommt mit FR-11; bis dahin ausgegraut. Siehe [[menue:modi]]."),
+  "menue:modus:aufloesung": Hilfe("menue:modus:aufloesung", "Menü: Auflösung", [
+    Verwendung("simple, high, max", "Genauigkeit der Zahlen"),
+  ], "Kommt mit FR-11; bis dahin ausgegraut. Siehe [[menue:modi]]."),
   "menue:ok": Hilfe("menue:ok", "Menü: OK", [
     Verwendung("OK", "im Bereich Bibliotheken: übernimmt, lädt die eingeschalteten, entlädt die ausgeschalteten"),
+    Verwendung("OK", "im Bereich Modi: übernimmt die geänderten Werte"),
     Verwendung("OK", "im Hauptmenü: schließt das Menü"),
     Verwendung("Enter", "am PC wie OK"),
   ], "Im Menü heißt ENTER OK. Würde OK etwas ändern, liegt ein dünner oranger Rahmen um die Taste; ist alles wieder "
@@ -101,6 +156,11 @@ const Map<String, Hilfe> eintraege = {
     Verwendung("▲ ▼", "blättern in Eingabe (Verlauf) und Stack"),
     Verwendung("◄ ►", "schieben lange Zeilen und Werte seitlich, bei den Funktionen wechseln sie die Seite"),
   ], "Orange Pfeile am Rahmen zeigen, wohin sich etwas schieben lässt. Siehe [[app:tab]]."),
+  "app:tasten": Hilfe("app:tasten", "Alle Tasten", [
+    Verwendung("seitlich wischen", "zeigt die übrigen Spalten einer Tabelle"),
+  ], "Jede Taste mit ihren Belegungen: normal, nach ~, | und ~|, mit Shift, im Alpha-Modus und am PC; darunter die "
+      "Funktionstasten der eingebauten Domänen und das Menü. Die ausführliche Fassung mit dem Geplanten steht in "
+      "doc/keys.md. Siehe [[app:shift]], [[app:alpha]], [[~]], [[|]]."),
   "app:maximieren": Hilfe("app:maximieren", "Maximieren", [
     Verwendung("□", "gibt Eingabe bzw. Stack die ganze Breite"),
     Verwendung("◫", "teilt die Anzeige wieder"),

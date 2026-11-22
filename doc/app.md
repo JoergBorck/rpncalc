@@ -31,6 +31,12 @@ Unter Windows und im Browser lässt sich das Fenster größer und kleiner ziehen
   Maximieren (3.5) bekommt einer der beiden die ganze Breite. Beide wachsen von oben nach unten: oben stehen die
   aktuelle Eingabe und der Tos auf einer Zeile, darunter ältere Zeilen bzw. tiefere Werte. Die Schrift wird
   nach unten kleiner.
+- **Anzeigeformat** (FR-3, eingestellt im Menü Modi, 3.6): Stack, Variablen, Tags und der Tos in der Statuszeile
+  zeigen die Werte im eingestellten Format (`RpnApi.formatiere`). Ein gerundeter Wert hat blass „…“ dahinter, ein
+  SI-Vorsatz steht abgesetzt und blass hinter der Zahl (12.3 k, 123.5… k); vor einem Exponenten steht das „…“
+  bei der Mantisse (1.235…ê6). Das schmale Leerzeichen des Trenners
+  steht wirklich schmal da, nicht so breit wie eine Ziffer. Tooltips zeigen den vollen Wert, die
+  Zwischenablage kopiert ihn unverändert.
 - Der Tos ist hellorange hinterlegt (wie in der Konsole). Ein Fehler wird in der Eingabezeile rot markiert,
   die Meldung steht darunter.
 - **Offenes Token:** Ist ein Token offen (z.B. die Zahl, die man gerade tippt), steht es grau mit `>:` oben in
@@ -56,8 +62,8 @@ Unter Windows und im Browser lässt sich das Fenster größer und kleiner ziehen
   Interne Funktionen stehen hier wie die anderen, ihr Name kursiv und ausgegraut.
   Blättern die Funktionstasten auf eine Seite einer Bibliothek, scrollt die Liste so, dass deren Funktionen zu
   sehen sind (erste Seite: der Abschnitt, weitere Seiten: ihre erste Funktion oben), sonst nach oben; umgekehrt ändert Scrollen in der Liste die Tasten nicht.
-- **Statuszeile:** Winkelmodus, aktive Umschaltungen (Shift, `~`, `|`, `'`, Alpha) und die Seite der
-  Funktionstasten. Den gewählten Bereich zeigt der Name unten am orangen Rahmen, immer auf der Außenseite
+- **Statuszeile:** Winkelmodus, was vom Anzeigeformat nicht auf Standard steht (FIX 4, 1'000, # #/#), aktive
+  Umschaltungen (Shift, `~`, `|`, `'`, Alpha) und die Seite der Funktionstasten. Den gewählten Bereich zeigt der Name unten am orangen Rahmen, immer auf der Außenseite
   (Eingabe links, Stack rechts), damit das Cursorkreuz ihn nicht verdeckt.
 
 ### 2.1 Kontextmenü und Zwischenablage
@@ -75,6 +81,7 @@ lange Drücken für ihren Tooltip. Im Browser ist das eigene Kontextmenü des Br
 | **Ganzen Stack kopieren** | **Ganzen Verlauf kopieren:** alle Zeilen bis zur aktuellen |
 | **Werte einfügen** | **Text einfügen** |
 | **Hilfe** | **Hilfe** |
+| **Protokoll kopieren** | **Protokoll kopieren** |
 
 - **Werte** werden für ein deutsches Excel kopiert wie `\c` und `\s` in der Konsole ([api.md](api.md)
   Kapitel 7): der tiefste Wert zuerst, mit Dezimalkomma, getrennt mit `;`. Ein offenes Token wird vorher mit `_`
@@ -88,35 +95,24 @@ lange Drücken für ihren Tooltip. Im Browser ist das eigene Kontextmenü des Br
   negative Zahlen, `ê` für den Exponenten, Leerzeichen dazwischen.
 - **Hilfe** zeigt die Seite des Elements wie ein Tipp im Inspekt-Modus (5.3); am Handy ersetzt das den Tooltip
   der Anzeige.
+- **Protokoll kopieren** legt das Tastenprotokoll in die Zwischenablage: die letzten 1000 Bedienungen, je eine
+  Zeile mit dem Zustand danach, dazu unerwartete Ausnahmen. Es gehört in eine Fehlermeldung; ein Test kann es
+  wieder abspielen (Backlog PA-1). Aus VS Code gestartet, schreibt die App es zusätzlich fortlaufend nach
+  process/testing/logs/protokoll.txt.
 - Danach steht kurz eine Meldung unten in der App (z.B. „Kopiert: 2,25“, „3 Zahlen eingefügt“).
 - **Im Browser** fragt Firefox beim Einfügen mit einem kleinen „Einfügen“ nach. Aus dem Kontextmenü liest die App
   deshalb erst, wenn das Menü zu ist; lehnt der Browser ab, meldet sie „Die Zwischenablage lässt sich nicht lesen“.
 - **Tastatur** (Kapitel 6): Strg+C kopiert x, Strg+Shift+C den ganzen Stack, Strg+V fügt im Stack Werte und
   in der Eingabe Text ein, je nach gewähltem Bereich. `\c`, `\s` und `\v` wirken wie in der Konsole, getippt
-  oder im Alpha-Modus (`\` liegt dort auf `'`).
+  oder im Alpha-Modus (`\` liegt dort auf `'`); `\m` öffnet das Menü wie MENÜ (3.6).
 
 ## 3. Tastenfeld
 
 ### 3.1 Belegung
 
-Oberer Block (Hauptfunktion / Shift; `~` und `|` zeigen erlaubte Präfixe):
-
-| | 1 | 2 | 3 | 4 | 5 | 6 |
-|---|---|---|---|---|---|---|
-| R1 | SHIFT | ALPHA | Cursorkreuz, in der Ecke frei | Cursorkreuz, in der Ecke □ / ◫ | TAB / ⇤ | MENÜ / HILFE |
-| R2 | `'` | `( )` reserviert | `[ ]` reserviert | `{` / `}` | CL / AC | ⌫ / `C` |
-| R3 | `D` / `Y` | F1 | F2 | F3 | F4 | F5 |
-| R4 | `S` / `R`, `~`: `~R` | F6 | F7 | F8 | F9 | F10 |
-| R5 | `!` | `^`, `~`: ˣ√y | `²`, `~`: √x | `³`, `~`: ∛x | `°`, `~`: →kart | `%`, `~%`, `\|%`, `~\|%` |
-
-Unterer Block:
-
-| | 1 | 2 | 3 | 4 | 5 |
-|---|---|---|---|---|---|
-| R6 | ENTER (Leerzeichen) / `_` | 7 | 8 | 9 | `/`, `~`: 1/x, `\|`: `\|/` / `>`, `~`: ≤ |
-| R7 | `:`, `~:`, `\|:`, `~\|:` | 4 | 5 | 6 | `*` / `&`, `~`: oder |
-| R8 | Präfix `\|` (zweimal: `\|\|` Betrag) | 1 | 2 | 3 | `-` / `<`, `~`: ≥ |
-| R9 | Präfix `~` (eingefärbt) | `ê` | 0 | `.` | `+` / `=`, `~`: ≠ |
+Die Belegung aller Tasten, ihre Anordnung und das Gegenstück auf der PC-Tastatur stehen in der Tastentabelle
+[keys.md](keys.md) (DG-7); sie ist die Spezifikation des Tastenfelds, geplante Belegungen kommen zuerst dorthin.
+Hier steht, was die Tabelle nicht zeigt:
 
 - `( )` und `[ ]` sind für Vektoren und Einheiten reserviert.
 - **CL** (Clear Line) leert die aktuelle Eingabezeile, ohne den Stack zu ändern: Was schon ausgeführt ist, bleibt
@@ -173,6 +169,8 @@ Unterer Block:
   Die aktuelle Zeile zeigt zuerst ihr Ende.
 - **Stack:** ▲ und ▼ blättern zu tieferen Werten, ◄ und ► schieben lange Werte seitlich. ▼ geht so weit, bis der
   unterste Wert in der 7. Zeile steht; so viele Zeilen zeigt auch die kleinste Anzeige ganz.
+  Ein zu langer Wert behält rechts seinen Exponenten, gekürzt wird die Mantisse (1.0000…ê23); ◄ ► schieben nur
+  die Mantisse, bis der Text bis zum Ende passt.
 - **Wischen und Mausrad in Eingabe und Stack:** Senkrecht wischen schiebt den Inhalt mit dem Finger, in
   Zeilenschritten: je Weg einer Zeilenhöhe eine Zeile (die Höhe der 3. Zeile von oben, weil die Zeilen nach unten
   kleiner werden). Nach oben wischen zeigt ältere Zeilen bzw. tiefere Werte, nach unten zurück. Nach einer
@@ -225,9 +223,10 @@ Unterer Block:
   a > b, sonst 0).
 - **`~` wirkt auch auf die Shift-Funktion:** `~` ⇧ ÷ schreibt `≤` (gleichwertig zu `~>`, reference.md 4),
   entsprechend `~&` (oder), `≥`, `≠`. Bei `~` und Shift zeigen die Tasten diese Umkehrungen.
-- **Regel für künftige Belegungen:** Auf `~` ⇧ liegt immer die Umkehrung der Shift-Funktion. Eine Shift-Funktion
-  darf also keine weitere eigene Variante mit `~` brauchen, und ihre Varianten mit `|` sind von der Taste aus nicht
-  erreichbar.
+- **Regel für künftige Belegungen:** Hat die Shift-Funktion eine Umkehrung, liegt sie auf `~` ⇧. Sonst ist `~` ⇧
+  frei für eine verwandte Funktion. `|` ⇧ und `~|` ⇧ sind erreichbar; dort liegt bevorzugt ein Paar aus Funktion und
+  Umkehrung (z.B. dms und zurück, Backlog FR-15). Eine Funktion direkt auf der Taste ist besser als ein Name, den man
+  über ALPHA tippt, oder ein Weg durch Menüs; kleine Ausnahmen von der Regel sind dafür in Ordnung.
 - **Seiten der Funktionstasten:** F1–F10 zeigen nacheinander die Grundfunktionen (immer), die Seiten der im Menü
   eingeschalteten Einträge in der Reihenfolge des Menüs (3.6): die Bibliotheken und Programm (X, if, ifel, loop,
   times), zuletzt die eigenen Funktionen. Beim Start ist keine Bibliothek geladen und Programm aus.
@@ -267,22 +266,22 @@ Verhalten:
 ### 3.6 Menü
 
 MENÜ öffnet das Menü auf dem Tastenfeld. Das Gesamtkonzept steht in Backlog FA-6 (process/requirements/FA-6.md);
-bisher gibt es einen Bereich, die Bibliotheken (FA-30).
+bisher gibt es zwei Bereiche, die Bibliotheken (FA-30) und die Modi (FA-32).
 
 - **Öffnen und Abbrechen:** MENÜ öffnet das Hauptmenü. Ein weiterer Druck auf MENÜ schließt das Menü, ohne etwas
   zu ändern (am PC Esc). Shift+MENÜ bleibt die Hilfe (5.2), auch im Menü; MENÜ trägt dafür klein „HILFE“.
 - **OK:** Im Menü heißt ENTER „OK“, ohne das kleine _ für Shift, und übernimmt bzw. schließt. Im Bereich
-  Bibliotheken liegt ein dünner oranger Rahmen etwas außerhalb um OK, solange OK etwas ändern würde; ist alles
+  Bibliotheken und Modi liegt ein dünner oranger Rahmen etwas außerhalb um OK, solange OK etwas ändern würde; ist alles
   wieder wie beim Öffnen, verschwindet er. Im Hauptmenü hat OK keinen Rahmen. Die Hilfe zu OK im Menü ist
   `menue:ok`.
 - **Leere Tasten:** Im Menü wirken nur MENÜ, SHIFT (für die Hilfe), OK und die Tasten des offenen Bereichs.
   Alle anderen Tasten sind leer, ohne Beschriftung, und tun nichts, auch Cursorkreuz, TAB und ALPHA.
 - **Wo man ist:** MENÜ und die gewählten Tasten des Pfads sind orange umrandet (MENÜ › 4 › statistik). Um den
   Block, in dem gerade gewählt wird, liegt ein oranger Rahmen mit seinem Namen: im Hauptmenü um den Ziffernblock
-  (1–9, ê, 0, ., „Hauptmenü“), im Bereich Bibliotheken um die Funktionstasten („Bibliotheken“).
-- **Hauptmenü:** Die Bereiche liegen auf dem Ziffernblock (FA-6); belegt ist bisher nur 4, Bibliotheken. Die
-  Taste füllt ein Symbol (ein Portikus mit einem Buch, app/assets/icons/bibliothek.svg), die Ziffer steht groß
-  oben links darüber. OK schließt hier das Menü, es gibt nichts zu übernehmen.
+  (1–9, ê, 0, ., „Hauptmenü“), in den Bereichen um die Funktionstasten („Bibliotheken“, „Modi“).
+- **Hauptmenü:** Die Bereiche liegen auf dem Ziffernblock (FA-6): 4 Bibliotheken, 8 Modi. Die Taste füllt ein
+  Symbol (Bibliotheken ein Portikus mit einem Buch, app/assets/icons/bibliothek.svg; Modi drei Schieberegler,
+  modi.svg), die Ziffer steht groß oben links darüber. OK schließt hier das Menü, es gibt nichts zu übernehmen.
 - **Bereich Bibliotheken (4):** Die Funktionstasten zeigen die Bibliotheken des Rechners ([api.md](api.md) 9.1),
   mitgelieferte nach Namen, dann hinzugefügte nach Namen, zuletzt Programm; bei mehr als zehn auf mehreren
   Seiten wie in 3.3. Die Grundfunktionen stehen nicht darin, sie sind immer da. Der Ziffernblock zeigt weiter das
@@ -305,12 +304,38 @@ bisher gibt es einen Bereich, die Bibliotheken (FA-30).
     ist), bleibt sie aus, und eine Meldung nennt den Fehler; die übrigen werden trotzdem übernommen.
   - **Danach** zeigen die Funktionstasten die erste Seite der ersten neu eingeschalteten Bibliothek (bzw. von
     Programm), sonst die vorher gezeigte Seite, wenn es sie noch gibt, sonst die Grundfunktionen.
+- **Bereich Modi (8):** Die Funktionstasten zeigen die Einstellungen (FA-32); der Ziffernblock zeigt weiter das
+  Hauptmenü.
+
+  ```
+  F1 Format    F2 Winkel   F3 Trig    F4 Klasse      F5 –
+  F6 Trenner   F7 Bruch    F8 Domain  F9 Auflösung   F10 –
+  ```
+  - **Werte:** Ein Druck schaltet zum nächsten Wert, Shift+Taste zum vorigen, am Ende wieder von vorn. Format: Std,
+    Fix, Sci, Eng, SI; Winkel: Deg, Rad, Grd; Trenner: 1000, 1,000, 1'000, 1 000; Bruch: 1.5, 3/2, 1 1/2.
+    Eingestellt wird erst mit OK.
+  - **Stellen (Grundregel „Zahlen im Menü“):** Ist Format gewählt und steht nicht auf Std, zeigt der Ziffernblock
+    Ziffern statt des Hauptmenüs; eine Ziffer setzt die Stellen, ê (links neben 0) 12, „.“ (rechts) die größte
+    Stellenzahl 15. Die eingestellte ist dunkel umrandet, 8 trägt klein das Symbol der Modi auf orangem Kasten
+    (der Pfad). Am PC tippt man die Ziffer. Wechselt das Format, bleiben die Stellen. Steht Format nicht auf Std,
+    wählt der erste Druck es nur aus (die Ziffern erscheinen, das Format bleibt); erst der nächste schaltet weiter.
+  - **Platzhalter:** Trig (FR-15), Klasse, Domain und Auflösung (FR-11) sind ausgegraut und ohne Rahmen; ein
+    Druck ändert nichts, die Menüseite sagt, womit sie kommen.
+  - **Beschriftung:** das Symbol des Modus (app/assets/icons/), darunter der gewählte Wert (Format mit Stellen:
+    „Fix 4“); Bruch zeigt ein Bild
+    je Wert (1.5, 3/2, 1 1/2), Trenner die Zahl 1000 im gewählten Format, Klasse „∈“ vor dem Wert.
+  - **Rahmen:** orange und breiter die zuletzt gedrückte, grün geändert (wird mit OK eingestellt), weiß
+    unverändert.
+  - **OK** stellt die geänderten Werte ein (Winkel mit `RpnApi.winkel`, Format, Trenner und Bruch mit
+    `RpnApi.anzeigeformat`, ohne die offene Zeile zu berühren) und schließt das Menü; die Seite der Funktionstasten
+    bleibt.
 - **Menüseite der Anzeige:** Solange das Menü offen ist, liegt die Menüseite über den Seiten der Anzeige, wie der
   Hilfeschirm; danach ist die vorige Seite wieder zu sehen. Unter der Anzeige steht „Menü“ statt des Seitennamens,
   ohne Seitenpunkte; wischen geht nicht. Unten bleibt Platz für das Cursorkreuz, das in die Anzeige ragt.
-  - **Kopf:** der Pfad (MENÜ › Bibliotheken › statistik), im Bereich Bibliotheken rechts die Zahl der geladenen.
-    Darunter der Hinweis „Bereich wählen · MENÜ bricht ab · OK übernimmt“, im Bereich Bibliotheken „Taste
-    schaltet um · MENÜ bricht ab · OK übernimmt“.
+  - **Kopf:** der Pfad (MENÜ › Bibliotheken › statistik, MENÜ › Modi › Winkel), rechts im Bereich Bibliotheken
+    die Zahl der geladenen, im Bereich Modi die der geänderten. Darunter der Hinweis „Bereich wählen · MENÜ bricht
+    ab · OK übernimmt“, im Bereich Bibliotheken „Taste schaltet um · …“, im Bereich Modi „Taste schaltet
+    weiter · …“.
   - **Hauptmenü:** der Ziffernblock als Karte 3 × 3, je belegtem Bereich das Symbol und darunter der Name; die
     übrigen Felder sind leer.
   - **Bereich Bibliotheken:** die Liste mit Name, Version und Wirkung in Worten (geladen, wird geladen, wird
@@ -318,11 +343,20 @@ bisher gibt es einen Bereich, die Bibliotheken (FA-30).
     nicht, scrollt sie, so dass die gewählte zu sehen ist. Darunter zur gewählten: Name, Version, Zahl der
     Funktionen, ihre Beschreibung und was OK insgesamt bewirkt („OK lädt statistik, entlädt finanz.“, ohne
     Änderung „OK ändert nichts.“).
-- **PC-Tastatur:** 4 öffnet die Bibliotheken, Enter (Return oder Ziffernblock) übernimmt bzw. schließt, Esc bricht
-  ab, F1 öffnet die Hilfe. Die Bibliotheken schaltet man mit Maus oder Finger. Andere Tasten tun nichts.
+  - **Bereich Modi:** eine Karte 2 × 5 wie der Funktionsblock. Je Feld Symbol und Name, darunter die Werte je zwei
+    nebeneinander (Bruch: die drei Bilder); der gewählte fett, weiß unverändert, grün geändert, die übrigen grau.
+    Platzhalter ganz ausgegraut, das zuletzt gedrückte Feld dünn orange umrandet. Darunter eine Zeile zum
+    gedrückten Modus („Winkel Rad · Bogenmaß, 90° = π/2“; bei Format, Trenner und Bruch eine Beispielzahl im
+    neuen Format, „Format Fix 2 · 1234.56789 → 1'234.57…“; bei einem Platzhalter „kommt mit FR-11“) und was OK
+    ändert („OK ändert Format und Trenner.“). Im Feld Format steht die Stellenzahl groß unten rechts.
+- **PC-Tastatur:** F10 öffnet das Menü wie MENÜ und bricht es auch ab, `\m` öffnet es; 4 öffnet die Bibliotheken,
+  8 die Modi, Enter (Return oder Ziffernblock) übernimmt bzw. schließt, Esc bricht ab, F1 öffnet die Hilfe. In
+  einem Bereich tragen die Funktionstasten klein oben links ihren Buchstaben aus dem Alpha-Modus (f–j, l–p, in der
+  Farbe von Alpha); getippt drückt er die Taste, ein Großbuchstabe wie mit Shift. Andere Tasten tun nichts.
 - **Tooltips:** MENÜ zeigt das Hauptmenü, wie es auf dem Ziffernblock liegt; im Bereich Bibliotheken zeigt eine
-  Taste die Kurzinfo ihrer Bibliothek (5.1).
-- **Hilfe:** Die Einträge `menue:hauptmenue` und `menue:bibliotheken` erklären das Menü und den Bereich,
+  Taste die Kurzinfo ihrer Bibliothek (5.1), im Bereich Modi ein Modus seine Werte bzw. womit er kommt.
+- **Hilfe:** Die Einträge `menue:hauptmenue`, `menue:bibliotheken` und `menue:modi` erklären das Menü und die
+  Bereiche, `menue:modus:winkel` usw. je einen Modus,
   `menue:programm` den Eintrag Programm, `menue:ok` die Taste OK; `app:enter` verweist auf `menue:ok`.
   Shift+MENÜ im Menü öffnet den Hilfe-Modus; eine Bibliothek zeigt dort ihre Übersicht (`#statistik`), Programm
   `menue:programm`, OK `menue:ok`. BEENDEN führt zurück ins Menü.
@@ -483,6 +517,7 @@ Funktionen (`#funktionen`), sonst die Hilfe zur Anzeige Funktionen (`app:funktio
   Ende über das Cursorkreuz hinaus nach oben schieben lässt, das in die Anzeige ragt.
 - **Tipp auf den Hilfeschirm:** im Inspekt-Modus geht er an das Element darunter; im Lese-Modus blättert man
   im Schirm und tippt Verweise an.
+- **Mausrad:** scrollt den Hilfeschirm in beiden Modi, wo immer der Zeiger auf ihm steht (BA-15).
 - **PC-Tastatur:** F1 schaltet die Hilfe an und aus, Esc beendet sie; TAB, Enter und die Pfeiltasten wirken wie
   die Knöpfe.
 
@@ -505,7 +540,10 @@ erste. So kann man sich mit den Verweisen durch die ganze Oberfläche führen la
 
 **Einträge der App** (Auswahl): `app:shift`, `app:alpha`, `app:tab`, `app:menue`, `app:hilfe`, `app:cursorkreuz`, `app:maximieren`,
 `app:enter` (Leerzeichen als Enter, Shift: Trenner, Alpha: Zeilenumbruch), `app:loeschen`, die vier Anzeigen
-und `app:umbruch` (Kapitel 4). Ein Test prüft wie im Rechner, dass jede Bedientaste einen Eintrag hat und jeder
+und `app:umbruch` (Kapitel 4), `app:tasten` (Alle Tasten: die Tabellen aus [keys.md](keys.md) ohne Geplantes und ohne
+den Text von Hand, jede seitlich scrollbar: wischen, am PC auch mit der Maus ziehen, Umschalt+Mausrad oder die
+Scrollleiste darunter (BA-16); Spalten, die nirgends belegt sind, fallen weg, die Spalte PC gibt es nur am
+PC; erreichbar von der Startseite). Ein Test prüft wie im Rechner, dass jede Bedientaste einen Eintrag hat und jeder
 Verweis ein Ziel.
 
 ## 6. Tastatur
@@ -532,9 +570,10 @@ Eine echte Tastatur (PC, Browser, Bluetooth am Handy) bedient die App wie die Kn
 | Tab / Shift+Tab | Bereich wechseln |
 | Pfeiltasten | Cursorkreuz |
 | F1 | Hilfe-Modus an und aus |
+| F10 | wie MENÜ: öffnet das Menü, im Menü bricht es ab (3.6) |
 | Strg+C / Strg+Shift+C | x bzw. den ganzen Stack kopieren (2.1) |
 | Strg+V | einfügen: im Stack Werte, sonst Text (2.1) |
-| `\c` `\s` `\v` | wie in der Konsole: x kopieren, Stack kopieren, Werte einfügen; das `\` wartet, bis das nächste Zeichen kommt |
+| `\c` `\s` `\v` `\m` | wie in der Konsole: x kopieren, Stack kopieren, Werte einfügen; `\m` öffnet das Menü (nur App); das `\` wartet, bis das nächste Zeichen kommt |
 | Esc | im Hilfe-Modus: beendet ihn; sonst wie CL (3.1) |
 
 - **Rückmeldung:** Der Knopf, der dem getippten Zeichen entspricht, leuchtet kurz auf: Ziffern, `.`, `ê` und
@@ -547,6 +586,10 @@ Eine echte Tastatur (PC, Browser, Bluetooth am Handy) bedient die App wie die Kn
 - **AltGr:** Windows meldet AltGr als Strg+Alt. Diese Kombination geht wie ein normales Zeichen an den
   Rechner, sonst fehlten auf der deutschen Tastatur `|`, `~`, `{`, `}` und `²`. Nur Strg allein bleibt dem
   System, außer Strg+C und Strg+V (2.1).
+- **Tottaste ^:** Auf der deutschen Tastatur (Taste links neben 1) meldet Windows erst `^` und mit der nächsten
+  Taste den Buchstaben mit Akzent, ^ e also `^` und `ê`. Darum wartet das `^` auf die nächste Taste: ist sie ein
+  Buchstabe mit Zirkumflex, war es nur der Akzent; sonst geht `^` vor ihr an den Rechner. Umschalt dazwischen
+  zählt nicht. So tippt man `ê` für den Exponenten mit ^ e.
 
 ## 7. Offen
 

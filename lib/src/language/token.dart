@@ -52,6 +52,13 @@ bool   isNegExp         = false; // e Exponent
   double skalierung = 1; // Skalierung wird nach dot angepasst
   double exponent   = 0;
   double get number {
+    // über double.parse, damit 1ê23 genau der nächste double ist; pow(10, 23) ist es nicht (1.0000000000000001e23)
+    if (absNummer.isFinite && skalierung.isFinite && exponent.isFinite) {
+      final nachkomma = (log(skalierung) / ln10).round();
+      final e = (isNegExp ? -exponent : exponent).round() - nachkomma;
+      final w = double.tryParse("${absNummer.toStringAsFixed(0)}e$e");
+      if (w != null) return isNegative ? -w : w;
+    }
     return (isNegative?-1:1)*absNummer/skalierung
            * pow(10,(isNegExp?-1:1)*exponent);
   }

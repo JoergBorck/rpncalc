@@ -1,6 +1,13 @@
 # rpncalc
 
-Ein RPN-Rechner für die Konsole mit eigener, über eine Grammatik konfigurierbarer Syntax.
+Ein RPN-Rechner mit eigener, über eine Grammatik konfigurierbarer Syntax: als App für Windows, Browser und Android
+und für die Konsole.
+
+## Ausprobieren
+
+- **Im Browser:** https://joergborck.github.io/rpncalc/
+- **Windows:** unter [Releases](https://github.com/JoergBorck/rpncalc/releases) die Datei
+  `rpncalc-<version>-windows.zip` laden, entpacken, `rpncalc_app.exe` starten. Keine Installation nötig.
 
 ## Aufbau
 
@@ -10,11 +17,12 @@ Ein RPN-Rechner für die Konsole mit eigener, über eine Grammatik konfigurierba
 | `lib/console.dart`, `lib/net.dart` | die Türen zur Konsole und zu Server und Client, für `bin/` |
 | `lib/src/`      | das Innere: `language/` (Grammatik, DEA, Parser), `engine/` (Interpreter, Calculator, Stack), `api/` (Zustand, Bibliotheken, Hilfe hinter der Tür), `help/`, `libraries/`, `console/`, `net/`, `selftest/`; Aufbau in `doc/architecture.md` |
 | `bin/`          | Startpunkte: `rpncalc.dart` (Konsole mit Menü), `server.dart` (Socket-Server), `client.dart` |
-| `app/`          | die Flutter-App für das Smartphone (`doc/app.md`), nutzt `RpnApi` per Pfad |
+| `app/`          | die Flutter-App für Windows, Browser und Android (`doc/app.md`), nutzt `RpnApi` per Pfad |
 | `library/`      | Funktionsbibliotheken in der Sprache des Rechners (Schwingungen, Statistik) |
 | `test/`         | Tests für `dart test`, nutzen die Testfälle aus `lib/src/selftest/` |
 | `process/`      | Arbeitsweise (`workflow.md`), Backlog, Anforderungen unter `requirements/`, Testprotokolle und Reviews unter `testing/` |
-| `doc/`          | Sprachreferenz (`reference.md`) mit EBNF-Diagramm, API-Spezifikation (`api.md`), Architektur, Demo |
+| `doc/`          | Sprachreferenz (`reference.md`) mit EBNF-Diagramm, API-Spezifikation (`api.md`), App (`app.md`), Tastenfeld (`keys.md`), Architektur, Demo |
+| `tool/`         | Werkzeuge: CHANGELOG, Anforderungen, Tastentabelle, Spur einer Eingabe, Veröffentlichen |
 
 ## Starten und testen
 
@@ -23,6 +31,7 @@ dart run bin/rpncalc.dart     # Konsole mit Menü
 dart run bin/server.dart      # Socket-Server auf Port 4040, Ende mit Strg+C
 dart run bin/client.dart      # Client, in einem zweiten Terminal
 dart test
+cd app && flutter run -d windows   # die App (oder -d chrome); Tests mit flutter test
 ```
 
 ## Lizenz

@@ -123,6 +123,14 @@ void main() {
     expect(m.menueAuswahl, isEmpty, reason: "die Hilfe hat nichts geschaltet");
   });
 
+  test('PC-Tastatur: F10 öffnet das Menü und bricht ab wie MENÜ', () {
+    m.tastaturMenue();
+    expect([m.menueOffen, m.menueBereich], [true, MenueBereich.haupt]);
+    m.tippeZeichen("8");
+    m.tastaturMenue();
+    expect(m.menueOffen, isFalse);
+  });
+
   test('PC-Tastatur: 4 öffnet die Bibliotheken, Enter übernimmt, Esc bricht ab', () {
     m.druecke(menue);
     m.tippeZeichen("4");
@@ -149,7 +157,7 @@ void main() {
     expect(find.text("TAB"), findsNothing, reason: "leer im Menü");
     expect(find.descendant(of: find.byType(Tastenfeld), matching: find.text("7")), findsNothing,
         reason: "Ziffern ohne Bedeutung sind leer");
-    await tester.tap(find.byType(MenueBereichTaste));
+    await tester.tap(find.byWidgetPredicate((w) => w is MenueBereichTaste && w.punkt.name == "Bibliotheken"));
     await tester.pumpAndSettle();
     expect(find.text("MENÜ › Bibliotheken"), findsOneWidget);
     expect(find.byType(MenueSchalter), findsNWidgets(3));

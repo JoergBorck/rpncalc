@@ -30,10 +30,10 @@ mixin _Tastatur on ModellKern {
 
   /// Ein auf der Tastatur getipptes Zeichen: geht so an den Rechner, wie es getippt wurde, ohne die Automatik
   /// für Namen; Präfixe schalten die Beschriftung um wie ihr Knopf. Im Hilfe-Modus zeigt es die Hilfe.
-  void tippeZeichen(String c) {
-    _leuchte(c);
-    modus.tippeZeichen(c);
-  }
+  void tippeZeichen(String c) => _bedienung("zeichen", [c], () {
+        _leuchte(c);
+        modus.tippeZeichen(c);
+      });
 
   /// Ein getipptes Zeichen im Bedienmodus Rechnen.
   void _tippeRechnen(String c) {
@@ -70,10 +70,10 @@ mixin _Tastatur on ModellKern {
   /// Enter auf dem Ziffernblock tut, was sein Name sagt: ENTER (Leerzeichen), dann bricht es die Zeile um. Das
   /// Enter bleibt am Zeilenende vorgemerkt, das erste Token der nächsten Zeile entscheidet: „5 Enter +“ ergibt 10,
   /// „5 Enter 3 +“ ergibt 8 (doc/app.md Kapitel 6).
-  void tastaturReturn() => _zeilenende(" \n");
+  void tastaturReturn() => _bedienung("return", [], () => _zeilenende(" \n"));
 
   /// Return bricht nur die Zeile um, wie ALPHA ⏎ (doc/app.md Kapitel 6).
-  void tastaturZeilenumbruch() => _zeilenende("\n");
+  void tastaturZeilenumbruch() => _bedienung("umbruch", [], () => _zeilenende("\n"));
 
   void _zeilenende(String text) {
     _leuchteAuf(_enter, _kurz);
@@ -89,14 +89,15 @@ mixin _Tastatur on ModellKern {
   }
 
   /// Backspace auf der Tastatur ist ⌫.
-  void tastaturLoeschen() {
-    _leuchteAuf(_loeschen, _kurz);
-    shift = false;
-    druecke(_loeschen);
-  }
+  void tastaturLoeschen() => _bedienung("loeschen", [], () {
+        _leuchteAuf(_loeschen, _kurz);
+        shift = false;
+        druecke(_loeschen);
+      });
 
   /// Tab und Umschalt+Tab wechseln den Bereich (in der Hilfe: siehe modes.dart).
-  void tastaturTab({bool rueckwaerts = false}) => modus.tab(rueckwaerts: rueckwaerts);
+  void tastaturTab({bool rueckwaerts = false}) =>
+      _bedienung("tab", [rueckwaerts], () => modus.tab(rueckwaerts: rueckwaerts));
 
   void _tabRechnen({bool rueckwaerts = false}) {
     final n = Bereich.values.length;
@@ -105,10 +106,16 @@ mixin _Tastatur on ModellKern {
   }
 
   /// F1 schaltet den Hilfe-Modus an und aus.
-  void tastaturHilfe() => modus.hilfe();
+  void tastaturHilfe() => _bedienung("f1", [], modus.hilfe);
+
+  /// F10 wie die Taste MENÜ: öffnet das Menü, im Menü bricht es ab (doc/app.md 6).
+  void tastaturMenue() => _bedienung("f10", [], () {
+        _leuchteAuf(tasteMenue, _kurz);
+        druecke(tasteMenue); // innen nicht noch einmal protokolliert (_bedienung zählt die Tiefe)
+      });
 
   /// Esc beendet die Hilfe.
-  void tastaturEsc() => modus.esc();
+  void tastaturEsc() => _bedienung("esc", [], modus.esc);
 
   /// Der Knopf, der einem getippten Zeichen entspricht, oder null (z.B. bei `<`).
   Taste? tasteFuer(String c) {
@@ -142,7 +149,7 @@ mixin _Tastatur on ModellKern {
 
   /// Ist mit dem letzten Zeichen ein Name fertig geworden (z.B. sin in "30sin*"), leuchtet seine Funktionstaste.
   void _nameFertig(String vorher) {
-    final name = RegExp(r"^['~|!=+\-*/]*([a-z]+)$").firstMatch(vorher)?.group(1);
+    final name = RegExp(r"^['~|!=+\-*/]*([a-z][a-z.]*)$").firstMatch(vorher)?.group(1); // auch rpn.fix
     if (name == null) return;
     final o = zustand.offen;
     if (o.length > vorher.length && o.startsWith(vorher)) return; // der Name wächst noch

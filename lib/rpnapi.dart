@@ -17,9 +17,13 @@ import 'src/api/builtin_help.dart';
 import 'src/api/help_lookup.dart';
 import 'src/api/libraries.dart';
 import 'src/api/state.dart';
+import 'src/engine/calculator.dart' show AngleMode;
 import 'src/engine/interpreter.dart';
 import 'src/engine/session.dart';
 import 'src/help/help.dart';
+import 'src/number_format.dart';
+import 'src/number_format.dart' as nf show formatiere;
+import 'src/trace.dart';
 import 'src/version.dart';
 
 export 'src/api/builtin_help.dart' show Hilfetexte;
@@ -30,6 +34,8 @@ export 'src/engine/session.dart' show Export;
 export 'src/format.dart' show ausExcel, fuerExcel, nurZahlen;
 export 'src/help/help.dart' show Argument, Hilfe, Verwendung;
 export 'src/helper.dart' show positionsName, zahl;
+export 'src/number_format.dart' show Anzeigeformat, Bruch, Formatiert, FormatiertText, Trenner, Zahlformat;
+export 'src/trace.dart' show Spur, spurKategorien;
 
 /// Fassade für alle Oberflächen: Eingabe hinein, Zustand heraus. Was dahinter geschieht, bleibt verborgen.
 /// Jede Methode, die etwas eingibt, liefert den neuen Zustand mit höchstens [zeilen] Stack-Zeilen.
@@ -97,6 +103,23 @@ class RpnApi {
 
   /// Die Oberfläche teilt ihre eigene Version mit; rpnjson prüft dann auch die Angabe `app` einer Bibliothek.
   set appVersion(String? v) => _rechner.calculator.appVersion = v;
+
+  /// Setzt den Winkelmodus wie `deg`, `rad`, `grd`, aber ohne die offene Zeile zu berühren (Menü Modi, FA-32);
+  /// gemeldet wird er in [Zustand.winkel]. Wird mit FR-9 Teil der Einstellungen.
+  set winkel(AngleMode w) => _rechner.calculator.angleMode = w;
+
+  /// Setzt das Anzeigeformat wie die Befehle `rpn.format.*`, `rpn.sep.*`, `rpn.frac.*`, ohne die offene Zeile zu
+  /// berühren (FR-3); gemeldet wird es in [Zustand.anzeige]. Wird mit FR-9 Teil der Einstellungen.
+  set anzeigeformat(Anzeigeformat f) => _rechner.calculator.anzeige = f;
+
+  /// Ein Wert für die Anzeige im eingestellten Format (FR-3): die Zahl, der SI-Vorsatz (sonst leer) und ob sie
+  /// gerundet ist. Mit [format] in einem anderen Format, z.B. für eine Vorschau im Menü.
+  Formatiert formatiere(num wert, [Anzeigeformat? format]) =>
+      nf.formatiere(wert, format ?? _rechner.calculator.anzeige);
+
+  /// Spur für die Fehlersuche (Backlog PR-1, tool/trace.dart): jedes Zeichen, jeder Übergang des DEA, jedes Token,
+  /// die Ausführung und der Stack danach als Zeile. null schaltet sie aus (Standard).
+  set spur(Spur? s) => _rechner.parser.spur = s;
 
   /// Alle Bibliotheken, mitgelieferte zuerst, jeweils nach Namen.
   List<({String name, bool mitgeliefert})> bibliotheken() => _bibliotheken.alle();

@@ -1,6 +1,9 @@
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rpncalc_app/help_texts.dart';
+import 'package:rpncalc_app/display/display.dart';
+import 'package:rpncalc_app/display/key_table_view.dart';
 import 'package:rpncalc_app/main.dart';
 import 'package:rpncalc_app/model/model.dart';
 import 'package:rpncalc_app/keys.dart';
@@ -233,5 +236,57 @@ void main() {
     // jetzt die Seite des Stacks (ihre Verweise liegen außerhalb des sichtbaren Teils)
     expect(find.text("Anzeige: Stack"), findsOneWidget, reason: "ein Verweis gilt auch im Inspekt-Modus");
     expect(find.text("Anzeige: Eingabe"), findsNothing);
+  });
+
+  testWidgets('Alle Tasten (DG-7): Tabellen aus key_table.dart, seitlich scrollbar, PC nur am PC, schmal ohne Überlauf', (tester) async {
+    tester.view.physicalSize = const Size(320 * 3, 640 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    final modell = tester.widget<Anzeige>(find.byType(Anzeige)).modell;
+    expect(AppHilfe.eintraege["app:start"]!.verweise, contains("app:tasten"));
+    modell.druecke(shift);
+    modell.druecke(menue);
+    modell.folgeVerweis("app:tasten");
+    await tester.pumpAndSettle();
+    expect(find.text("Alle Tasten"), findsWidgets);
+    expect(find.byType(TastenTabellenAnsicht), findsOneWidget);
+    expect(find.text("Domäne Grundfunktionen"), findsOneWidget);
+    expect(find.text("asin"), findsOneWidget, reason: "die Umkehrung von sin in der Spalte ~");
+    expect(find.text("Symbole"), findsNothing, reason: "leere Spalten fallen weg");
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Am PC: das Mausrad scrollt den Schirm auch über dem Text (BA-15), Ziehen mit der Maus die Tabelle (BA-16)', (tester) async {
+    tester.view.physicalSize = const Size(320 * 3, 640 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const RpnApp());
+    final modell = tester.widget<Anzeige>(find.byType(Anzeige)).modell;
+    modell.druecke(shift);
+    modell.druecke(menue);
+    modell.folgeVerweis("app:tasten");
+    await tester.pumpAndSettle();
+    expect([modell.hilfeModus, modell.hilfeLesen], [true, false], reason: "Inspekt-Modus");
+    // das Rad über einer Verwendung, also über Text und nicht über einem Verweis
+    final zeiger = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(zeiger.hover(tester.getCenter(find.textContaining("seitlich wischen", findRichText: true))));
+    await tester.sendEventToBinding(zeiger.scroll(const Offset(0, 120)));
+    await tester.pumpAndSettle();
+    expect(modell.hilfeScroll.offset, greaterThan(0), reason: "BA-15");
+    // die erste Tabelle ist breiter als das schmale Fenster; Ziehen mit der Maus schiebt sie
+    final tabelle = find.descendant(of: find.byType(TastenTabellenAnsicht), matching: find.byType(Scrollable)).first;
+    expect(tester.state<ScrollableState>(tabelle).position.maxScrollExtent, greaterThan(0));
+    await tester.drag(tabelle, const Offset(-150, 0), kind: PointerDeviceKind.mouse);
+    await tester.pumpAndSettle();
+    expect(tester.state<ScrollableState>(tabelle).position.pixels, greaterThan(0), reason: "BA-16");
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Alle Tasten: die Spalte PC nur, wenn eine Tastatur da ist', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SingleChildScrollView(child: TastenTabellenAnsicht(pc: true)))));
+    expect(find.text("Backspace"), findsOneWidget);
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SingleChildScrollView(child: TastenTabellenAnsicht(pc: false)))));
+    expect(find.text("Backspace"), findsNothing);
   });
 }

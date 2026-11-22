@@ -327,6 +327,14 @@ final List<(int, String, String)> data = [
   (206, "grd 100cos_rad pi cos", "Stack: ...[0.0] [0.0] [0.0] [-1.0]<tos"), // gon und Bogenmaß
   (207, "2 180~°", "Stack: ...[0.0] [0.0] [-2.0] [0.0]<tos"),               // polar nach kartesisch exakt
   (208, "1ê~30_1ê30*", "Stack: ...[0.0] [0.0] [0.0] [1.0]<tos"),            // kleine Zahlen gehen nicht verloren
+
+  // ==========================================
+  // NAMENSRÄUME: Punkt in Namen (IDs 209-)
+  // ==========================================
+  (209, "{1 2+}':geo.f geo.f", "Stack: ...[0.0] [0.0] [0.0] [3.0]<tos"),     // eigene Funktion im Namensraum
+  (210, "5'!geo.r 'geo.r 'geo.r+", "Stack: ...[0.0] [0.0] [0.0] [10.0]<tos"), // Variable im Namensraum
+  (211, "3{1}':rpn.f", "Stack: ...[0.0] [0.0] [0.0] [3.0]<tos"),             // Fehler: rpn gehört dem Rechner
+  (212, "{1}':geo.f {2}':geo.g geo.f geo.g+", "Stack: ...[0.0] [0.0] [0.0] [3.0]<tos"), // zwei Namen im selben Raum
 ];
 
 

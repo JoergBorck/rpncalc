@@ -46,7 +46,7 @@ void main() {
   });
 
   test('CHANGELOG.md ist aktuell (sonst: dart run tool/changelog.dart)', () {
-    final r = changelog(File("process/backlog.md").readAsStringSync(), File("pubspec.yaml").readAsStringSync());
+    final r = changelog(File("process/done.md").readAsStringSync(), File("pubspec.yaml").readAsStringSync());
     expect(r.fehler, isEmpty);
     expect(File("CHANGELOG.md").readAsStringSync().replaceAll("\r\n", "\n"), r.text);
   });

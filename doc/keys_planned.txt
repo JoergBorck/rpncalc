@@ -1,0 +1,40 @@
+# Geplante Belegungen des Tastenfelds (DG-7). Das Werkzeug tool/keytable.dart trägt sie kursiv in doc/keys.md ein.
+#
+# Belegung:  Taste.Spalte = Text (Eintrag)   oder   Taste.Modus.Spalte = Text (Eintrag)
+#   ⇄ vor dem Text: die Funktion schaltet um (Toggle), z.B. ⇄DEG/RAD.
+#   Taste: die normale Beschriftung (sin, x², ENTER, :); gelesen wird von rechts.
+#   Spalten: normal tilde strich beide shift shiftTilde shiftStrich shiftBeide alpha symbol pc
+# Modus:     modus kennung = Gruppe: Titel (Eintrag)
+#   Die Gruppe ist das Wort in der Spalte Modi (Link), je Modus gibt es eine Tabelle mit den geänderten Tasten.
+#
+# Meldungen: unbekannte Taste, Spalte oder Modus sind Fehler; eine belegte Zelle ist eine Warnung (Kollision);
+# ist eine Zeile umgesetzt, kommt der Hinweis, dass sie aus der Liste kann.
+
+modus quer = Quer: Querformat (FA-5)
+modus hypr = Trig: HYPR, hyperbolisch (FR-15)
+
+# FR-15: Shift schaltet um (⇄ vor dem Namen: Toggle); kollidiert mit sinh und cosh, die dann wegziehen
+sin.shift = ⇄DEG/RAD (FR-15)
+cos.shift = ⇄CIRC/HYPR (FR-15)
+
+# FR-15: Kehrwerte auf | und ~| (Familie Kreis)
+sin.strich = csc (FR-15)
+sin.beide = acsc (FR-15)
+cos.strich = sec (FR-15)
+cos.beide = asec (FR-15)
+tan.strich = cot (FR-15)
+tan.beide = acot (FR-15)
+
+# FR-15: Familie hyperbolisch
+sin.hypr.normal = sinh (FR-15)
+sin.hypr.tilde = asinh (FR-15)
+sin.hypr.strich = csch (FR-15)
+sin.hypr.beide = acsch (FR-15)
+cos.hypr.normal = cosh (FR-15)
+cos.hypr.tilde = acosh (FR-15)
+cos.hypr.strich = sech (FR-15)
+cos.hypr.beide = asech (FR-15)
+tan.hypr.normal = tanh (FR-15)
+tan.hypr.tilde = atanh (FR-15)
+tan.hypr.strich = coth (FR-15)
+tan.hypr.beide = acoth (FR-15)

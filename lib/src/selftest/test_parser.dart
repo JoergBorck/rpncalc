@@ -156,6 +156,28 @@ class UnittestParser {
     ["pi_sin",         "F‖pi\tF‖sin"],
     ["5_{1}",          "Z‖5.0\tK‖{1}"],
     ["{1_2}",          "K‖{1_2}"],         // im Code bleibt _ erhalten
+
+    // === 12. PUNKT IN NAMEN (Namensräume, doc/reference.md 3.2) ===
+    ["rpn.fix",        "F‖rpn.fix"],
+    ["a.b.c",          "F‖a.b.c"],
+    ["~geo.f",         "F‖~geo.f"],
+    ["4:rpn.fix",      "Z‖4.0\tO‖:\tF‖rpn.fix"],
+    ["'geo.r",         "V‖geo.r"],
+    ["'~geo.r",        "V‖~geo.r"],
+    ["'+geo.r",        "V‖+geo.r"],
+    ["{1}':geo.f",     "K‖{1}\tV‖:geo.f"],
+    ["'|geo.r",        "S‖geo.r"],
+    ["'||geo.r",       "S‖|geo.r"],
+    ["rpn.fix 2",      "F‖rpn.fix\tT‖_\tZ‖2.0"],
+    ["x .5",           "F‖x\tT‖_\tZ‖0.5"],  // Zahlen bleiben, wie sie sind
+    ["2.5",            "Z‖2.5"],
+    ["1.2.3",          "Z‖1.2\tZ‖0.3"],
+    ["rpn.",           "X‖C"],
+    ["rpn..fix",       "X‖C"],
+    ["x.5",            "X‖C"],               // früher x und 0.5, jetzt "x .5" schreiben
+    ["rpn.F",          "X‖C"],
+    ["'geo.",          "X‖C"],
+    ["'|geo.5",        "X‖C"],
   ];
 
 

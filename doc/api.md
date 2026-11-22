@@ -52,6 +52,10 @@ print(z.fehler?.text);           // Division durch 0
 | `exportieren({bool nurFunktionen = false})` | `Export` | der Zustand als RPN-Skript (Kapitel 4) |
 | `importieren(String text, {bool ersetzen = true})` | `String?` | führt ein Skript aus; `null` oder der erste Fehler (Kapitel 4) |
 | `testString({int zeilen = 4})` | `String` | nur für Tests: Stack im Format `Stack: ...[a] [b]<tos` |
+| `winkel = AngleMode` | – | setzt den Winkelmodus wie `deg`, `rad`, `grd`, ohne die offene Zeile zu berühren (Menü Modi der App, FA-32); gemeldet in `Zustand.winkel`. Kommt mit FR-9 zu den Einstellungen |
+| `anzeigeformat = Anzeigeformat` | – | setzt das Anzeigeformat wie `rpn.format.*`, `rpn.sep.*`, `rpn.frac.*`, ohne die offene Zeile zu berühren (FR-3); gemeldet in `Zustand.anzeige`. Kommt mit FR-9 zu den Einstellungen |
+| `formatiere(num wert, [Anzeigeformat? format])` | `Formatiert` | ein Wert für die Anzeige im eingestellten (bzw. angegebenen) Format: `(zahl, vorsatz, gerundet)`; `vorsatz` ist der SI-Vorsatz oder leer, die Oberfläche setzt ihn ab; `gerundet` heißt, die Zahl ist gerundet (die App zeigt blass „…“). Regeln: reference.md 6.5, Backlog FR-3 |
+| `spur = Spur?` | – | Spur für die Fehlersuche: jedes Zeichen, jeder Übergang des DEA, jedes Token, die Ausführung und der Stack danach als Textzeile (`Spur(ausgabe, nur: {...})`, `Spur.liste(zeilen)`); `null` schaltet sie aus (Standard). Das Werkzeug dazu ist `dart run tool/trace.dart "3 4+"` (Backlog PR-1) |
 
 Dazu exportiert `rpnapi.dart` Hilfsfunktionen, damit eine Oberfläche nichts anderes aus dem Paket importieren
 muss (architecture.md 5):
@@ -101,6 +105,7 @@ Alle Klassen sind unveränderliche Datenobjekte: Die Felder sind `final`, die Li
 | `offen` | `String` | Text des offenen Tokens, `""` wenn keins (5.3) |
 | `enterVorgemerkt` | `bool` | ein Leerzeichen wartet auf das nächste Token (5.3) |
 | `zeile` | `String` | die bisher eingegebene Zeile (5.3) |
+| `anzeige` | `Anzeigeformat` | Format, Stellen, Trenner und Bruch der Anzeige (FR-3); in JSON als `format` (`std`, `fix`, `sci`, `eng`, `si`), `stellen` (0–15), `trenner` (`none`, `comma`, `apos`, `space`) und `bruch` (`off`, `improper`, `mixed`) |
 
 ### 3.2 `StackZeile`
 
@@ -335,7 +340,8 @@ Für Socket, Client und später andere Programme wird der Zustand als JSON über
 ```json
 {"stack":[{"position":0,"wert":7,"tags":[]}],"tiefe":1,"speicher":[],"argumente":[],
  "winkel":"deg","seed":null,"fehler":null,"codeOffen":false,"codeStack":[],
- "offen":"","enterVorgemerkt":false,"zeile":"3 4+","zeileFertig":false}
+ "offen":"","enterVorgemerkt":false,"zeile":"3 4+","zeileFertig":false,
+ "format":"std","stellen":4,"trenner":"none","bruch":"off"}
 ```
 
 (Im Beispiel ist die Zeile umbrochen, gesendet wird sie in einem Stück.)

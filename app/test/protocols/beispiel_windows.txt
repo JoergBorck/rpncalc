@@ -1,0 +1,35 @@
+# Beispiel aus der App unter Windows (2026-11-21): Menü mit Bibliothek statistik, Rechnen, TAB, Maximieren,
+# PC-Tastatur und Backspace. Läuft in replay_test.dart als Regressionstest.
+1	taste	MENÜ	{"text":"MENÜ","shift":"HILFE","aktion":"menue"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=menue	flags=	verlauf=0	breite=12	zeilen=10/10
+2	taste	4	{"text":"4"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=menue	flags=	verlauf=0	breite=12	zeilen=10/10
+3	taste	statistik	{"text":"statistik","aktion":"menueEintrag"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=menue	flags=	verlauf=0	breite=12	zeilen=10/10
+4	taste	ENTER	{"text":"ENTER","eingabe":" ","shift":"_","aktion":"enter"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=rechnen	flags=	verlauf=0	breite=12	zeilen=10/10
+5	bereich	eingabe	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=rechnen	flags=	verlauf=0	breite=12	zeilen=10/10
+6	tipp	stack	false	→	zeile=	stack=	tiefe=0	fehler=	bereich=stack	modus=rechnen	flags=	verlauf=0	breite=12	zeilen=10/10
+7	taste	TAB	{"text":"TAB","shift":"⇤","aktion":"tab"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=funktionen	modus=rechnen	flags=	verlauf=0	breite=12	zeilen=10/10
+8	taste	TAB	{"text":"TAB","shift":"⇤","aktion":"tab"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=variablen	modus=rechnen	flags=	verlauf=0	breite=12	zeilen=10/10
+9	taste	TAB	{"text":"TAB","shift":"⇤","aktion":"tab"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=rechnen	flags=	verlauf=0	breite=12	zeilen=10/10
+10	taste		{"text":"","aktion":"maximieren"}	→	zeile=	stack=	tiefe=0	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+11	taste	4	{"text":"4"}	→	zeile=4	stack=	tiefe=0	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+12	taste	ENTER	{"text":"ENTER","eingabe":" ","shift":"_","aktion":"enter"}	→	zeile=4 	stack=4	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+13	taste	2	{"text":"2"}	→	zeile=4 2	stack=4	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+14	taste	5	{"text":"5"}	→	zeile=4 25	stack=4	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+15	taste	×	{"text":"×","eingabe":"*","shift":"&","shiftTilde":"oder","buchstabe":"x"}	→	zeile=4 25*	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+16	taste	TAB	{"text":"TAB","shift":"⇤","aktion":"tab"}	→	zeile=4 25*	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+17	zeichen	{	→	zeile=4 25*{	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+18	zeichen	!	→	zeile=4 25*{!	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+19	zeichen	~	→	zeile=4 25*{!~	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=~M	verlauf=0	breite=12	zeilen=10/10
+20	zeichen	/	→	zeile=4 25*{!~/	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=M	verlauf=0	breite=12	zeilen=10/10
+21	zeichen	}	→	zeile=	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=M	verlauf=1	breite=12	zeilen=10/10
+22	taste	SHIFT	{"text":"SHIFT","aktion":"shift"}	→	zeile=	stack=100	tiefe=1	fehler=	bereich=stack	modus=rechnen	flags=SM	verlauf=1	breite=12	zeilen=10/10
+23	taste	TAB	{"text":"TAB","shift":"⇤","aktion":"tab"}	→	zeile=	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=1	breite=12	zeilen=10/10
+24	taste	⌫	{"text":"⌫","shift":"C","aktion":"loeschen"}	→	zeile=	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=1	breite=12	zeilen=10/10
+25	tipp	eingabe	false	→	zeile=	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=1	breite=12	zeilen=10/10
+26	umbruch	→	zeile=	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10
+27	zeichen	{	→	zeile={	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10
+28	zeichen	!	→	zeile={!	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10
+29	zeichen	~	→	zeile={!~	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=~M	verlauf=2	breite=12	zeilen=10/10
+30	loeschen	→	zeile={!	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10
+31	loeschen	→	zeile={	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10
+32	loeschen	→	zeile=	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10
+33	bereich	eingabe	→	zeile=	stack=100	tiefe=1	fehler=	bereich=eingabe	modus=rechnen	flags=M	verlauf=2	breite=12	zeilen=10/10

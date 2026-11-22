@@ -11,6 +11,7 @@ library;
 
 import 'dart:convert';
 
+import '../number_format.dart';
 import 'calculator.dart';
 import 'value.dart';
 
@@ -45,8 +46,11 @@ class SessionSkript {
     return (text: zeilen.where((z) => z.isNotEmpty).join("\n"), warnungen: List.of(_warnungen));
   }
 
-  String _einstellungen(Calculator c) =>
-      [c.angleMode == AngleMode.grad ? "grd" : c.angleMode.name, if (c.seed != null) "${_zahl(c.seed!)}seed"].join("_");
+  String _einstellungen(Calculator c) => [
+        c.angleMode == AngleMode.grad ? "grd" : c.angleMode.name,
+        if (c.seed != null) "${_zahl(c.seed!)}seed",
+        ...anzeigeBefehle(c.anzeige),
+      ].join("_");
 
   /// Werte (tiefstes zuerst) und danach n:'!name bzw. n:'!!name für Konstanten.
   String _werte(Iterable<Wert> werte, String name, String mod) {

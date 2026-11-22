@@ -1,4 +1,4 @@
-/// Aufgabe: erzeugt CHANGELOG.md aus dem Abschnitt „Erledigt“ des Backlogs (DG-2, process/backlog.md):
+/// Aufgabe: erzeugt CHANGELOG.md aus dem Abschnitt „Erledigt“ (DG-2, seit PG-5 in process/done.md):
 /// je „### Version …“ eine Liste auf Englisch, aus den Zeilen „EN: …“ der Einträge, ohne Commit-Hashes.
 ///
 ///   dart run tool/changelog.dart        CHANGELOG.md schreiben
@@ -19,7 +19,7 @@ library;
 import 'dart:io';
 
 void main() {
-  final ergebnis = changelog(File("process/backlog.md").readAsStringSync(), File("pubspec.yaml").readAsStringSync());
+  final ergebnis = changelog(File("process/done.md").readAsStringSync(), File("pubspec.yaml").readAsStringSync());
   if (ergebnis.fehler.isNotEmpty) {
     stderr.writeln("CHANGELOG.md nicht geschrieben:");
     for (final f in ergebnis.fehler) {

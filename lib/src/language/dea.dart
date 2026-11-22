@@ -9,6 +9,8 @@
 /// Siehe auch: grammar.dart, parser.dart, doc/reference.md Anhang A (EBNF), selftest/test_dea.dart.
 library;
 
+import '../trace.dart';
+
 /// Übergangstabelle einer Grammatik: (Zustand, Symbolgruppe) -> (Folgezustand, Ausgabe)
 typedef UebergangsTabelle = Map<(String , String), (String , String)>;
 
@@ -132,6 +134,9 @@ class Dea {
 
 
   String state="q0"; // aktueller Zustand des Automaten erstmal vorläufig auf q0 gesetzt.
+
+  /// Spur für die Fehlersuche (PR-1): jeder Übergang als Zeile „dea“; null heißt aus.
+  Spur? spur;
     
 
   // Dea neu starten und alle Variablen initialisieren
@@ -155,6 +160,7 @@ class Dea {
     
     // Aufgrund der Einschränkungen durch die SymbolMap dürfen Eingabem nur 1 Charakter lang sein: 
     if (eingabe.isEmpty || eingabe.length > 1) {
+      spur?.call("dea", [state, "?", state, errorZeichenUnbekannt]);
       return errorZeichenUnbekannt;
     } 
 
@@ -164,7 +170,10 @@ class Dea {
       // Dieses Eingabezeichen gibt es nicht in den Symbolen. Hat der Zustand einen Übergang für das
       // Ersatz-Symbol "sonst" (z.B. im Code-Block, der beliebige Zeichen enthalten darf), gilt der;
       // sonst kann mit einer Fehlerrückgabe abgebrochen werden.
-      if (!uebergangsTabelle.containsKey((state, sonstSymbol))) return errorZeichenUnbekannt;
+      if (!uebergangsTabelle.containsKey((state, sonstSymbol))) {
+        spur?.call("dea", [state, "?", state, errorZeichenUnbekannt]);
+        return errorZeichenUnbekannt;
+      }
       symbols = const [sonstSymbol];
     } 
 
@@ -174,12 +183,14 @@ class Dea {
       ausgabe=""; // Ausgabepuffer, initialisieren
       (String, String)? uebergang = uebergangsTabelle[(state, symbol)];  
       if (uebergang != null) { // Es wurde ein gültiger Übergang gefunden
+        spur?.call("dea", [state, symbol, uebergang.$1, uebergang.$2]);
         state = uebergang.$1;
         ausgabe = uebergang.$2;
         // Epsilon-Übergänge ausführen, wenn nötig 
         while (true) { 
           var epsilonuebergang = uebergangsTabelle[(state, "")];
           if (epsilonuebergang == null) { break; } 
+          spur?.call("dea", [state, "ε", epsilonuebergang.$1, epsilonuebergang.$2]);
           state = epsilonuebergang.$1;
           ausgabe += epsilonuebergang.$2; 
         }  
@@ -187,6 +198,7 @@ class Dea {
       }
     } 
     // Wenn der Automat hier ankommt, wurde kein gültiges Symbol gefunden
+    spur?.call("dea", [state, symbols.join(","), state, errorZeichenNichtErlaubt]);
     return errorZeichenNichtErlaubt; 
   }
 

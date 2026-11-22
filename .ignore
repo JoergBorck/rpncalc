@@ -1,0 +1,5 @@
+# Für Suchen mit ripgrep (auch die von Claude); git beachtet diese Datei nicht (PG-7).
+# Erzeugt aus library/*.rpnlib (tool/bibliotheken.dart), sehr lange JSON-Zeilen; gesucht wird in den Quellen.
+# Ohne führenden Pfad, damit es auch greift, wenn die Suche in einem Unterordner beginnt.
+# Wer die Datei doch durchsuchen will, gibt ihren Pfad ausdrücklich an.
+libraries.g.dart

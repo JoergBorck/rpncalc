@@ -1,5 +1,5 @@
 /// Aufgabe: das Kontextmenü einer Zeile der Eingabe- bzw. Stackspalte (Rechtsklick am PC, langes Drücken am
-/// Handy): Werte oder Zeilen kopieren, Werte oder Text einfügen, Hilfe. Die Zeile bleibt markiert, solange das
+/// Handy): Werte oder Zeilen kopieren, Werte oder Text einfügen, Hilfe, Protokoll kopieren. Die Zeile bleibt markiert, solange das
 /// Menü offen ist; Tooltips ruhen so lange.
 ///
 /// Abgrenzung: Kopieren und Einfügen selbst macht das Modell (Zwischenablage); diese Datei zeigt nur das Menü.
@@ -66,6 +66,8 @@ class Kontextmenue extends StatelessWidget {
         ],
         const PopupMenuDivider(),
         eintrag("Hilfe", () => m.oeffneHilfe(hilfe())),
+        const PopupMenuDivider(),
+        eintrag("Protokoll kopieren", m.kopiereProtokoll), // für Fehlermeldungen (PA-1)
       ],
     ).whenComplete(() {
       m.markiereKontext(null);

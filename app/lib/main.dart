@@ -9,6 +9,8 @@
 /// Siehe auch: doc/app.md 1.1 (Zoom), Kapitel 6 (Tastatur), 2.1 (Kontextmenü, Zwischenablage), doc/architecture.md 4.
 library;
 
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +20,7 @@ import 'display/display.dart';
 import 'keypad/cursor_cross.dart';
 import 'keypad/keypad.dart';
 import 'model/model.dart';
+import 'model/protocol.dart';
 import 'tooltip.dart';
 
 void main() {
@@ -25,6 +28,15 @@ void main() {
   // Flutter läuft, deshalb zuerst ensureInitialized
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) BrowserContextMenu.disableContextMenu();
+  // unerwartete Ausnahmen ins Tastenprotokoll (PA-1), die übliche Ausgabe bleibt
+  FlutterError.onError = (details) {
+    Protokoll.app.ausnahme(details.exception, details.stack);
+    FlutterError.presentError(details);
+  };
+  PlatformDispatcher.instance.onError = (fehler, stack) {
+    Protokoll.app.ausnahme(fehler, stack);
+    return false; // weiter wie ohne Behandlung (Ausgabe in der Konsole)
+  };
   runApp(const RpnApp());
 }
 
@@ -80,6 +92,14 @@ class RechnerSeite extends StatefulWidget {
 
 class _RechnerSeiteState extends State<RechnerSeite> {
   final modell = RechnerModell();
+
+  /// Ein ^ der Tottaste wartet auf die nächste Taste (siehe [_taste]).
+  bool _tottaste = false;
+  static final _modifikatoren = {
+    LogicalKeyboardKey.shiftLeft, LogicalKeyboardKey.shiftRight, LogicalKeyboardKey.controlLeft,
+    LogicalKeyboardKey.controlRight, LogicalKeyboardKey.altLeft, LogicalKeyboardKey.altRight,
+    LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.metaRight, LogicalKeyboardKey.capsLock,
+  };
 
   @override
   void initState() {
@@ -170,6 +190,18 @@ class _RechnerSeiteState extends State<RechnerSeite> {
   /// das muss durch, sonst fehlen auf der deutschen Tastatur | ~ { } und ².
   KeyEventResult _taste(FocusNode knoten, KeyEvent e) {
     if (e is KeyUpEvent) return KeyEventResult.ignored;
+    // Tottaste ^ (deutsche Tastatur, links neben 1): Windows meldet erst ^ und mit der nächsten Taste ê. Das ^
+    // wartet darum auf die nächste Taste: kommt ein Buchstabe mit Zirkumflex, war es nur der Akzent; sonst geht
+    // es vor der Taste an den Rechner. Umschalt und andere Modifikatoren zählen nicht als nächste Taste.
+    if (e.character == "^" && e.physicalKey == PhysicalKeyboardKey.backquote) {
+      if (_tottaste) modell.tippeZeichen("^");
+      _tottaste = true;
+      return KeyEventResult.handled;
+    }
+    if (_tottaste && !_modifikatoren.contains(e.logicalKey)) {
+      _tottaste = false;
+      if (!"âêîôûÂÊÎÔÛ".contains(e.character ?? "-")) modell.tippeZeichen("^");
+    }
     TippSperre.bisMausWechselt(); // wer tippt, braucht keinen Tooltip unter der Maus (doc/app.md 5.1)
     final tastatur = HardwareKeyboard.instance;
     final altGr = tastatur.isControlPressed && tastatur.isAltPressed;
@@ -205,6 +237,8 @@ class _RechnerSeiteState extends State<RechnerSeite> {
       modell.pfeil(AxisDirection.right);
     } else if (k == LogicalKeyboardKey.f1) {
       modell.tastaturHilfe();
+    } else if (k == LogicalKeyboardKey.f10) {
+      modell.tastaturMenue();
     } else if (k == LogicalKeyboardKey.escape) {
       modell.tastaturEsc();
     } else {

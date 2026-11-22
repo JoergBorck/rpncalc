@@ -8,6 +8,7 @@
 /// Siehe auch: doc/app.md Kapitel 5.2, help_texts.dart.
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:rpncalc/rpnapi.dart';
@@ -15,6 +16,7 @@ import 'package:rpncalc/rpnapi.dart';
 import '../colors.dart';
 import '../help_texts.dart';
 import '../model/model.dart';
+import 'key_table_view.dart';
 
 /// Der Hilfeschirm über der Anzeige (doc/app.md 5.2): je Eintrag Titel und Verwendungen, nach MENÜ die
 /// Einzelheiten, unten die Verweise zum Antippen. Ein Tipp daneben schließt ihn.
@@ -39,7 +41,7 @@ class Hilfeschirm extends StatelessWidget {
     final einzelheiten = seite.any((h) => h.text.isNotEmpty);
     // im Inspekt-Modus lässt der Schirm Tipps durch, außer auf die Verweise: ein Tipp in die Anzeige zeigt die Hilfe
     // des Elements darunter; blättern gehört zum Lese-Modus (doc/app.md 5.2)
-    return _NurVerweise(
+    final schirm = _NurVerweise(
       aktiv: m.hilfeModus && !m.hilfeLesen,
       child: Container(
         color: Farben.anzeige.withValues(alpha: 0.97),
@@ -75,6 +77,9 @@ class Hilfeschirm extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(h.textMit((k) => AppHilfe.titel(m.api, k)), style: stil.copyWith(height: 1.4)),
                 ),
+              // Alle Tasten (DG-7): die Tabellen, seitlich scrollbar; sie nehmen Tipps und Wischen an wie ein Verweis
+              if (h.kennung == "app:tasten")
+                const Padding(padding: EdgeInsets.only(top: 6), child: _Verweis(child: TastenTabellenAnsicht())),
               const SizedBox(height: 8),
             ],
             if (verweise.isNotEmpty)
@@ -106,6 +111,21 @@ class Hilfeschirm extends StatelessWidget {
           ],
         ),
       ),
+    );
+    if (!scrollen) return schirm;
+    // Das Mausrad scrollt den Schirm überall (BA-15): Im Inspekt-Modus kommt es sonst nur über einem Verweis bei der
+    // Liste an. Durchlässig, damit Tipps weiter zur Anzeige darunter gehen; über einem Verweis oder im Lese-Modus
+    // meldet sich die Liste zuerst (tiefer im Pfad) und bekommt das Rad wie bisher.
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerSignal: (e) {
+        if (e is! PointerScrollEvent || !m.hilfeScroll.hasClients) return;
+        GestureBinding.instance.pointerSignalResolver.register(e, (e) {
+          final p = m.hilfeScroll.position;
+          if (p is ScrollPositionWithSingleContext) p.pointerScroll((e as PointerScrollEvent).scrollDelta.dy);
+        });
+      },
+      child: schirm,
     );
   }
 }

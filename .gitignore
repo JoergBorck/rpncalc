@@ -11,3 +11,6 @@
 
 # Erzeugte Vorschauen (Prüfseite, App-Symbol), process/testing/README.md
 process/testing/preview/
+
+# Tastenprotokoll der App auf dem Entwicklungsrechner (PA-1)
+process/testing/logs/

@@ -48,6 +48,12 @@ class Statuszeile extends StatelessWidget {
               onTap: m.hilfeModus ? () => m.zeigeHilfe(AppHilfe.nachschlagen(m.api, "#winkel")) : null,
               child: _tippStatus(winkel.$2, Text(winkel.$1, style: klein.copyWith(color: Farben.anzeigeText))),
             ),
+            // was vom Anzeigeformat nicht auf Standard steht: FIX 4, 1'000, #/# (FR-3, FA-32)
+            for (final (text, erklaerung) in _anzeige(m.zustand.anzeige))
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: _tippStatus(erklaerung, Text(text, style: klein.copyWith(color: Farben.anzeigeText))),
+              ),
             if (m.hilfeModus)
               m.hilfeLesen
                   ? marke("HILFE · LESEN", Farben.hilfe, "Lese-Modus: ▲ ▼ blättern, TAB wählt einen Verweis, ENTER folgt ihm")
@@ -73,7 +79,7 @@ class Statuszeile extends StatelessWidget {
                   child: _tippStatus(
                     "Tos, der Stack ist ausgeblendet",
                     Text(
-                      zahl(m.zustand.stack.first.wert),
+                      m.wertText(m.zustand.stack.first.wert),
                       style: Schrift.monospace(11, Farben.tosText, gewicht: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -95,8 +101,17 @@ class Statuszeile extends StatelessWidget {
     );
   }
 
+  /// Die Teile des Anzeigeformats, die nicht auf Standard stehen, als kurzer Text mit Erklärung.
+  static List<(String, String)> _anzeige(Anzeigeformat f) => [
+        if (f.format != Zahlformat.std) ("${f.format.name.toUpperCase()} ${f.stellen}", "Anzeigeformat ${f.format.name} mit ${f.stellen} Stellen"),
+        if (f.trenner != Trenner.none)
+          ("1${f.trenner.zeichen}000", "Tausendertrenner ${const {Trenner.comma: "Komma", Trenner.apos: "Apostroph", Trenner.space: "schmales Leerzeichen"}[f.trenner]}"),
+        if (f.bruch != Bruch.off) (f.bruch == Bruch.mixed ? "# #/#" : "#/#", f.bruch == Bruch.mixed ? "gemischte Brüche" : "unechte Brüche"),
+      ];
+
   String _einstellungen(String winkel) => [
     "Winkelmodus: $winkel",
+    "Anzeige: ${m.zustand.anzeige.istStandard ? "Standard" : [for (final (t, _) in _anzeige(m.zustand.anzeige)) t].join(", ")}",
     "Zufall: ${m.zustand.seed == null ? "echte Zufallszahlen" : "Startwert ${m.zustand.seed}"}",
     "Stack: ${m.zustand.tiefe} Werte",
     "Funktionstasten: ${["Grundfunktionen", ...m.eingeschalteteEintraege].join(", ")}",

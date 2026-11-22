@@ -10,7 +10,7 @@ import 'package:rpncalc_app/model/model.dart';
 Future<void> bibliothekEinschalten(WidgetTester tester, String name) async {
   await tester.tap(find.text("MENÜ"));
   await tester.pumpAndSettle();
-  await tester.tap(find.byType(MenueBereichTaste));
+  await tester.tap(find.byWidgetPredicate((w) => w is MenueBereichTaste && w.punkt.name == "Bibliotheken"));
   await tester.pumpAndSettle();
   await tester.tap(find.byWidgetPredicate((w) => w is MenueSchalter && w.taste.text == name));
   await tester.pumpAndSettle();

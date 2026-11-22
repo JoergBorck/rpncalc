@@ -1,5 +1,6 @@
 /// Aufgabe: die Menüseite der Anzeige (doc/app.md 3.6). Solange das Menü offen ist, liegt sie über den Seiten:
-/// oben der Pfad und der Hinweis zur Bedienung, im Hauptmenü der Ziffernblock als Karte mit Symbol und Name je Bereich, im Bereich Bibliotheken
+/// oben der Pfad und der Hinweis zur Bedienung, im Hauptmenü der Ziffernblock als Karte mit Symbol und Name je
+/// Bereich, im Bereich Modi die Karte 2 × 5 wie der Funktionsblock (FA-32), im Bereich Bibliotheken
 /// die Liste mit Name, Version und Wirkung, darunter die gewählte Bibliothek und was OK bewirkt. Unten
 /// bleibt Platz für das Cursorkreuz, das in die Anzeige ragt.
 ///
@@ -41,7 +42,13 @@ class _MenueSeiteState extends State<MenueSeite> {
   Widget build(BuildContext context) {
     final m = widget.m;
     final bibliotheken = m.menueBereich == MenueBereich.bibliotheken;
+    final modi = m.menueBereich == MenueBereich.modi;
     final klein = Schrift.monospace(11, Farben.anzeigeBlass);
+    final rechts = switch (m.menueBereich) {
+      MenueBereich.bibliotheken => "${m.eingeschalteteEintraege.where((e) => e != "Programm").length} geladen",
+      MenueBereich.modi => "${[for (final f in modusFelder.nonNulls) if (m.modusGeaendert(f.name)) f].length} geändert",
+      _ => "Hauptmenü",
+    };
     return Container(
       color: Farben.anzeige,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, _kreuz),
@@ -55,12 +62,11 @@ class _MenueSeiteState extends State<MenueSeite> {
                     overflow: TextOverflow.ellipsis,
                     style: Schrift.monospace(12, Farben.anzeigeText, gewicht: FontWeight.w600)),
               ),
-              Text(bibliotheken ? "${m.eingeschalteteEintraege.where((e) => e != "Programm").length} geladen" : "Hauptmenü",
-                  style: klein),
+              Text(rechts, style: klein),
             ],
           ),
           Text(
-            "${bibliotheken ? "Taste schaltet um" : "Bereich wählen"} · MENÜ bricht ab · OK übernimmt",
+            "${bibliotheken ? "Taste oder f–p schaltet um" : modi ? "Taste oder f–p schaltet weiter" : "Bereich wählen"} · MENÜ bricht ab · OK übernimmt",
             overflow: TextOverflow.ellipsis,
             style: klein,
           ),
@@ -69,7 +75,7 @@ class _MenueSeiteState extends State<MenueSeite> {
             height: 1,
             color: const Color(0xFF1F2E27),
           ),
-          Expanded(child: bibliotheken ? _bibliotheken(m) : _karte(m)),
+          Expanded(child: bibliotheken ? _bibliotheken(m) : modi ? _modi(m) : _karte(m)),
         ],
       ),
     );
@@ -174,6 +180,137 @@ class _MenueSeiteState extends State<MenueSeite> {
           child: Text(m.menueWirkung, style: Schrift.monospace(11, Farben.shift)),
         ),
       ],
+    );
+  }
+
+  /// Bereich Modi: Karte 2 × 5 wie der Funktionsblock, darunter die Zeile zum gedrückten Modus und was OK bewirkt
+  /// (FA-32).
+  Widget _modi(RechnerModell m) {
+    final zeile = m.modusZeile;
+    return LayoutBuilder(builder: (context, platz) {
+      // zwei Reihen, höchstens 66 hoch (Titel und drei Zeilen Werte); darunter bleiben gut 34 für Zeile und Satz zu OK
+      final hoehe = ((platz.maxHeight - 34) / 2).clamp(0.0, 66.0);
+      return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final reihe in [modusFelder.sublist(0, 5), modusFelder.sublist(5, 10)])
+          SizedBox(
+            height: hoehe,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final f in reihe) _modusFeld(m, f)]),
+          ),
+        const Spacer(),
+        if (zeile != null)
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(text: zeile.wert),
+              if (zeile.erklaerung.isNotEmpty)
+                TextSpan(text: " · ${zeile.erklaerung}", style: const TextStyle(color: Farben.anzeigeBlass)),
+            ]),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Schrift.monospace(11.5, Farben.anzeigeText),
+          ),
+        Padding(
+          padding: const EdgeInsets.only(top: 2, bottom: 2),
+          child: Text(m.menueWirkung, style: Schrift.monospace(11, Farben.shift)),
+        ),
+      ],
+      );
+    });
+  }
+
+  /// Ein Feld der Karte Modi: Symbol und Name, darunter die Werte je zwei nebeneinander, der gewählte fett (weiß
+  /// unverändert, grün geändert), die übrigen grau; Bruch mit seinen drei Bildern. Platzhalter ganz ausgegraut, das
+  /// zuletzt gedrückte Feld dünn orange umrandet.
+  Widget _modusFeld(RechnerModell m, ModusFeld? f) {
+    const grau = Color(0xFF4E6359), dunkel = Color(0xFF34463E);
+    final rand = f == null
+        ? const Color(0xFF16211C)
+        : f.name == m.menueGewaehlt
+            ? Farben.shift
+            : f.aktiv
+                ? const Color(0xFF3E5A4D)
+                : const Color(0xFF1C2A24);
+    Widget? inhalt;
+    if (f != null) {
+      final gewaehlt = m.modusWert(f.name), geaendert = m.modusGeaendert(f.name);
+      Color farbeVon(String w) =>
+          !f.aktiv ? dunkel : w != gewaehlt ? grau : geaendert ? Farben.rahmenGruen : Farben.rahmenWeiss;
+      final werte = f.name == "Bruch"
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                for (final w in f.werte)
+                  SvgPicture.asset(bruchBilder[w]!,
+                      width: 17, height: 17, colorFilter: ColorFilter.mode(farbeVon(w), BlendMode.srcIn)),
+              ],
+            )
+          : Wrap(
+              children: [
+                for (final w in f.werte)
+                  FractionallySizedBox(
+                    widthFactor: f.name == "Auflösung" ? 1 : 0.5,
+                    child: Text(w,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.clip,
+                        style: TextStyle(
+                            fontSize: 10,
+                            height: 1.25,
+                            color: farbeVon(w),
+                            fontWeight: f.aktiv && w == gewaehlt ? FontWeight.w700 : FontWeight.w400)),
+                  ),
+              ],
+            );
+      inhalt = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              SvgPicture.asset(f.symbol,
+                  width: 12,
+                  height: 12,
+                  colorFilter: ColorFilter.mode(f.aktiv ? Farben.anzeigeText : dunkel, BlendMode.srcIn)),
+              const SizedBox(width: 2),
+              Flexible(
+                child: Text(f.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    softWrap: false,
+                    style: TextStyle(fontSize: 9.5, color: f.aktiv ? Farben.anzeigeText : dunkel)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 1),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(child: ClipRect(child: werte)),
+                // Format: die Stellenzahl groß unten rechts, grün, wenn geändert
+                if (f.name == "Format" && gewaehlt != "Std")
+                  Positioned(
+                    right: 1,
+                    bottom: 0,
+                    child: Text("${m.menueStellen}",
+                        style: TextStyle(
+                            fontSize: 17,
+                            height: 1,
+                            fontWeight: FontWeight.w700,
+                            color: geaendert ? Farben.rahmenGruen : Farben.rahmenWeiss)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.all(2),
+        padding: const EdgeInsets.fromLTRB(3, 3, 3, 2),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: rand)),
+        child: inhalt,
+      ),
     );
   }
 

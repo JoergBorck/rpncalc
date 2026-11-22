@@ -71,6 +71,7 @@ Eigene Funktionen führt der Calculator rekursiv über denselben Parser aus (`co
 | `lib/src/help/` | Hilfe-Modell (`Hilfe`, `Verwendung`, `Argument`) |
 | `lib/src/libraries/` | die mitgelieferten Bibliotheken und Systemdateien als erzeugte Konstanten (`libraries.g.dart` aus `library/*.rpnlib` und `library/system/*.rpnlib`) |
 | `lib/src/format.dart` | das Excel-Format der Zwischenablage, gemeinsam für App und Konsole; `rpnapi.dart` exportiert es zusammen mit `zahl` und `positionsName` aus `helper.dart` |
+| `lib/src/trace.dart` | die Spur für die Fehlersuche (`Spur`, PR-1): Haken in DEA, Parser und Calculator, ohne gesetzte Spur ohne Wirkung; ausgegeben von `tool/trace.dart` |
 
 Neue Funktionen trägt man in die Tabelle des passenden Mixins ein. Neue Hilfetexte stehen in
 `library/system/hilfe.de.rpnlib`.
@@ -96,7 +97,9 @@ Die Konsole kennt den Rechner über die Schnittstelle `Rechner` (`taste`, `zeile
 app/lib/
   main.dart          Start, Zoom, Seitenaufbau, Tasten der PC-Tastatur
   colors.dart        Farben und Schriften (Rollen statt Farbwerte)
-  keys.dart          die Tasten und ihre Belegung (Taste, Aktion)
+  keys.dart          die Tasten und ihre Belegung (Taste, Aktion), auch R1; reines Dart (doc/keys.md, DG-7)
+  menu_tree.dart     der Menübaum als Daten: Bereiche des Hauptmenüs, Modi mit Werten; reines Dart
+  key_table.dart     die Zeilen der Tastentabelle für doc/keys.md (tool/keytable.dart) und die Hilfeseite; reines Dart
   help_texts.dart    Hilfe und Tooltips der App zusammensetzen (AppHilfe)
   help_texts_de.dart alle deutschen Texte dazu; eine weitere Sprache bekommt eine Datei daneben
   tooltip.dart       Tooltips und wann sie ruhen (TippSperre)
@@ -126,7 +129,8 @@ stehen die Abhängigkeiten zwischen den Teilen an einer Stelle.
 | `viewport.dart` | Ausschnitte der Anzeige: Versatz im Stack und Verlauf, waagrechtes Schieben, Pfeile |
 | `keyboard.dart` | Zeichen der PC-Tastatur auf Tasten abbilden, Leuchten der Tasten |
 | `modes.dart` | die Bedienmodi Rechnen und Hilfe (4.3) |
-| `menu.dart` | das Menü auf dem Tastenfeld mit seinem Bedienmodus (doc/app.md 3.6) |
+| `menu.dart` | das Menü auf dem Tastenfeld mit seinem Bedienmodus (doc/app.md 3.6); der Menübaum als Daten steht in app/lib/menu_tree.dart |
+| `protocol.dart` | das Tastenprotokoll (PA-1), keine part-Datei: Ringpuffer, Datei auf dem Entwicklungsrechner (`protocol_file_io.dart`, im Browser `protocol_file_stub.dart`), Ausnahmen; protokolliert wird in `ModellKern._bedienung`, abgespielt in app/test/protocol_replay.dart |
 
 ### 4.3 Bedienmodi
 
@@ -143,7 +147,8 @@ liegt.
 ### 4.4 Anzeige und Tastenfeld
 
 - `display/`: `display.dart` (Rahmen mit den Seiten zum Wischen), `status_line.dart`, `calc_page.dart`
-  (Rechnen), `list_page.dart` (Variablen und Tags, Funktionen), `help_screen.dart`, `context_menu.dart`.
+  (Rechnen), `list_page.dart` (Variablen und Tags, Funktionen), `help_screen.dart`, `key_table_view.dart` (Hilfeseite
+  Alle Tasten), `context_menu.dart`.
 - `keypad/`: `keypad.dart` (das Tastenfeld aus den Blöcken R1, R2–R5 und R6–R9, Rahmen um die
   Funktionstasten, Maximieren-Ecke), `function_block.dart` (die zehn Funktionstasten, verschiebbar mit Wischen und
   Mausrad), `key_widget.dart` (eine Taste), `cursor_cross.dart`. Jede Zeichnung

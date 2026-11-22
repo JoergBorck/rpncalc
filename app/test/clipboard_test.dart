@@ -94,7 +94,7 @@ void main() {
     expect(stack().first, closeTo(3e-20, 1e-30));
   });
 
-  test(r'\c, \s und \v wie in der Konsole; das \ wartet, ⌫ nimmt es zurück', () async {
+  test(r'\c, \s, \v und \m wie in der Konsole; das \ wartet, ⌫ nimmt es zurück', () async {
     tippe("1 2 3_");
     tippe(r"\");
     expect(m.eingabeText(0).endsWith(r"\"), isTrue, reason: "das wartende \\ ist zu sehen");
@@ -110,6 +110,8 @@ void main() {
     tippe(r"\v");
     await pumpEventQueue();
     expect(stack().first, 7);
+    tippe(r"\m");
+    expect([m.menueOffen, m.zeile], [true, "1 2 3_7_"], reason: r"\m öffnet das Menü wie MENÜ, geschrieben wird nichts");
   });
 
   testWidgets('Rechtsklick in den Stack öffnet das Kontextmenü, Kopieren meldet sich unten', (tester) async {

@@ -113,9 +113,13 @@ Alle Fehler sind in [Kapitel 12](#12-fehler) aufgelistet.
 ### 3.2 Namen
 
 - Funktionen, Variablen und Tags haben Namen aus Kleinbuchstaben `a`–`z`, beliebig lang.
+- Ein Punkt zwischen zwei Buchstaben teilt einen Namen in Namensräume: `rpn.fix`, `'geo.radius`,
+  `':meine.fn`. Der Namensraum `rpn` gehört dem Rechner (10.2).
 - Befehle bestehen aus genau einem Großbuchstaben (`D`, `S`, `R` …). Sie brauchen kein trennendes Zeichen:
   `"2 3S"`.
-- Ein Name endet am ersten Zeichen, das kein Kleinbuchstabe ist: `"deg50"` ist `deg` und `50`.
+- Ein Name endet am ersten Zeichen, das weder Kleinbuchstabe noch Punkt ist: `"deg50"` ist `deg` und `50`.
+- Auf einen Punkt im Namen muss ein Kleinbuchstabe folgen: `"rpn."`, `"rpn..fix"` und `"x.5"` sind Fehler
+  (12.1, Code C). Für `x` und `0.5` schreibt man `"x .5"`.
 
 > **Warum so?** Großbuchstaben sind kurze, häufige Befehle. Kleinbuchstaben bleiben für Funktionen und eigene Namen frei.
 
@@ -352,6 +356,32 @@ Zehner, Hunderter usw.
 
 Beispiele: `"3.14159 2:round"` ergibt 3,14, `"1234 ~2:round"` ergibt 1200. Andere Arten sind ein Fehler.
 
+### 6.5 Anzeigeformat
+
+Wie Zahlen angezeigt werden (Backlog FR-3). Nur die Anzeige ändert sich: gerechnet wird mit dem vollen Wert, die
+Zwischenablage und die Session schreiben Zahlen unverändert. Das Format wird mit der Session gespeichert, in der
+Zeile der Einstellungen als diese Befehle ([api.md](api.md) 4).
+
+| Befehl | Argument | Bedeutung |
+|--------|----------|-----------|
+| `rpn.format.std` | n | Standard: wie bisher, bis 12 Nachkommastellen |
+| `rpn.format.fix` | n | n Nachkommastellen, höchstens 15 gültige Ziffern; ab 10¹⁵ wie `sci` |
+| `rpn.format.sci` | n | Mantisse mit n Nachkommastellen und Exponent: 1.235ê6 |
+| `rpn.format.eng` | n | n + 1 gültige Ziffern, der Exponent ein Vielfaches von 3: 12.34ê−3 |
+| `rpn.format.si` | n | wie `eng`, statt des Exponenten der SI-Vorsatz von a (10⁻¹⁸) bis E (10¹⁸): 12.34 m; außerhalb wie `eng` |
+| `rpn.sep.none`, `rpn.sep.comma`, `rpn.sep.apos`, `rpn.sep.space` | – | Tausendertrenner: keiner, 1,234, 1'234, 1 234 (schmales geschütztes Leerzeichen) |
+| `rpn.frac.off`, `rpn.frac.improper`, `rpn.frac.mixed` | – | Brüche: aus, unecht (3/2), gemischt (1 1/2) |
+
+- **Stellen:** 0 bis 15, sonst Fehler `stellen`. Ohne Argument gelten die zuletzt eingestellten (anfangs 4).
+- **Rundung:** kaufmännisch. Ist ein angezeigter Wert gerundet, zeigt die App blass „…“ dahinter, vor einem Exponenten
+  bzw. SI-Vorsatz (1.235…ê6, 123.5… k).
+- **Exponent:** in allen Formaten mit `ê` wie bei der Eingabe und einem Minuszeichen: 1.5ê20, 1ê−20.
+- **Brüche:** Ein Bruch erscheint, wenn er genauer ist als die Dezimalzahl, die sonst angezeigt würde (ist sie
+  exakt, muss er es auch sein; ist sie gerundet, um eine Stelle genauer: 123.4567 bei SI 3 bleibt 123.5…), sein Nenner keine Zehnerpotenz ist und Zähler und Nenner zusammen
+  höchstens eine echte Stelle mehr haben als der Nachkommateil (0.75 → 3/4, 0.05 → 1/20, 1234.56 bleibt).
+  Unter Sci steht die Zehnerpotenz im Nenner als Exponent (0.01234 → 617/5ê4), ganze Zahlen ab 1 mit
+  Zehnerpotenz (1234000 → 1234ê3); unter Eng und SI gibt es Brüche nur unter 1000 und ohne Zehnerpotenz im Nenner.
+
 ---
 
 ## 7. Stackbefehle
@@ -543,8 +573,9 @@ Funktionen haben einen eigenen Namensraum, denn sie werden ohne `'` aufgerufen.
 - **Eingebaute Funktionen** können nicht überschrieben werden, Funktionen aus Bibliotheken ebenfalls nicht (10.6).
 - **Ersetzen nur ausdrücklich:** Wer eine Funktion beim Entwickeln neu fasst, schreibt `'::name`. So
   überschreibt `':` nie versehentlich eine Funktion, die man noch braucht.
-- **Namen mit `rpn` am Anfang** sind für das System reserviert (z.B. `rpnjson`, 10.5); eigene Funktionen dürfen
-  nicht so heißen.
+- **Namen mit `rpn` am Anfang** sind für das System reserviert (z.B. `rpnjson`, 10.5), damit auch der
+  Namensraum `rpn.` (3.2); eigene Funktionen dürfen nicht so heißen. Eigene Namensräume sind erlaubt
+  (`':geo.flaeche`).
 - **Interne Funktionen** (`rpnintern`): Hilfsfunktionen, die andere Funktionen benutzen. Sie bekommen keine
   Funktionstaste; in Listen und in der Hilfe stehen sie wie alle anderen, aufrufen lassen sie sich ebenso.
   `rpnintern` bezieht sich auf die zuletzt mit `':` oder `'::` abgelegte Funktion (gibt es keine mehr, ist das
@@ -678,6 +709,7 @@ Jeder Fehler hat einen Code und einen Text. Bei vielen Fehlern wird ein Detail a
 | 9 | Ungültiges Zeichen nach ' |
 | A | Bezeichner nach Variablen-Präfix fehlt |
 | B | Ungültiges Zeichen im Tag |
+| C | Buchstabe nach Punkt im Namen erwartet |
 | X | Nicht implementiert |
 | Y | Zeichen an dieser Stelle nicht erlaubt |
 | Z | Unbekanntes Zeichen (auch für das intern reservierte Zeichen ETX) |
@@ -789,7 +821,9 @@ code_close      = "}" ;
 incode_zeichen  = ? alle Zeichen außer "{" und "}" ? ;
 
 (* --- Namen --- *)
-name            = kleinbuchstabe , { kleinbuchstabe } ;
+(* Der Punkt steht nur zwischen zwei Buchstaben und trennt Namensräume: rpn.fix *)
+name_teil       = kleinbuchstabe , { kleinbuchstabe } ;
+name            = name_teil , { dot , name_teil } ;
 
 (* --- Zahlen --- *)
 integer         = ziffer , { ziffer } ;
@@ -829,6 +863,11 @@ Reihenfolge der Symbolliste und nimmt den ersten passenden Übergang. So gehöre
 bzw. zur Tilde und zusätzlich zur Gruppe `varmod`, `:` zusätzlich zur Gruppe `colon`. Beide stehen hinter den
 Operatoren und haben Übergänge nur nach `'`; überall sonst gelten die Operatoren und die Tilde. Nach `'~` bleibt
 ein eigener Zustand, weil dort auch `'~R` (Befehl mit Tags) möglich ist.
+
+**Zerlegung in Token:** Die Regeln oben sagen, wie ein Token aussieht, nicht, wo eins endet. Der Automat liest
+jedes Token so lang wie möglich und entscheidet Zeichen für Zeichen, ohne vorauszuschauen. Deshalb ist `"deg50"`
+der Name `deg` und die Zahl `50`, aber `"x.5"` kein Name `x` mit der Zahl `.5`: Der Punkt nach einem Namen gehört
+zum Namen, und weil kein Buchstabe folgt, ist das Fehler C (3.2). Ebenso ist `"1.2.3"` die Zahl `1.2` und `.3`.
 
 Die Grammatik beschreibt, welche Token möglich sind. Welche davon belegt sind (z.B. welche Operatoren), legen
 die Kapitel 4–11 fest.

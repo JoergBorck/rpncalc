@@ -1,7 +1,7 @@
 name: rpncalc_app
 description: "RPN-Rechner für das Smartphone, Oberfläche zu rpncalc (doc/app.md)."
 publish_to: 'none'
-version: 0.4.0+4
+version: 0.5.0+5
 
 environment:
   sdk: ^3.13.7

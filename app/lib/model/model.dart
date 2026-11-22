@@ -11,6 +11,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
@@ -19,6 +20,10 @@ import 'package:rpncalc/rpnapi.dart';
 
 import '../help_texts.dart';
 import '../keys.dart';
+import '../menu_tree.dart';
+import 'protocol.dart';
+
+export '../menu_tree.dart';
 
 part 'assignment.dart';
 part 'clipboard.dart';
@@ -51,7 +56,7 @@ class RechnerModell extends ModellKern
 
   /// Version der App (MAJOR.MINOR.PATCH wie in pubspec.yaml); der Rechner prüft damit die Angabe `app` von
   /// Bibliotheken (doc/api.md 9.1).
-  static const String appVersion = "0.4.0";
+  static const String appVersion = "0.5.0";
 
   static const int verlaufMax = 100;
 
@@ -72,18 +77,18 @@ class RechnerModell extends ModellKern
 
   /// Ein Tipp in die Anzeige wählt den Bereich (doc/app.md 3.3); auf den Seiten Funktionen und Variablen gibt er
   /// der Liste den Rahmen zurück (VA-15).
-  void waehleBereich(Bereich b) {
-    if (bereich == b && !tastenblockGewaehlt) return;
-    bereich = b;
-    notifyListeners();
-  }
+  void waehleBereich(Bereich b) => _bedienung("bereich", [b.name], () {
+        if (bereich == b && !tastenblockGewaehlt) return;
+        bereich = b;
+        notifyListeners();
+      });
 
   /// Ein Tipp in den Block der Funktionstasten, solange die Liste den Rahmen hat: gibt ihn dem Block (VA-15).
-  void waehleTastenblock() {
-    if (!listeGewaehlt || !tastenblockVerbunden) return;
-    tastenblockGewaehlt = true;
-    notifyListeners();
-  }
+  void waehleTastenblock() => _bedienung("tastenblock", [], () {
+        if (!listeGewaehlt || !tastenblockVerbunden) return;
+        tastenblockGewaehlt = true;
+        notifyListeners();
+      });
 
   /// Der Block der Funktionstasten ist leicht orange hinterlegt, weil er zur Liste mit dem Rahmen gehört; nur, wenn
   /// er etwas aus ihr zeigen kann (tastenblockVerbunden).
@@ -96,10 +101,15 @@ class RechnerModell extends ModellKern
     final letzter = _letzterTipp;
     final doppelt = letzter != null && letzter.$1 == b && jetzt.difference(letzter.$2) < const Duration(milliseconds: 400);
     _letzterTipp = doppelt ? null : (b, jetzt);
-    if (!doppelt) return waehleBereich(b);
-    bereich = b;
-    druecke(const Taste("", aktion: Aktion.maximieren));
+    tippeBereichMit(b, doppelt: doppelt);
   }
+
+  /// [tippeBereich] mit bekanntem Ergebnis der Doppelklick-Erkennung, z.B. beim Abspielen eines Protokolls.
+  void tippeBereichMit(Bereich b, {required bool doppelt}) => _bedienung("tipp", [b.name, doppelt], () {
+        if (!doppelt) return waehleBereich(b);
+        bereich = b;
+        druecke(tasteMaximieren);
+      });
 
   (Bereich, DateTime)? _letzterTipp;
 
@@ -119,6 +129,37 @@ class RechnerModell extends ModellKern
 /// die Zeile umbrechen, wenn sie voll ist, den Verlauf führen.
 abstract class ModellKern extends ChangeNotifier {
   final RpnApi api = RpnApi()..appVersion = RechnerModell.appVersion;
+
+  /// Das Tastenprotokoll (PA-1, protocol.dart); Tests können ein eigenes setzen.
+  Protokoll protokoll = Protokoll.app;
+
+  int _bedienTiefe = 0;
+
+  /// Führt eine Bedienung aus und protokolliert sie danach mit dem Zustand; Bedienungen, die eine andere
+  /// aufrufen (Backspace der Tastatur ruft ⌫), stehen nur einmal im Protokoll, mit dem äußeren Namen.
+  T _bedienung<T>(String art, List<Object?> felder, T Function() wirkung) {
+    _bedienTiefe++;
+    try {
+      return wirkung();
+    } finally {
+      if (--_bedienTiefe == 0) protokoll.bedienung(art, felder, protokollZustand);
+    }
+  }
+
+  /// Der Zustand nach einer Bedienung, wie er im Protokoll steht und beim Abspielen verglichen wird.
+  Map<String, Object?> get protokollZustand => {
+        "zeile": zeile, // wie angezeigt: nach dem Zeilenende leer
+        "stack": [for (final s in zustand.stack.take(4)) zahl(s.wert)].join(" "),
+        "tiefe": zustand.tiefe,
+        "fehler": zustand.fehler?.code ?? "",
+        "bereich": bereich.name,
+        "modus": hilfeModus ? "hilfe" : menueOffen ? "menue" : "rechnen",
+        "flags": [if (shift) "S", if (alpha) "A", if (tilde) "~", if (strich) "|", if (apostroph) "'",
+                  if (rueckstrich) "\\", if (maximiert) "M"].join(),
+        "verlauf": verlauf.length,
+        "breite": zeichenProZeile,
+        "zeilen": "${platzEingabe.length}/${platzStack.length}",
+      };
   late Zustand zustand = api.zustand(zeilen: _stackZeilen);
 
   bool shift = false, tilde = false, strich = false, apostroph = false, alpha = false;
@@ -226,9 +267,9 @@ abstract class ModellKern extends ChangeNotifier {
     // Präfixe gelten, solange das Token mit ihnen offen ist: ~sin behält den Rahmen um ~, bis sin fertig ist
     if (!praefix) {
       final o = zustand.offen;
-      tilde = RegExp(r"^~[a-z]*$").hasMatch(o);
+      tilde = RegExp(r"^~[a-z.]*$").hasMatch(o); // Namen mit Punkt: ~geo.f
       strich = RegExp(r"^~?\|$").hasMatch(o);
-      apostroph = RegExp(r"^'[!=+\-*/~|]*[a-z]*$").hasMatch(o);
+      apostroph = RegExp(r"^'[!=+\-*/~|]*[a-z.]*$").hasMatch(o);
     }
     _zurueckschieben();
     // nach einer Operation ab 80 %, nach einem ENTER (vorgemerkt) ab 90 %

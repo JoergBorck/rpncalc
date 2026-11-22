@@ -58,6 +58,7 @@ const Map<String, String> rpnFehler = {
   "X9": "Ungültiges Zeichen nach '",
   "XA": "Bezeichner nach Variablen-Präfix fehlt",
   "XB": "Ungültiges Zeichen im Tag",
+  "XC": "Buchstabe nach Punkt im Namen erwartet",
 };
 
 const UebergangsTabelle rpnGrammatik = {
@@ -90,7 +91,10 @@ const UebergangsTabelle rpnGrammatik = {
 ('q_ExpFlanke'     , 'zif'   ) :('q_ExpFlanke'     , '+e______') , // Weitere Exponenten-Ziffern
 ('q_ExpFlanke'     , 'alle'  ) :('q0'              , '!Z?_____') , // Token fertig (Zahl mit Exponent)
 ('q_Name'          , 'kbu'   ) :('q_Name'          , '+n______') , // Teil des langen Namens
+('q_Name'          , 'dot'   ) :('q_NameDot'       , '+n______') , // Punkt im Namen (rpn.fix)
 ('q_Name'          , 'alle'  ) :('q0'              , '!F?_____') , // Token fertig (Funktion)
+('q_NameDot'       , 'kbu'   ) :('q_Name'          , '+n______') , // Name geht nach dem Punkt weiter
+('q_NameDot'       , 'alle'  ) :('q0'              , 'XC______') , // Buchstabe nach Punkt im Namen erwartet
 ('q_Inv'           , 'tilde' ) :('q0'              , '+~+o!O__') , // Token fertig (~~)
 ('q_Inv'           , 'ops'   ) :('q0'              , '+~+o!O__') , // Token fertig (~op)
 ('q_Inv'           , 'split' ) :('q_InvSplit'      , '________') , // Sequenz ~| gelesen, noch unklar, wohin damit
@@ -126,14 +130,20 @@ const UebergangsTabelle rpnGrammatik = {
 ('q_VarDef2'       , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Name der Funktion ('::f)
 ('q_VarDef2'       , 'alle'  ) :('q0'              , 'XA______') , // Bezeichner nach Variablen-Präfix fehlt
 ('q_VarNormIdent'  , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Verarbeitet langen Variablennamen
+('q_VarNormIdent'  , 'dot'   ) :('q_VarDot'        , '+v______') , // Punkt im Namen ('geo.r)
 ('q_VarNormIdent'  , 'alle'  ) :('q0'              , '!V?_____') , // Token fertig (Var_Normal)
+('q_VarDot'        , 'kbu'   ) :('q_VarNormIdent'  , '+v______') , // Name geht nach dem Punkt weiter
+('q_VarDot'        , 'alle'  ) :('q0'              , 'XC______') , // Buchstabe nach Punkt im Namen erwartet
 ('q_TagSplit'      , 'kbu'   ) :('q_TagIdent'      , 'St+v____') , // Direkt der Identifier des Tags ('|tmp)
 ('q_TagSplit'      , 'split' ) :('q_TagSchutz'     , '+v______') , // Tag mit Schreibschutz ('||tmp)
 ('q_TagSplit'      , 'alle'  ) :('q0'              , 'XB______') , // Ungültiges Zeichen im Tag
 ('q_TagSchutz'     , 'kbu'   ) :('q_TagIdent'      , 'St+v____') , // Identifier des geschützten Tags
 ('q_TagSchutz'     , 'alle'  ) :('q0'              , 'XB______') , // Ungültiges Zeichen im Tag
 ('q_TagIdent'      , 'kbu'   ) :('q_TagIdent'      , '+v______') , // Sammelt Rest des Tag-Identifiers
+('q_TagIdent'      , 'dot'   ) :('q_TagDot'        , '+v______') , // Punkt im Namen ('|geo.r)
 ('q_TagIdent'      , 'alle'  ) :('q0'              , '!S?_____') , // Token fertig (Tag)
+('q_TagDot'        , 'kbu'   ) :('q_TagIdent'      , '+v______') , // Name geht nach dem Punkt weiter
+('q_TagDot'        , 'alle'  ) :('q0'              , 'XC______') , // Buchstabe nach Punkt im Namen erwartet
 // Code-Blöcke: alle Zeichen landen im Code-Puffer, { und } zählt der RpnToken.
 // Ist die passende } erkannt, schiebt der RpnToken ETX nach und der Block ist fertig.
 // Blöcke sind immer anonym; einen Namen bekommen sie erst mit ':name.

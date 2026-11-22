@@ -12,6 +12,7 @@
 /// Siehe auch: dea.dart, token.dart, engine/calculator.dart, doc/api.md Kapitel 5 (Eingabe Zeichen für Zeichen).
 library;
 
+import '../trace.dart';
 import 'dea.dart';
 
 /// Der Parser ruft Callbacks für die gefundenen Tokens auf
@@ -152,6 +153,14 @@ class Parser<T extends TokenBuilder> {
   /// Gehört das gerade verarbeitete Zeichen bei einem Fehler noch zum Token? (nein, wenn es das Token nur beendet)
   bool _zeichenImToken = true;
 
+  /// Spur für die Fehlersuche (PR-1): Zeichen, Tokens und Fehler; gilt auch für den DEA. null heißt aus.
+  Spur? get spur => _spur;
+  set spur(Spur? s) {
+    _spur = s;
+    dea.spur = s;
+  }
+  Spur? _spur;
+
   /// Erzeugung des Parsers mit Übergabe einer Grammatik und des passenden TokenBuilders.
   ///
   /// [fehler] enthält die Texte zu den Fehlercodes der Grammatik (z.B. "X6").
@@ -227,6 +236,7 @@ class Parser<T extends TokenBuilder> {
     }
     bool fertig = currentToken.verarbeite(zeichen, cmd, param);
     if (currentToken.inject.isNotEmpty) return ParserResult.inject;
+    if (fertig) _spur?.call("token", ["$param‖${currentToken.anzeige}"]);
     ParserCallback<T>? callback = _action(cmd, param);
     if (callback == null) {
       return fertig ? ParserResult.nyi : ParserResult.processing;
@@ -274,6 +284,7 @@ class Parser<T extends TokenBuilder> {
           currentToken.inject = "";
           result = lastResult;
         case ParserResult.error:
+          _spur?.call("fehler", [currentToken.errorCode, currentToken.errorMsg]);
           if (tokenOutput != "") tokenOutput += "\t";
           tokenOutput += "X‖${currentToken.errorCode}";
           // Dea zurücksetzen, damit die nächste Eingabe sauber beginnt.
@@ -313,9 +324,11 @@ class Parser<T extends TokenBuilder> {
   /// Ein Zeichen der Eingabezeile verarbeiten, einschließlich eines wiederholten Zeichens (reconsume).
   /// [i] ist die Position in der Zeile, für errorPosition.
   ParserResult _zeichen(String c, int i) {
+    _spur?.call("zeichen", [i, c]);
     if (gesperrt.contains(c)) { // nur per inject erlaubt, nicht als Eingabe
       currentToken.errorCode = "Z";
       currentToken.errorMsg  = fehlerTexte["XZ"] ?? "Unbekanntes Zeichen";
+      _spur?.call("fehler", [currentToken.errorCode, currentToken.errorMsg]);
       if (tokenOutput != "") tokenOutput += "\t";
       tokenOutput += "X‖Z";
       dea.restart();

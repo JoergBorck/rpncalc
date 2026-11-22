@@ -10,6 +10,7 @@ library;
 
 import '../engine/calculator.dart' show AngleMode, Calculator;
 import '../engine/interpreter.dart';
+import '../number_format.dart';
 
 /// Eine Zeile der Stack-Anzeige.
 class StackZeile {
@@ -92,8 +93,10 @@ class Zustand {
   final bool enterVorgemerkt;       // ein Leerzeichen wartet auf das nächste Token
   final String zeile;               // die bisher eingegebene Zeile
   final bool zeileFertig;           // die Zeile ist abgeschlossen, die nächste Taste beginnt eine neue
+  final Anzeigeformat anzeige;      // Format, Stellen, Trenner, Bruch (FR-3)
   const Zustand(this.stack, this.tiefe, this.speicher, this.argumente, this.winkel, this.seed, this.fehler,
-                this.codeOffen, this.codeStack, this.offen, this.enterVorgemerkt, this.zeile, this.zeileFertig);
+                this.codeOffen, this.codeStack, this.offen, this.enterVorgemerkt, this.zeile, this.zeileFertig,
+                {this.anzeige = Anzeigeformat.standard});
 
   /// Der Zustand als JSON-Objekt, z.B. für den Socket (doc/api.md Kapitel 6). Mit jsonEncode wird daraus
   /// eine einzige Zeile, auch wenn der Code Zeilenumbrüche enthält.
@@ -111,6 +114,10 @@ class Zustand {
         "enterVorgemerkt": enterVorgemerkt,
         "zeile": zeile,
         "zeileFertig": zeileFertig,
+        "format": anzeige.format.name,
+        "stellen": anzeige.stellen,
+        "trenner": anzeige.trenner.name,
+        "bruch": anzeige.bruch.name,
       };
 
   factory Zustand.fromJson(Map<String, Object?> j) => Zustand(
@@ -127,6 +134,13 @@ class Zustand {
         j["enterVorgemerkt"] as bool,
         j["zeile"] as String,
         j["zeileFertig"] as bool,
+        // ältere Server schicken kein Anzeigeformat
+        anzeige: Anzeigeformat(
+          format: Zahlformat.values.byName(j["format"] as String? ?? "std"),
+          stellen: j["stellen"] as int? ?? Anzeigeformat.standard.stellen,
+          trenner: Trenner.values.byName(j["trenner"] as String? ?? "none"),
+          bruch: Bruch.values.byName(j["bruch"] as String? ?? "off"),
+        ),
       );
 }
 
@@ -150,6 +164,7 @@ Zustand zustandVon(Interpreter i, {int zeilen = 8}) {
     calculator.enter.vorgemerkt,
     i.zeile,
     parser.zeileFertig,
+    anzeige: calculator.anzeige,
   );
 }
 

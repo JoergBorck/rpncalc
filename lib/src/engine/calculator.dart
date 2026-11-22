@@ -11,6 +11,7 @@
 /// Siehe auch: doc/architecture.md 2.1, core.dart, ../language/token.dart, doc/reference.md 2.3 und 2.4.
 library;
 
+import '../helper.dart';
 import '../language/parser.dart';
 import '../language/token.dart';
 import 'arguments.dart';
@@ -69,14 +70,25 @@ class Calculator extends Kern with Speicher, Funktionen, Operatoren, StackBefehl
     final enterVorher = enter.merken();
     final argumenteVorher = args.offen;
     bool dup = enter.vorToken(typ) && fehlerCode.isEmpty;
-    if (fehlerCode.isEmpty) aktion(mitArgumenten ? args.nimm() : const Argumente([]));
+    if (fehlerCode.isEmpty) {
+      final a = mitArgumenten ? args.nimm() : const Argumente([]);
+      parser.spur?.call("rechner", [typ.name, token.anzeige, if (!a.isEmpty) "args=${a.liste.map(str).join(" ")}"]);
+      aktion(a);
+    }
     enter.nachToken(typ);
     if (fehlerCode.isNotEmpty) {
       if (dup) stack.pull();
       enter.wiederherstellen(enterVorher);
       args.zuruecklegen(argumenteVorher);
     }
+    _spurStack();
     return ergebnis(token);
+  }
+
+  /// Stack nach einem Token in der Spur (PR-1), ohne den Vorspann von show().
+  void _spurStack() {
+    final n = stack.tiefe;
+    parser.spur?.call("stack", [n == 0 ? "leer" : stack.show(n).replaceFirst("Stack: ...", "")]);
   }
 
   ParserResult onOperator(RpnToken token, String name) => _ausfuehren(token, TokenTyp.operator, operatoren, name, "op?");
@@ -105,7 +117,11 @@ class Calculator extends Kern with Speicher, Funktionen, Operatoren, StackBefehl
     int errorPosition = parser.errorPosition;
     aufrufArgumente.add(a.liste);
     String? bibliothek = aktuelleBibliothek; // ein version-Eintrag im Code gilt bis zu dessen Ende
+    final spur = parser.spur;
+    spur?.call("rechner", ["code", name, code]);
+    spur?.tiefe++;
     ParserResult r = parser.feedLine(code);
+    spur?.tiefe--;
     String fehlerCode = parser.currentToken.errorCode;
     String fehlerText = parser.currentToken.errorMsg;
     aufrufArgumente.removeLast();
@@ -136,10 +152,12 @@ class Calculator extends Kern with Speicher, Funktionen, Operatoren, StackBefehl
   }
 
   ParserResult onTrenner(RpnToken token, String name) {
+    parser.spur?.call("rechner", ["trenner", name == " " ? "␣" : name]);
     switch (name) {
       case " " : enter.leerzeichen();
       case "\n": enter.zeilenende();
     }
+    _spurStack();
     return ergebnis(token); // auch das dup kann an einem Tag scheitern
   }
 

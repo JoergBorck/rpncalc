@@ -84,6 +84,7 @@ class Kern {
     "tagC" : "Es gibt Tags, Stack und Tags löschen mit 'C",
     "elem" : "Element liegt außerhalb von Variable bzw. Tag",
     "rnd"  : "Ungültiger Bereich für rnd",
+    "stellen": "Stellen von 0 bis 15",
     "round": "Unbekannte Rundungsart (erlaubt: 0, ±1, ±2, ±3)",
     "k"    : "Als drittes Argument sind nur 0 (je Element ein Wert) oder 1 (ein Wert für alle) erlaubt",
     "block": "Ein Tag-Block darf nur als Ganzes verschoben oder entfernt werden",

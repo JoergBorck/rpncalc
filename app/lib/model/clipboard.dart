@@ -77,7 +77,7 @@ mixin _Ablage on ModellKern {
 
   /// Kopiert in die Zwischenablage und meldet, was kopiert wurde.
   Future<void> kopiere(Kopie art, [int r = 0]) async {
-    final text = kopierText(art, r);
+    final text = _bedienung("kopie", [art.name, r], () => kopierText(art, r));
     notifyListeners(); // ein offenes Token ist jetzt abgeschlossen
     if (text == null) return _melde("An dieser Stelle gibt es nichts zu kopieren");
     await Clipboard.setData(ClipboardData(text: text));
@@ -86,6 +86,13 @@ mixin _Ablage on ModellKern {
     final teile = text.split(werte ? ";" : "\n");
     if (teile.length > 1) return _melde("${teile.length} ${werte ? "Werte" : "Zeilen"} kopiert");
     _melde("Kopiert: ${text.length > 40 ? "${text.substring(0, 39)}…" : text}");
+  }
+
+  /// „Protokoll kopieren“ im Kontextmenü (PA-1): das Tastenprotokoll in die Zwischenablage, z.B. zum Einfügen in
+  /// eine Fehlermeldung.
+  Future<void> kopiereProtokoll() async {
+    await Clipboard.setData(ClipboardData(text: protokoll.text));
+    _melde("Protokoll kopiert (${protokoll.anzahl} Zeilen)");
   }
 
   /// Fügt aus der Zwischenablage ein: als [werte] alle Zahlen darin (wie `\v`, die letzte wird x), sonst den
@@ -101,6 +108,14 @@ mixin _Ablage on ModellKern {
       text = null; // der Browser hat das Lesen abgelehnt, z.B. die Rückfrage nicht bestätigt
     }
     if (text == null) return _melde("Die Zwischenablage lässt sich nicht lesen");
+    fuegeTextEin(text, werte: werte);
+  }
+
+  /// Fügt [text] ein wie [fuegeEin] nach dem Lesen der Zwischenablage; auch zum Abspielen eines Protokolls.
+  void fuegeTextEin(String text, {required bool werte}) =>
+      _bedienung("einfuegen", [werte, text], () => _fuegeTextEin(text, werte));
+
+  void _fuegeTextEin(String text, bool werte) {
     if (werte) {
       final zahlen = ausExcel(text);
       if (zahlen.isEmpty) return _melde("Keine Zahlen in der Zwischenablage");
@@ -116,8 +131,8 @@ mixin _Ablage on ModellKern {
     notifyListeners();
   }
 
-  /// `\` und das Zeichen danach: `\c` kopiert x, `\s` den Stack, `\v` fügt Werte ein; sonst gehen beide an den
-  /// Rechner. Liefert, ob das Zeichen damit erledigt ist.
+  /// `\` und das Zeichen danach: `\c` kopiert x, `\s` den Stack, `\v` fügt Werte ein, `\m` öffnet das Menü wie
+  /// MENÜ; sonst gehen beide an den Rechner. Liefert, ob das Zeichen damit erledigt ist.
   @override
   bool _rueckstrichBefehl(String c) {
     if (rueckstrich) {
@@ -131,6 +146,9 @@ mixin _Ablage on ModellKern {
           return true;
         case "v":
           fuegeEin(werte: true);
+          return true;
+        case "m":
+          druecke(tasteMenue);
           return true;
       }
       _schreibe("\\");

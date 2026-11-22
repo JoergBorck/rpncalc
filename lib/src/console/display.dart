@@ -10,6 +10,7 @@
 library;
 
 import '../../rpnapi.dart';
+import '../number_format.dart' show formatiere;
 
 /// Die Bereiche der zeichenweisen Eingabe, zwischen denen Tab wechselt.
 enum KonsolenBereich { stack, verlauf, variablen, funktionen }
@@ -42,6 +43,12 @@ class Darstellung {
   /// Der Tos, hellorange hinterlegt.
   static String _tos(String s, bool farbe) => farbe ? "\x1B[48;5;223;30m$s\x1B[0m" : s;
 
+  /// Ein Wert im Anzeigeformat (FR-3): mit SI-Vorsatz und „…“, wenn gerundet.
+  static String _zahl(num w, Anzeigeformat f) {
+    final r = formatiere(w, f);
+    return r.text;
+  }
+
   static final RegExp _ansi = RegExp(r"\x1B\[[0-9;?]*[A-Za-z]");
 
   /// Länge ohne die unsichtbaren ANSI-Steuerfolgen (Farben).
@@ -71,7 +78,7 @@ class Darstellung {
   static String kompakt(Zustand z, {int zeilen = 4, bool farbe = true, int versatz = 0}) {
     String stack = [
       for (StackZeile s in z.stack.skip(versatz).take(zeilen).toList().reversed)
-        "${s.position == 0 ? _tos("[${zahl(s.wert)}]", farbe) : "[${zahl(s.wert)}]"}${s.tags.join(",")}"
+        "${s.position == 0 ? _tos("[${_zahl(s.wert, z.anzeige)}]", farbe) : "[${_zahl(s.wert, z.anzeige)}]"}${s.tags.join(",")}"
     ].join(" ");
     if (z.tiefe > versatz + zeilen) stack = "… $stack";
     if (versatz > 0) stack = "$stack …";
@@ -79,7 +86,7 @@ class Darstellung {
     final offen = versatz == 0 ? _offenesToken(z) : null;
     return [
       _modi(z).join(" "),
-      if (z.speicher.isNotEmpty) [for (Speicher s in z.speicher) _speicher(s)].join("  "),
+      if (z.speicher.isNotEmpty) [for (Speicher s in z.speicher) _speicher(s, z.anzeige)].join("  "),
       if (z.argumente.isNotEmpty) "args ${_argumente(z).join(" ")}",
       if (z.codeStack.isNotEmpty) "Code ${z.codeStack.length}",
       "$stack<tos${offen == null ? "" : " ${_grau(">:$offen", farbe)}"}",
@@ -106,7 +113,7 @@ class Darstellung {
   static String uebersicht(Zustand z, {bool farbe = true, Ansicht? ansicht}) {
     if (ansicht != null) return _uebersicht(z, farbe, ansicht);
     String wert(StackZeile s) {
-      String w = zahl(s.wert);
+      String w = _zahl(s.wert, z.anzeige);
       return "${" " * (16 - w.length).clamp(0, 16)}${s.position == 0 ? _tos(w, farbe) : w}";
     }
     // ein offenes Token steht grau über dem Tos und zählt zu den 8 Zeilen
@@ -118,7 +125,7 @@ class Darstellung {
       if (z.tiefe > gezeigt.length) " … ${z.tiefe - gezeigt.length} weitere",
       if (z.tiefe == 0 && offen == null) " (leer)",
     ];
-    List<String> speicher = [for (Speicher s in z.speicher) _speicher(s)];
+    List<String> speicher = [for (Speicher s in z.speicher) _speicher(s, z.anzeige)];
     List<String> rechts = [
       ..._modi(z),
       "Tiefe ${z.tiefe}",
@@ -130,7 +137,7 @@ class Darstellung {
 
   static String _uebersicht(Zustand z, bool farbe, Ansicht a) {
     String wert(StackZeile s) {
-      String w = zahl(s.wert);
+      String w = _zahl(s.wert, z.anzeige);
       return "${" " * (16 - w.length).clamp(0, 16)}${s.position == 0 ? _tos(w, farbe) : w}";
     }
     // höchstens so weit, dass der unterste Wert in der letzten Zeile steht
@@ -179,7 +186,7 @@ class Darstellung {
   /// Variablen und Tags bzw. Funktionen als (Name, Inhalt), je nach [Ansicht.funktionen].
   static List<(String, String)> _liste(Zustand z, Ansicht a) => [
         for (Speicher s in z.speicher)
-          if ((s.art == SpeicherArt.funktion) == a.funktionen) _teile(s),
+          if ((s.art == SpeicherArt.funktion) == a.funktionen) _teile(s, z.anzeige),
       ];
 
   /// Erste angezeigte Zeile der Liste, höchstens so weit, dass die letzte Zeile gefüllt ist.
@@ -212,16 +219,16 @@ class Darstellung {
   /// Variablen als "m = 10", Tags mit "|" davor wie in der Syntax, Felder durch Leerzeichen getrennt,
   /// Konstanten mit "!!" und Tags mit Schreibschutz mit "||" davor,
   /// eigene Funktionen mit ihrem (gekürzten) Code.
-  static String _speicher(Speicher s) {
+  static String _speicher(Speicher s, Anzeigeformat f) {
     if (s.art == SpeicherArt.funktion) return _kurz("${s.name} {${s.code}}");
-    final (kopf, inhalt) = _teile(s);
+    final (kopf, inhalt) = _teile(s, f);
     return "$kopf$inhalt";
   }
 
   /// Name und Inhalt getrennt, ungekürzt: ("m = ", "10") bzw. ("f ", "{1+}").
-  static (String, String) _teile(Speicher s) {
+  static (String, String) _teile(Speicher s, Anzeigeformat f) {
     if (s.art == SpeicherArt.funktion) return ("${s.name} ", "{${s.code}}".replaceAll("\n", "↵"));
-    String werte = s.werte.map(zahl).join(" "); // Felder ohne [ ], die sind für Einheiten reserviert
+    String werte = s.werte.map((w) => _zahl(w, f)).join(" "); // Felder ohne [ ], die sind für Einheiten reserviert
     String praefix = s.art == SpeicherArt.tag ? (s.schreibschutz ? "||" : "|") : (s.schreibschutz ? "!!" : "");
     return ("$praefix${s.name} = ", werte);
   }

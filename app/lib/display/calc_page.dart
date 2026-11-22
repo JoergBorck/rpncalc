@@ -308,17 +308,36 @@ class RechnenSeite extends StatelessWidget {
     // x bis ₆ haben auch leer ihren Namen, damit der Übergang von t zu ₄ klar ist (doc/app.md Kapitel 2)
     if (!offen && s == null && (position < 0 || position > 6)) return const SizedBox();
     final tos = s != null && s.position == 0;
-    final sicht = RechnerModell.ausschnitt(m.stackText(r), m.stackVon(r), m.platzStack[r]);
-    final wert = Text(
-      sicht,
-      style: Schrift.monospace(
-        g,
-        offen
-            ? Farben.anzeigeBlass
-            : tos
-            ? Farben.tosText
-            : Farben.anzeigeText,
-      ),
+    // der Ausschnitt; ein zu langer Wert behält rechts seinen Exponenten (FR-3)
+    final (sicht, stellen) = m.stackSicht(r);
+    final farbe = offen
+        ? Farben.anzeigeBlass
+        : tos
+        ? Farben.tosText
+        : Farben.anzeigeText;
+    // SI-Vorsatz und „…“ für gerundete Werte blass (FR-3), im sichtbaren Ausschnitt an ihrer Stelle
+    final teile = m.stackTeile(r);
+    final blass = tos ? Farben.tosText.withValues(alpha: 0.45) : Farben.anzeigeBlass;
+    bool istBlass(int i) => [teile?.vorsatz, teile?.gerundet].any((b) => b != null && stellen[i] >= b.$1 && stellen[i] < b.$2);
+    // das schmale Leerzeichen des Trenners: die Monospace-Schrift zeigt es so breit wie eine Ziffer, darum ein
+    // Leerzeichen in kleiner Schrift
+    final spans = <TextSpan>[];
+    var schmal = false;
+    for (var i = 0; i < sicht.length; i++) {
+      final b = istBlass(i);
+      if (sicht[i] == " ") {
+        spans.add(TextSpan(text: " ", style: TextStyle(color: farbe, fontSize: g * 0.4)));
+        schmal = true;
+      } else if (spans.isNotEmpty && !schmal && (spans.last.style?.color == blass) == b) {
+        spans[spans.length - 1] = TextSpan(text: spans.last.text! + sicht[i], style: spans.last.style);
+      } else {
+        spans.add(TextSpan(text: sicht[i], style: TextStyle(color: b ? blass : farbe)));
+        schmal = false;
+      }
+    }
+    final wert = Text.rich(
+      TextSpan(children: spans),
+      style: Schrift.monospace(g, farbe),
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.clip,

@@ -12,7 +12,7 @@ part of 'model.dart';
 mixin _Eingabe on ModellKern {
   /// Eine Taste des Tastenfelds; was sie bewirkt, entscheidet der aktive Bedienmodus (modes.dart).
   @override
-  void druecke(Taste t) => modus.druecke(t);
+  void druecke(Taste t) => _bedienung("taste", [t.text, jsonEncode(t.toJson())], () => modus.druecke(t));
 
   /// Eine Taste im Bedienmodus Rechnen.
   void _druckeRechnen(Taste t) {
